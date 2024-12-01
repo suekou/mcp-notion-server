@@ -65,6 +65,11 @@ interface UpdateDatabaseArgs {
   properties?: any;
 }
 
+interface CreateDatabaseItemArgs {
+  database_id: string;
+  properties: any;
+}
+
 // Tool definitions
 // Blocks
 const appendBlockChildrenTool: Tool = {
@@ -157,17 +162,17 @@ const retrievePageTool: Tool = {
 
 const updatePagePropertiesTool: Tool = {
   name: "notion_update_page_properties",
-  description: "Update properties of a page in Notion",
+  description: "Update properties of a page or an item in a Notion database",
   inputSchema: {
     type: "object",
     properties: {
       page_id: {
         type: "string",
-        description: "The ID of the page to update. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+        description: "The ID of the page or database item to update. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
       },
       properties: {
         type: "object",
-        description: "Properties to update",
+        description: "Properties to update. These correspond to the columns or fields in the database.",
       },
     },
     required: ["page_id", "properties"],
@@ -268,6 +273,25 @@ const updateDatabaseTool: Tool = {
       },
     },
     required: ["database_id"],
+  },
+};
+
+const createDatabaseItemTool: Tool = {
+  name: "notion_create_database_item",
+  description: "Create a new item (page) in a Notion database",
+  inputSchema: {
+    type: "object",
+    properties: {
+      database_id: {
+        type: "string",
+        description: "The ID of the database to add the item to. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+      },
+      properties: {
+        type: "object",
+        description: "Properties of the new database item. These should match the database schema.",
+      },
+    },
+    required: ["database_id", "properties"],
   },
 };
 
@@ -410,6 +434,21 @@ class NotionClientWrapper {
 
     return response.json();
   }
+
+  async createDatabaseItem(database_id: string, properties: any): Promise<any> {
+    const body = {
+      parent: { database_id },
+      properties,
+    };
+  
+    const response = await fetch(`${this.baseUrl}/pages`, {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+  
+    return response.json();
+  }  
 }
 
 async function main() {
@@ -577,6 +616,17 @@ async function main() {
             };
           }
 
+          case "notion_create_database_item": {
+            const args = request.params.arguments as unknown as CreateDatabaseItemArgs;
+            const response = await notionClient.createDatabaseItem(
+              args.database_id,
+              args.properties,
+            );
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
           default:
             throw new Error(`Unknown tool: ${request.params.name}`);
         }
@@ -610,6 +660,7 @@ async function main() {
         queryDatabaseTool,
         retrieveDatabaseTool,
         updateDatabaseTool,
+        createDatabaseItemTool,
       ],
     };
   });
