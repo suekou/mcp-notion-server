@@ -80,6 +80,7 @@ MCP Server for the Notion API, enabling Claude to interact with Notion workspace
    - Returns: Detailed information about the database.
 
 10. `notion_update_database`
+
     - Update information about a database.
     - Required inputs:
       - `database_id` (string): The ID of the database to update.
@@ -88,6 +89,14 @@ MCP Server for the Notion API, enabling Claude to interact with Notion workspace
       - `description` (array): New description for the database.
       - `properties` (object): Updated property schema.
     - Returns: Information about the updated database.
+
+11. `notion_create_database_item`
+
+    - Create a new item in a Notion database.
+    - Required inputs:
+      - `database_id` (string): The ID of the database to add the item to.
+      - `properties` (object): The properties of the new item. These should match the database schema.
+    - Returns: Information about the newly created item.
 
 ## Setup
 
