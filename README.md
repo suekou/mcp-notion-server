@@ -115,8 +115,8 @@ MCP Server for the Notion API, enabling Claude to interact with Notion workspace
    {
      "mcpServers": {
        "notion": {
-         "command": "npx",
-         "args": ["-y", "@modelcontextprotocol/server-notion"],
+         "command": "node",
+         "args": ["your-buit-file-path"],
          "env": {
            "NOTION_API_TOKEN": "your-integration-token"
          }
