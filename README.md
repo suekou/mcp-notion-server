@@ -91,6 +91,11 @@ MCP Server for the Notion API, enabling Claude to interact with Notion workspace
 
 ## Setup
 
+Here is a detailed explanation of the steps mentioned above in the following articles:
+
+- English Version: https://dev.to/suekou/operating-notion-via-claude-desktop-using-mcp-c0h
+- Japanese Version: https://qiita.com/suekou/items/44c864583f5e3e6325d9
+
 1. **Create a Notion Integration**:
 
    - Visit the [Notion Your Integrations page](https://www.notion.so/profile/integrations).
@@ -116,7 +121,7 @@ MCP Server for the Notion API, enabling Claude to interact with Notion workspace
      "mcpServers": {
        "notion": {
          "command": "node",
-         "args": ["your-buit-file-path"],
+         "args": ["your-built-file-path"],
          "env": {
            "NOTION_API_TOKEN": "your-integration-token"
          }
