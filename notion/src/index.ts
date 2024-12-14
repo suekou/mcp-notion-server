@@ -39,6 +39,16 @@ interface UpdatePagePropertiesArgs {
   properties: any;
 }
 
+// Users
+interface ListAllUsersArgs {
+  start_cursor?: string;
+  page_size?: number;
+}
+
+interface RetrieveUserArgs {
+  user_id: string;
+}
+
 // Databases
 interface CreateDatabaseArgs {
   parent: any;
@@ -198,6 +208,53 @@ const updatePagePropertiesTool: Tool = {
   },
 };
 
+// Users
+const listAllUsersTool: Tool = {
+  name: "notion_list_all_users",
+  description:
+    "List all users in the Notion workspace. **Note:** This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      start_cursor: {
+        type: "string",
+        description: "Pagination start cursor for listing users",
+      },
+      page_size: {
+        type: "number",
+        description: "Number of users to retrieve (max 100)",
+      },
+    },
+  },
+};
+
+const retrieveUserTool: Tool = {
+  name: "notion_retrieve_user",
+  description:
+    "Retrieve a specific user by user_id in Notion. **Note:** This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      user_id: {
+        type: "string",
+        description:
+          "The ID of the user to retrieve. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+      },
+    },
+    required: ["user_id"],
+  },
+};
+
+const retrieveBotUserTool: Tool = {
+  name: "notion_retrieve_bot_user",
+  description:
+    "Retrieve the bot user associated with the current token in Notion",
+  inputSchema: {
+    type: "object",
+    properties: {},
+  },
+};
+
 // Databases
 const createDatabaseTool: Tool = {
   name: "notion_create_database",
@@ -324,6 +381,7 @@ const createDatabaseItemTool: Tool = {
   },
 };
 
+// Search
 const searchTool: Tool = {
   name: "notion_search",
   description: "Search pages or databases by title in Notion",
@@ -459,6 +517,34 @@ class NotionClientWrapper {
       body: JSON.stringify(body),
     });
 
+    return response.json();
+  }
+
+  async listAllUsers(start_cursor?: string, page_size?: number): Promise<any> {
+    const params = new URLSearchParams();
+    if (start_cursor) params.append("start_cursor", start_cursor);
+    if (page_size) params.append("page_size", page_size.toString());
+
+    const response = await fetch(`${this.baseUrl}/users?${params.toString()}`, {
+      method: "GET",
+      headers: this.headers,
+    });
+    return response.json();
+  }
+
+  async retrieveUser(user_id: string): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/users/${user_id}`, {
+      method: "GET",
+      headers: this.headers,
+    });
+    return response.json();
+  }
+
+  async retrieveBotUser(): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/users/me`, {
+      method: "GET",
+      headers: this.headers,
+    });
     return response.json();
   }
 
@@ -692,6 +778,37 @@ async function main() {
             };
           }
 
+          case "notion_list_all_users": {
+            const args = request.params
+              .arguments as unknown as ListAllUsersArgs;
+            const response = await notionClient.listAllUsers(
+              args.start_cursor,
+              args.page_size
+            );
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "notion_retrieve_user": {
+            const args = request.params
+              .arguments as unknown as RetrieveUserArgs;
+            if (!args.user_id) {
+              throw new Error("Missing required argument: user_id");
+            }
+            const response = await notionClient.retrieveUser(args.user_id);
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "notion_retrieve_bot_user": {
+            const response = await notionClient.retrieveBotUser();
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
           case "notion_query_database": {
             const args = request.params
               .arguments as unknown as QueryDatabaseArgs;
@@ -803,6 +920,9 @@ async function main() {
         deleteBlockTool,
         retrievePageTool,
         updatePagePropertiesTool,
+        listAllUsersTool,
+        retrieveUserTool,
+        retrieveBotUserTool,
         createDatabaseTool,
         queryDatabaseTool,
         retrieveDatabaseTool,
