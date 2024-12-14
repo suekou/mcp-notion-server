@@ -80,6 +80,19 @@ interface CreateDatabaseItemArgs {
   properties: any;
 }
 
+// Comments
+interface CreateCommentArgs {
+  parent?: { page_id: string };
+  discussion_id?: string;
+  rich_text: any[];
+}
+
+interface RetrieveCommentsArgs {
+  block_id: string;
+  start_cursor?: string;
+  page_size?: number;
+}
+
 // Search
 interface SearchArgs {
   query?: string;
@@ -381,6 +394,289 @@ const createDatabaseItemTool: Tool = {
   },
 };
 
+// Comments
+const createCommentTool: Tool = {
+  name: "notion_create_comment",
+  description:
+    "Create a comment in Notion. This requires the integration to have 'insert comment' capabilities. You can either specify a page parent or a discussion_id, but not both.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      parent: {
+        type: "object",
+        description:
+          "Parent object that specifies the page to comment on. Must include a page_id if used.",
+        properties: {
+          page_id: {
+            type: "string",
+            description:
+              "The ID of the page to comment on. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+          },
+        },
+      },
+      discussion_id: {
+        type: "string",
+        description:
+          "The ID of an existing discussion thread to add a comment to. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+      },
+      rich_text: {
+        type: "array",
+        description:
+          "Array of rich text objects representing the comment content.",
+        items: {
+          type: "object",
+          description: "A rich text object.",
+          properties: {
+            type: {
+              type: "string",
+              description:
+                "The type of this rich text object. Possible values: text, mention, equation.",
+              enum: ["text", "mention", "equation"],
+            },
+            text: {
+              type: "object",
+              description:
+                "Object containing text content and optional link info. Required if type is 'text'.",
+              properties: {
+                content: {
+                  type: "string",
+                  description: "The actual text content.",
+                },
+                link: {
+                  type: "object",
+                  description: "Optional link object with a 'url' field.",
+                  properties: {
+                    url: {
+                      type: "string",
+                      description: "The URL the text links to.",
+                    },
+                  },
+                },
+              },
+            },
+            mention: {
+              type: "object",
+              description:
+                "Mention object if type is 'mention'. Represents an inline mention of a database, date, link preview, page, template mention, or user.",
+              properties: {
+                type: {
+                  type: "string",
+                  description: "The type of the mention.",
+                  enum: [
+                    "database",
+                    "date",
+                    "link_preview",
+                    "page",
+                    "template_mention",
+                    "user",
+                  ],
+                },
+                database: {
+                  type: "object",
+                  description:
+                    "Database mention object. Contains a database reference with an 'id' field.",
+                  properties: {
+                    id: {
+                      type: "string",
+                      description:
+                        "The ID of the mentioned database. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+                    },
+                  },
+                  required: ["id"],
+                },
+                date: {
+                  type: "object",
+                  description:
+                    "Date mention object, containing a date property value object.",
+                  properties: {
+                    start: {
+                      type: "string",
+                      description:
+                        "An ISO 8601 formatted start date or date-time.",
+                    },
+                    end: {
+                      type: ["string", "null"],
+                      description:
+                        "An ISO 8601 formatted end date or date-time, or null if not a range.",
+                    },
+                    time_zone: {
+                      type: ["string", "null"],
+                      description:
+                        "Time zone information for start and end. If null, times are in UTC.",
+                    },
+                  },
+                  required: ["start"],
+                },
+                link_preview: {
+                  type: "object",
+                  description:
+                    "Link Preview mention object, containing a URL for the link preview.",
+                  properties: {
+                    url: {
+                      type: "string",
+                      description: "The URL for the link preview.",
+                    },
+                  },
+                  required: ["url"],
+                },
+                page: {
+                  type: "object",
+                  description:
+                    "Page mention object, containing a page reference with an 'id' field.",
+                  properties: {
+                    id: {
+                      type: "string",
+                      description:
+                        "The ID of the mentioned page. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+                    },
+                  },
+                  required: ["id"],
+                },
+                template_mention: {
+                  type: "object",
+                  description:
+                    "Template mention object, can be a template_mention_date or template_mention_user.",
+                  properties: {
+                    type: {
+                      type: "string",
+                      enum: ["template_mention_date", "template_mention_user"],
+                      description: "The template mention type.",
+                    },
+                    template_mention_date: {
+                      type: "string",
+                      enum: ["today", "now"],
+                      description:
+                        "For template_mention_date type, the date keyword.",
+                    },
+                    template_mention_user: {
+                      type: "string",
+                      enum: ["me"],
+                      description:
+                        "For template_mention_user type, the user keyword.",
+                    },
+                  },
+                },
+                user: {
+                  type: "object",
+                  description:
+                    "User mention object, contains a user reference.",
+                  properties: {
+                    object: {
+                      type: "string",
+                      description: "Should be 'user'.",
+                      enum: ["user"],
+                    },
+                    id: {
+                      type: "string",
+                      description:
+                        "The ID of the user. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+                    },
+                  },
+                  required: ["object", "id"],
+                },
+              },
+              required: ["type"],
+              oneOf: [
+                { required: ["database"] },
+                { required: ["date"] },
+                { required: ["link_preview"] },
+                { required: ["page"] },
+                { required: ["template_mention"] },
+                { required: ["user"] },
+              ],
+            },
+            equation: {
+              type: "object",
+              description:
+                "Equation object if type is 'equation'. Represents an inline LaTeX equation.",
+              properties: {
+                expression: {
+                  type: "string",
+                  description: "LaTeX string representing the inline equation.",
+                },
+              },
+              required: ["expression"],
+            },
+            annotations: {
+              type: "object",
+              description: "Styling information for the text.",
+              properties: {
+                bold: { type: "boolean" },
+                italic: { type: "boolean" },
+                strikethrough: { type: "boolean" },
+                underline: { type: "boolean" },
+                code: { type: "boolean" },
+                color: {
+                  type: "string",
+                  description: "Color for the text.",
+                  enum: [
+                    "default",
+                    "blue",
+                    "blue_background",
+                    "brown",
+                    "brown_background",
+                    "gray",
+                    "gray_background",
+                    "green",
+                    "green_background",
+                    "orange",
+                    "orange_background",
+                    "pink",
+                    "pink_background",
+                    "purple",
+                    "purple_background",
+                    "red",
+                    "red_background",
+                    "yellow",
+                    "yellow_background",
+                  ],
+                },
+              },
+            },
+            href: {
+              type: "string",
+              description:
+                "The URL of any link or mention in this text, if any.",
+            },
+            plain_text: {
+              type: "string",
+              description: "The plain text without annotations.",
+            },
+          },
+          required: ["type"],
+        },
+      },
+    },
+    required: ["rich_text"],
+  },
+};
+
+const retrieveCommentsTool: Tool = {
+  name: "notion_retrieve_comments",
+  description:
+    "Retrieve a list of unresolved comments from a Notion page or block. Requires the integration to have 'read comment' capabilities.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      block_id: {
+        type: "string",
+        description:
+          "The ID of the block or page whose comments you want to retrieve. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+      },
+      start_cursor: {
+        type: "string",
+        description:
+          "If supplied, returns a page of results starting after the cursor.",
+      },
+      page_size: {
+        type: "number",
+        description: "Number of comments to retrieve (max 100).",
+      },
+    },
+    required: ["block_id"],
+  },
+};
+
 // Search
 const searchTool: Tool = {
   name: "notion_search",
@@ -633,6 +929,49 @@ class NotionClientWrapper {
     return response.json();
   }
 
+  async createComment(
+    parent?: { page_id: string },
+    discussion_id?: string,
+    rich_text?: any[]
+  ): Promise<any> {
+    const body: any = { rich_text };
+    if (parent) {
+      body.parent = parent;
+    }
+    if (discussion_id) {
+      body.discussion_id = discussion_id;
+    }
+
+    const response = await fetch(`${this.baseUrl}/comments`, {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+
+    return response.json();
+  }
+
+  async retrieveComments(
+    block_id: string,
+    start_cursor?: string,
+    page_size?: number
+  ): Promise<any> {
+    const params = new URLSearchParams();
+    params.append("block_id", block_id);
+    if (start_cursor) params.append("start_cursor", start_cursor);
+    if (page_size) params.append("page_size", page_size.toString());
+
+    const response = await fetch(
+      `${this.baseUrl}/comments?${params.toString()}`,
+      {
+        method: "GET",
+        headers: this.headers,
+      }
+    );
+
+    return response.json();
+  }
+
   async search(
     query?: string,
     filter?: { property: string; value: string },
@@ -877,6 +1216,42 @@ async function main() {
             };
           }
 
+          case "notion_create_comment": {
+            const args = request.params
+              .arguments as unknown as CreateCommentArgs;
+
+            if (!args.parent && !args.discussion_id) {
+              throw new Error(
+                "Either parent.page_id or discussion_id must be provided"
+              );
+            }
+
+            const response = await notionClient.createComment(
+              args.parent,
+              args.discussion_id,
+              args.rich_text
+            );
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
+          case "notion_retrieve_comments": {
+            const args = request.params
+              .arguments as unknown as RetrieveCommentsArgs;
+            if (!args.block_id) {
+              throw new Error("Missing required argument: block_id");
+            }
+            const response = await notionClient.retrieveComments(
+              args.block_id,
+              args.start_cursor,
+              args.page_size
+            );
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
           case "notion_search": {
             const args = request.params.arguments as unknown as SearchArgs;
             const response = await notionClient.search(
@@ -928,6 +1303,8 @@ async function main() {
         retrieveDatabaseTool,
         updateDatabaseTool,
         createDatabaseItemTool,
+        createCommentTool,
+        retrieveCommentsTool,
         searchTool,
       ],
     };
