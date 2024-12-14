@@ -70,6 +70,15 @@ interface CreateDatabaseItemArgs {
   properties: any;
 }
 
+// Search
+interface SearchArgs {
+  query?: string;
+  filter?: { property: string; value: string };
+  sort?: { direction: "ascending" | "descending"; timestamp: "last_edited_time" };
+  start_cursor?: string;
+  page_size?: number;
+}
+
 // Tool definitions
 // Blocks
 const appendBlockChildrenTool: Tool = {
@@ -295,6 +304,56 @@ const createDatabaseItemTool: Tool = {
   },
 };
 
+const searchTool: Tool = {
+  name: "notion_search",
+  description: "Search pages or databases by title in Notion",
+  inputSchema: {
+    type: "object",
+    properties: {
+      query: {
+        type: "string",
+        description: "Text to search for in page or database titles",
+      },
+      filter: {
+        type: "object",
+        description: "Filter results by object type (page or database)",
+        properties: {
+          property: {
+            type: "string",
+            description: "Must be 'object'",
+          },
+          value: {
+            type: "string",
+            description: "Either 'page' or 'database'",
+          },
+        }
+      },
+      sort: {
+        type: "object",
+        description: "Sort order of results",
+        properties: {
+          direction: {
+            type: "string",
+            enum: ["ascending", "descending"],
+          },
+          timestamp: {
+            type: "string",
+            enum: ["last_edited_time"],
+          },
+        },
+      },
+      start_cursor: {
+        type: "string",
+        description: "Pagination start cursor"
+      },
+      page_size: {
+        type: "number",
+        description: "Number of results to return (max 100)"
+      }
+    }
+  },
+};
+
 class NotionClientWrapper {
   private notionToken: string;
   private baseUrl: string = "https://api.notion.com/v1";
@@ -448,7 +507,30 @@ class NotionClientWrapper {
     });
   
     return response.json();
-  }  
+  }
+
+  async search(
+    query?: string,
+    filter?: { property: string; value: string },
+    sort?: { direction: "ascending" | "descending"; timestamp: "last_edited_time" },
+    start_cursor?: string,
+    page_size?: number,
+  ): Promise<any> {
+    const body: any = {};
+    if (query) body.query = query;
+    if (filter) body.filter = filter;
+    if (sort) body.sort = sort;
+    if (start_cursor) body.start_cursor = start_cursor;
+    if (page_size) body.page_size = page_size;
+
+    const response = await fetch(`${this.baseUrl}/search`, {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+
+    return response.json();
+  }
 }
 
 async function main() {
@@ -627,6 +709,20 @@ async function main() {
             };
           }
 
+          case "notion_search": {
+            const args = request.params.arguments as unknown as SearchArgs;
+            const response = await notionClient.search(
+              args.query,
+              args.filter,
+              args.sort,
+              args.start_cursor,
+              args.page_size,
+            );
+            return {
+              content: [{ type: "text", text: JSON.stringify(response) }],
+            };
+          }
+
           default:
             throw new Error(`Unknown tool: ${request.params.name}`);
         }
@@ -661,6 +757,7 @@ async function main() {
         retrieveDatabaseTool,
         updateDatabaseTool,
         createDatabaseItemTool,
+        searchTool,
       ],
     };
   });
