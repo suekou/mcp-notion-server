@@ -109,6 +109,25 @@ MCP Server for the Notion API, enabling Claude to interact with Notion workspace
       - `page_size` (number, default: 100, max: 100): Number of results to retrieve.
     - Returns: List of matching pages or databases.
 
+13. `notion_list_all_users`
+    - List all users in the Notion workspace.
+    - Note: This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.
+    - Optional inputs:
+      - start_cursor (string): Pagination start cursor for listing users.
+      - page_size (number, max: 100): Number of users to retrieve.
+    - Returns: A paginated list of all users in the workspace.
+
+14. `notion_retrieve_user`
+    - Retrieve a specific user by user_id in Notion.
+    - Note: This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.
+    - Required inputs:
+      - user_id (string): The ID of the user to retrieve.
+    - Returns: Detailed information about the specified user.
+
+15. `notion_retrieve_bot_user`
+    - Retrieve the bot user associated with the current token in Notion.
+    - Returns: Information about the bot user, including details of the person who authorized the integration.
+
 ## Setup
 
 Here is a detailed explanation of the steps mentioned above in the following articles:
