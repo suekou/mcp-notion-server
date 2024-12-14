@@ -74,7 +74,10 @@ interface CreateDatabaseItemArgs {
 interface SearchArgs {
   query?: string;
   filter?: { property: string; value: string };
-  sort?: { direction: "ascending" | "descending"; timestamp: "last_edited_time" };
+  sort?: {
+    direction: "ascending" | "descending";
+    timestamp: "last_edited_time";
+  };
   start_cursor?: string;
   page_size?: number;
 }
@@ -89,7 +92,8 @@ const appendBlockChildrenTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description: "The ID of the parent block. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+        description:
+          "The ID of the parent block. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
       },
       children: {
         type: "array",
@@ -108,12 +112,13 @@ const retrieveBlockTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description: "The ID of the block to retrieve. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+        description:
+          "The ID of the block to retrieve. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
       },
     },
     required: ["block_id"],
   },
-}
+};
 
 const retrieveBlockChildrenTool: Tool = {
   name: "notion_retrieve_block_children",
@@ -123,7 +128,8 @@ const retrieveBlockChildrenTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description: "The ID of the block. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+        description:
+          "The ID of the block. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
       },
       start_cursor: {
         type: "string",
@@ -146,7 +152,8 @@ const deleteBlockTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description: "The ID of the block to delete. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+        description:
+          "The ID of the block to delete. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
       },
     },
     required: ["block_id"],
@@ -162,7 +169,8 @@ const retrievePageTool: Tool = {
     properties: {
       page_id: {
         type: "string",
-        description: "The ID of the page to retrieve. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+        description:
+          "The ID of the page to retrieve. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
       },
     },
     required: ["page_id"],
@@ -177,11 +185,13 @@ const updatePagePropertiesTool: Tool = {
     properties: {
       page_id: {
         type: "string",
-        description: "The ID of the page or database item to update. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+        description:
+          "The ID of the page or database item to update. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
       },
       properties: {
         type: "object",
-        description: "Properties to update. These correspond to the columns or fields in the database.",
+        description:
+          "Properties to update. These correspond to the columns or fields in the database.",
       },
     },
     required: ["page_id", "properties"],
@@ -201,11 +211,13 @@ const createDatabaseTool: Tool = {
       },
       title: {
         type: "array",
-        description: "Title of database as it appears in Notion. An array of rich text objects.",
+        description:
+          "Title of database as it appears in Notion. An array of rich text objects.",
       },
       properties: {
         type: "object",
-        description: "Property schema of database. The keys are the names of properties as they appear in Notion and the values are property schema objects.",
+        description:
+          "Property schema of database. The keys are the names of properties as they appear in Notion and the values are property schema objects.",
       },
     },
     required: ["parent", "properties"],
@@ -220,7 +232,8 @@ const queryDatabaseTool: Tool = {
     properties: {
       database_id: {
         type: "string",
-        description: "The ID of the database to query. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+        description:
+          "The ID of the database to query. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
       },
       filter: {
         type: "object",
@@ -251,7 +264,8 @@ const retrieveDatabaseTool: Tool = {
     properties: {
       database_id: {
         type: "string",
-        description: "The ID of the database to retrieve. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+        description:
+          "The ID of the database to retrieve. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
       },
     },
     required: ["database_id"],
@@ -266,19 +280,23 @@ const updateDatabaseTool: Tool = {
     properties: {
       database_id: {
         type: "string",
-        description: "The ID of the database to update. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+        description:
+          "The ID of the database to update. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
       },
       title: {
         type: "array",
-        description: "An array of rich text objects that represents the title of the database that is displayed in the Notion UI.",
+        description:
+          "An array of rich text objects that represents the title of the database that is displayed in the Notion UI.",
       },
       description: {
         type: "array",
-        description: "An array of rich text objects that represents the description of the database that is displayed in the Notion UI.",
+        description:
+          "An array of rich text objects that represents the description of the database that is displayed in the Notion UI.",
       },
       properties: {
         type: "object",
-        description: "The properties of a database to be changed in the request, in the form of a JSON object.",
+        description:
+          "The properties of a database to be changed in the request, in the form of a JSON object.",
       },
     },
     required: ["database_id"],
@@ -293,11 +311,13 @@ const createDatabaseItemTool: Tool = {
     properties: {
       database_id: {
         type: "string",
-        description: "The ID of the database to add the item to. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
+        description:
+          "The ID of the database to add the item to. It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).",
       },
       properties: {
         type: "object",
-        description: "Properties of the new database item. These should match the database schema.",
+        description:
+          "Properties of the new database item. These should match the database schema.",
       },
     },
     required: ["database_id", "properties"],
@@ -326,7 +346,7 @@ const searchTool: Tool = {
             type: "string",
             description: "Either 'page' or 'database'",
           },
-        }
+        },
       },
       sort: {
         type: "object",
@@ -344,13 +364,13 @@ const searchTool: Tool = {
       },
       start_cursor: {
         type: "string",
-        description: "Pagination start cursor"
+        description: "Pagination start cursor",
       },
       page_size: {
         type: "number",
-        description: "Number of results to return (max 100)"
-      }
-    }
+        description: "Number of results to return (max 100)",
+      },
+    },
   },
 };
 
@@ -362,7 +382,7 @@ class NotionClientWrapper {
   constructor(token: string) {
     this.notionToken = token;
     this.headers = {
-      "Authorization": `Bearer ${this.notionToken}`,
+      Authorization: `Bearer ${this.notionToken}`,
       "Content-Type": "application/json",
       "Notion-Version": "2022-06-28",
     };
@@ -371,11 +391,14 @@ class NotionClientWrapper {
   async appendBlockChildren(block_id: string, children: any[]): Promise<any> {
     const body = { children };
 
-    const response = await fetch(`${this.baseUrl}/blocks/${block_id}/children`, {
-      method: "PATCH",
-      headers: this.headers,
-      body: JSON.stringify(body),
-    });
+    const response = await fetch(
+      `${this.baseUrl}/blocks/${block_id}/children`,
+      {
+        method: "PATCH",
+        headers: this.headers,
+        body: JSON.stringify(body),
+      }
+    );
 
     return response.json();
   }
@@ -392,16 +415,19 @@ class NotionClientWrapper {
   async retrieveBlockChildren(
     block_id: string,
     start_cursor?: string,
-    page_size?: number,
+    page_size?: number
   ): Promise<any> {
     const params = new URLSearchParams();
     if (start_cursor) params.append("start_cursor", start_cursor);
     if (page_size) params.append("page_size", page_size.toString());
 
-    const response = await fetch(`${this.baseUrl}/blocks/${block_id}/children?${params}`, {
-      method: "GET",
-      headers: this.headers,
-    });
+    const response = await fetch(
+      `${this.baseUrl}/blocks/${block_id}/children?${params}`,
+      {
+        method: "GET",
+        headers: this.headers,
+      }
+    );
 
     return response.json();
   }
@@ -436,7 +462,11 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async createDatabase(parent: any, title: any[], properties: any): Promise<any> {
+  async createDatabase(
+    parent: any,
+    title: any[],
+    properties: any
+  ): Promise<any> {
     const body = { parent, title, properties };
 
     const response = await fetch(`${this.baseUrl}/databases`, {
@@ -453,7 +483,7 @@ class NotionClientWrapper {
     filter?: any,
     sorts?: any,
     start_cursor?: string,
-    page_size?: number,
+    page_size?: number
   ): Promise<any> {
     const body: any = {};
     if (filter) body.filter = filter;
@@ -461,11 +491,14 @@ class NotionClientWrapper {
     if (start_cursor) body.start_cursor = start_cursor;
     if (page_size) body.page_size = page_size;
 
-    const response = await fetch(`${this.baseUrl}/databases/${database_id}/query`, {
-      method: "POST",
-      headers: this.headers,
-      body: JSON.stringify(body),
-    });
+    const response = await fetch(
+      `${this.baseUrl}/databases/${database_id}/query`,
+      {
+        method: "POST",
+        headers: this.headers,
+        body: JSON.stringify(body),
+      }
+    );
 
     return response.json();
   }
@@ -479,7 +512,12 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async updateDatabase(database_id: string, title?: any[], description?: any[], properties?: any): Promise<any> {
+  async updateDatabase(
+    database_id: string,
+    title?: any[],
+    description?: any[],
+    properties?: any
+  ): Promise<any> {
     const body: any = {};
     if (title) body.title = title;
     if (description) body.description = description;
@@ -499,22 +537,25 @@ class NotionClientWrapper {
       parent: { database_id },
       properties,
     };
-  
+
     const response = await fetch(`${this.baseUrl}/pages`, {
       method: "POST",
       headers: this.headers,
       body: JSON.stringify(body),
     });
-  
+
     return response.json();
   }
 
   async search(
     query?: string,
     filter?: { property: string; value: string },
-    sort?: { direction: "ascending" | "descending"; timestamp: "last_edited_time" },
+    sort?: {
+      direction: "ascending" | "descending";
+      timestamp: "last_edited_time";
+    },
     start_cursor?: string,
-    page_size?: number,
+    page_size?: number
   ): Promise<any> {
     const body: any = {};
     if (query) body.query = query;
@@ -551,7 +592,7 @@ async function main() {
       capabilities: {
         tools: {},
       },
-    },
+    }
   );
 
   const notionClient = new NotionClientWrapper(notionToken);
@@ -567,15 +608,16 @@ async function main() {
 
         switch (request.params.name) {
           case "notion_append_block_children": {
-            const args = request.params.arguments as unknown as AppendBlockChildrenArgs;
+            const args = request.params
+              .arguments as unknown as AppendBlockChildrenArgs;
             if (!args.block_id || !args.children) {
               throw new Error(
-                "Missing required arguments: block_id and children",
+                "Missing required arguments: block_id and children"
               );
             }
             const response = await notionClient.appendBlockChildren(
               args.block_id,
-              args.children,
+              args.children
             );
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
@@ -583,7 +625,8 @@ async function main() {
           }
 
           case "notion_retrieve_block": {
-            const args = request.params.arguments as unknown as RetrieveBlockArgs;
+            const args = request.params
+              .arguments as unknown as RetrieveBlockArgs;
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
@@ -602,7 +645,7 @@ async function main() {
             const response = await notionClient.retrieveBlockChildren(
               args.block_id,
               args.start_cursor,
-              args.page_size,
+              args.page_size
             );
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
@@ -621,7 +664,8 @@ async function main() {
           }
 
           case "notion_retrieve_page": {
-            const args = request.params.arguments as unknown as RetrievePageArgs;
+            const args = request.params
+              .arguments as unknown as RetrievePageArgs;
             if (!args.page_id) {
               throw new Error("Missing required argument: page_id");
             }
@@ -632,15 +676,16 @@ async function main() {
           }
 
           case "notion_update_page_properties": {
-            const args = request.params.arguments as unknown as UpdatePagePropertiesArgs;
+            const args = request.params
+              .arguments as unknown as UpdatePagePropertiesArgs;
             if (!args.page_id || !args.properties) {
               throw new Error(
-                "Missing required arguments: page_id and properties",
+                "Missing required arguments: page_id and properties"
               );
             }
             const response = await notionClient.updatePageProperties(
               args.page_id,
-              args.properties,
+              args.properties
             );
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
@@ -658,7 +703,7 @@ async function main() {
               args.filter,
               args.sorts,
               args.start_cursor,
-              args.page_size,
+              args.page_size
             );
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
@@ -666,11 +711,12 @@ async function main() {
           }
 
           case "notion_create_database": {
-            const args = request.params.arguments as unknown as CreateDatabaseArgs;
+            const args = request.params
+              .arguments as unknown as CreateDatabaseArgs;
             const response = await notionClient.createDatabase(
               args.parent,
               args.title,
-              args.properties,
+              args.properties
             );
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
@@ -678,20 +724,24 @@ async function main() {
           }
 
           case "notion_retrieve_database": {
-            const args = request.params.arguments as unknown as RetrieveDatabaseArgs;
-            const response = await notionClient.retrieveDatabase(args.database_id);
+            const args = request.params
+              .arguments as unknown as RetrieveDatabaseArgs;
+            const response = await notionClient.retrieveDatabase(
+              args.database_id
+            );
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
             };
           }
 
           case "notion_update_database": {
-            const args = request.params.arguments as unknown as UpdateDatabaseArgs;
+            const args = request.params
+              .arguments as unknown as UpdateDatabaseArgs;
             const response = await notionClient.updateDatabase(
               args.database_id,
               args.title,
               args.description,
-              args.properties,
+              args.properties
             );
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
@@ -699,10 +749,11 @@ async function main() {
           }
 
           case "notion_create_database_item": {
-            const args = request.params.arguments as unknown as CreateDatabaseItemArgs;
+            const args = request.params
+              .arguments as unknown as CreateDatabaseItemArgs;
             const response = await notionClient.createDatabaseItem(
               args.database_id,
-              args.properties,
+              args.properties
             );
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
@@ -716,7 +767,7 @@ async function main() {
               args.filter,
               args.sort,
               args.start_cursor,
-              args.page_size,
+              args.page_size
             );
             return {
               content: [{ type: "text", text: JSON.stringify(response) }],
@@ -739,7 +790,7 @@ async function main() {
           ],
         };
       }
-    },
+    }
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
