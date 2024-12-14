@@ -2,6 +2,55 @@
 
 MCP Server for the Notion API, enabling Claude to interact with Notion workspaces.
 
+## Setup
+
+Here is a detailed explanation of the steps mentioned above in the following articles:
+
+- English Version: https://dev.to/suekou/operating-notion-via-claude-desktop-using-mcp-c0h
+- Japanese Version: https://qiita.com/suekou/items/44c864583f5e3e6325d9
+
+1. **Create a Notion Integration**:
+
+   - Visit the [Notion Your Integrations page](https://www.notion.so/profile/integrations).
+   - Click "New Integration".
+   - Name your integration and select appropriate permissions (e.g., "Read content", "Update content").
+
+2. **Retrieve the Secret Key**:
+
+   - Copy the "Internal Integration Token" from your integration.
+   - This token will be used for authentication.
+
+3. **Add the Integration to Your Workspace**:
+
+   - Open the page or database you want the integration to access in Notion.
+   - Click the navigation button in the top right corner.
+   - Click "Connect to" button and select your integration.
+
+4. **Configure Claude Desktop**:
+   Add the following to your `claude_desktop_config.json`:
+
+   ```json
+   {
+     "mcpServers": {
+       "notion": {
+         "command": "node",
+         "args": ["your-built-file-path"],
+         "env": {
+           "NOTION_API_TOKEN": "your-integration-token"
+         }
+       }
+     }
+   }
+   ```
+
+## Troubleshooting
+
+If you encounter permission errors:
+
+1. Ensure the integration has the required permissions.
+2. Verify that the integration is invited to the relevant pages or databases.
+3. Confirm the token and configuration are correctly set in `claude_desktop_config.json`.
+
 ## Tools
 
 1. `notion_append_block_children`
@@ -148,55 +197,6 @@ MCP Server for the Notion API, enabling Claude to interact with Notion workspace
       - `start_cursor` (string): Pagination start cursor.
       - `page_size` (number, max: 100): Number of comments to retrieve.
     - Returns: A paginated list of comments associated with the specified block or page.
-
-## Setup
-
-Here is a detailed explanation of the steps mentioned above in the following articles:
-
-- English Version: https://dev.to/suekou/operating-notion-via-claude-desktop-using-mcp-c0h
-- Japanese Version: https://qiita.com/suekou/items/44c864583f5e3e6325d9
-
-1. **Create a Notion Integration**:
-
-   - Visit the [Notion Your Integrations page](https://www.notion.so/profile/integrations).
-   - Click "New Integration".
-   - Name your integration and select appropriate permissions (e.g., "Read content", "Update content").
-
-2. **Retrieve the Secret Key**:
-
-   - Copy the "Internal Integration Token" from your integration.
-   - This token will be used for authentication.
-
-3. **Add the Integration to Your Workspace**:
-
-   - Open the page or database you want the integration to access in Notion.
-   - Click the navigation button in the top right corner.
-   - Click "Connect to" button and select your integration.
-
-4. **Configure Claude Desktop**:
-   Add the following to your `claude_desktop_config.json`:
-
-   ```json
-   {
-     "mcpServers": {
-       "notion": {
-         "command": "node",
-         "args": ["your-built-file-path"],
-         "env": {
-           "NOTION_API_TOKEN": "your-integration-token"
-         }
-       }
-     }
-   }
-   ```
-
-## Troubleshooting
-
-If you encounter permission errors:
-
-1. Ensure the integration has the required permissions.
-2. Verify that the integration is invited to the relevant pages or databases.
-3. Confirm the token and configuration are correctly set in `claude_desktop_config.json`.
 
 ## License
 
