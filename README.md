@@ -98,6 +98,17 @@ MCP Server for the Notion API, enabling Claude to interact with Notion workspace
       - `properties` (object): The properties of the new item. These should match the database schema.
     - Returns: Information about the newly created item.
 
+12. `notion_search`
+
+    - Search pages or databases by title.
+    - Optional inputs:
+      - `query` (string): Text to search for in page or database titles.
+      - `filter` (object): Criteria to limit results to either only pages or only databases.
+      - `sort` (object): Criteria to sort the results
+      - `start_cursor` (string): Pagination start cursor.
+      - `page_size` (number, default: 100, max: 100): Number of results to retrieve.
+    - Returns: List of matching pages or databases.
+
 ## Setup
 
 Here is a detailed explanation of the steps mentioned above in the following articles:
