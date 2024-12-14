@@ -128,6 +128,27 @@ MCP Server for the Notion API, enabling Claude to interact with Notion workspace
     - Retrieve the bot user associated with the current token in Notion.
     - Returns: Information about the bot user, including details of the person who authorized the integration.
 
+16. `notion_create_comment`
+    - Create a comment in Notion.
+    - Requires the integration to have 'insert comment' capabilities.
+    - Either specify a `parent` object with a `page_id` or a `discussion_id`, but not both.
+    - Required inputs:
+      - `rich_text` (array): Array of rich text objects representing the comment content.
+    - Optional inputs:
+      - `parent` (object): Must include `page_id` if used.
+      - `discussion_id` (string): An existing discussion thread ID.
+    - Returns: Information about the created comment.
+
+17. `notion_retrieve_comments`
+    - Retrieve a list of unresolved comments from a Notion page or block.
+    - Requires the integration to have 'read comment' capabilities.
+    - Required inputs:
+      - `block_id` (string): The ID of the block or page whose comments you want to retrieve.
+    - Optional inputs:
+      - `start_cursor` (string): Pagination start cursor.
+      - `page_size` (number, max: 100): Number of comments to retrieve.
+    - Returns: A paginated list of comments associated with the specified block or page.
+
 ## Setup
 
 Here is a detailed explanation of the steps mentioned above in the following articles:
