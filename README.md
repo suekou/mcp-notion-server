@@ -29,19 +29,35 @@ Here is a detailed explanation of the steps mentioned above in the following art
 4. **Configure Claude Desktop**:
    Add the following to your `claude_desktop_config.json`:
 
-   ```json
-   {
-     "mcpServers": {
-       "notion": {
-         "command": "node",
-         "args": ["your-built-file-path"],
-         "env": {
-           "NOTION_API_TOKEN": "your-integration-token"
-         }
-       }
-     }
-   }
-   ```
+```json
+{
+  "mcpServers": {
+    "notion": {
+      "command": "npx",
+      "args": ["-y", "@suekou/mcp-notion-server"],
+      "env": {
+        "NOTION_API_TOKEN": "your-integration-token"
+      }
+    }
+  }
+}
+```
+
+or
+
+```json
+{
+  "mcpServers": {
+    "notion": {
+      "command": "node",
+      "args": ["your-built-file-path"],
+      "env": {
+        "NOTION_API_TOKEN": "your-integration-token"
+      }
+    }
+  }
+}
+```
 
 ## Troubleshooting
 
@@ -159,6 +175,7 @@ If you encounter permission errors:
     - Returns: List of matching pages or databases.
 
 13. `notion_list_all_users`
+
     - List all users in the Notion workspace.
     - Note: This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.
     - Optional inputs:
@@ -167,6 +184,7 @@ If you encounter permission errors:
     - Returns: A paginated list of all users in the workspace.
 
 14. `notion_retrieve_user`
+
     - Retrieve a specific user by user_id in Notion.
     - Note: This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.
     - Required inputs:
@@ -174,10 +192,12 @@ If you encounter permission errors:
     - Returns: Detailed information about the specified user.
 
 15. `notion_retrieve_bot_user`
+
     - Retrieve the bot user associated with the current token in Notion.
     - Returns: Information about the bot user, including details of the person who authorized the integration.
 
 16. `notion_create_comment`
+
     - Create a comment in Notion.
     - Requires the integration to have 'insert comment' capabilities.
     - Either specify a `parent` object with a `page_id` or a `discussion_id`, but not both.
