@@ -1,5 +1,7 @@
 # Notion MCP Server
 
+[![smithery badge](https://smithery.ai/badge/@suekou/mcp-notion-server)](https://smithery.ai/servers/@suekou/mcp-notion-server)
+
 MCP Server for the Notion API, enabling Claude to interact with Notion workspaces.
 
 ## Setup
@@ -221,3 +223,4 @@ If you encounter permission errors:
 ## License
 
 This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.
+File to patch: 
