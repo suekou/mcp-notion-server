@@ -1,4 +1,5 @@
 # Notion MCP Server
+[![smithery badge](https://smithery.ai/badge/@suekou/mcp-notion-server)](https://smithery.ai/server/@suekou/mcp-notion-server)
 
 MCP Server for the Notion API, enabling Claude to interact with Notion workspaces.
 
@@ -8,6 +9,14 @@ Here is a detailed explanation of the steps mentioned above in the following art
 
 - English Version: https://dev.to/suekou/operating-notion-via-claude-desktop-using-mcp-c0h
 - Japanese Version: https://qiita.com/suekou/items/44c864583f5e3e6325d9
+
+### Installing via Smithery
+
+To install Notion MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@suekou/mcp-notion-server):
+
+```bash
+npx -y @smithery/cli install @suekou/mcp-notion-server --client claude
+```
 
 1. **Create a Notion Integration**:
 
