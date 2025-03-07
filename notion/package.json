@@ -1,14 +1,18 @@
 {
-  "name": "notion",
-  "version": "0.1.1",
-  "description": "A Model Context Protocol server",
-  "private": true,
+  "name": "@suekou/mcp-notion-server",
+  "version": "1.0.1",
+  "description": "MCP server for interacting with Notion API based on Node",
+  "license": "MIT",
+  "author": "Kosuke Suenaga (https://github.com/suekou/mcp-notion-server)",
   "type": "module",
+  "main": "build/index.js",
   "bin": {
-    "notion": "./build/index.js"
+    "mcp-notion-server": "./build/index.js"
   },
   "files": [
-    "build"
+    "build",
+    "Readme.md",
+    "notion"
   ],
   "scripts": {
     "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
@@ -17,7 +21,7 @@
     "inspector": "npx @modelcontextprotocol/inspector build/index.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "0.6.0"
+    "@modelcontextprotocol/sdk": "0.6.1"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
