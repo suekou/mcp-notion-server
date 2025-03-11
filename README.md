@@ -23,8 +23,8 @@ Here is a detailed explanation of the steps mentioned above in the following art
 3. **Add the Integration to Your Workspace**:
 
    - Open the page or database you want the integration to access in Notion.
-   - Click the navigation button in the top right corner.
-   - Click "Connect to" button and select your integration.
+   - Click the "···" button in the top right corner.
+   - Click the "Connections" button, and select the the integration you created in step 1 above.
 
 4. **Configure Claude Desktop**:
    Add the following to your `claude_desktop_config.json`:
