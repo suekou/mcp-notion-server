@@ -7,6 +7,7 @@ import {
   ListToolsRequestSchema,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
+import { convertToMarkdown } from "./markdown/index.js";
 
 // Type definitions for tool arguments
 // Blocks
@@ -384,6 +385,7 @@ const blockObjectSchema = {
   required: ["object", "type"],
 }
 
+// TODO: If modifications are made, since the original source information is necessary, add an explanation that retrieves the raw object that has not been converted to markdown, and create a dedicated tool to convert to markdown.
 // Tool definitions
 // Blocks
 const appendBlockChildrenTool: Tool = {
@@ -1065,6 +1067,10 @@ class NotionClientWrapper {
 
     return response.json();
   }
+
+  async toMarkdown(response: any): Promise<string> {
+    return convertToMarkdown(response);
+  }
 }
 
 async function main() {
@@ -1098,6 +1104,8 @@ async function main() {
           throw new Error("No arguments provided");
         }
 
+        let response;
+
         switch (request.params.name) {
           case "notion_append_block_children": {
             const args = request.params
@@ -1107,13 +1115,11 @@ async function main() {
                 "Missing required arguments: block_id and children"
               );
             }
-            const response = await notionClient.appendBlockChildren(
+            response = await notionClient.appendBlockChildren(
               args.block_id,
               args.children
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_retrieve_block": {
@@ -1122,10 +1128,8 @@ async function main() {
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
-            const response = await notionClient.retrieveBlock(args.block_id);
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            response = await notionClient.retrieveBlock(args.block_id);
+            break;
           }
 
           case "notion_retrieve_block_children": {
@@ -1134,14 +1138,12 @@ async function main() {
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
-            const response = await notionClient.retrieveBlockChildren(
+            response = await notionClient.retrieveBlockChildren(
               args.block_id,
               args.start_cursor,
               args.page_size
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_delete_block": {
@@ -1149,10 +1151,8 @@ async function main() {
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
-            const response = await notionClient.deleteBlock(args.block_id);
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            response = await notionClient.deleteBlock(args.block_id);
+            break;
           }
 
           case "notion_retrieve_page": {
@@ -1161,10 +1161,8 @@ async function main() {
             if (!args.page_id) {
               throw new Error("Missing required argument: page_id");
             }
-            const response = await notionClient.retrievePage(args.page_id);
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            response = await notionClient.retrievePage(args.page_id);
+            break;
           }
 
           case "notion_update_page_properties": {
@@ -1175,25 +1173,21 @@ async function main() {
                 "Missing required arguments: page_id and properties"
               );
             }
-            const response = await notionClient.updatePageProperties(
+            response = await notionClient.updatePageProperties(
               args.page_id,
               args.properties
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_list_all_users": {
             const args = request.params
               .arguments as unknown as ListAllUsersArgs;
-            const response = await notionClient.listAllUsers(
+            response = await notionClient.listAllUsers(
               args.start_cursor,
               args.page_size
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_retrieve_user": {
@@ -1202,17 +1196,13 @@ async function main() {
             if (!args.user_id) {
               throw new Error("Missing required argument: user_id");
             }
-            const response = await notionClient.retrieveUser(args.user_id);
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            response = await notionClient.retrieveUser(args.user_id);
+            break;
           }
 
           case "notion_retrieve_bot_user": {
-            const response = await notionClient.retrieveBotUser();
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            response = await notionClient.retrieveBotUser();
+            break;
           }
 
           case "notion_query_database": {
@@ -1221,66 +1211,56 @@ async function main() {
             if (!args.database_id) {
               throw new Error("Missing required argument: database_id");
             }
-            const response = await notionClient.queryDatabase(
+            response = await notionClient.queryDatabase(
               args.database_id,
               args.filter,
               args.sorts,
               args.start_cursor,
               args.page_size
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_create_database": {
             const args = request.params
               .arguments as unknown as CreateDatabaseArgs;
-            const response = await notionClient.createDatabase(
+            response = await notionClient.createDatabase(
               args.parent,
               args.title,
               args.properties
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_retrieve_database": {
             const args = request.params
               .arguments as unknown as RetrieveDatabaseArgs;
-            const response = await notionClient.retrieveDatabase(
+            response = await notionClient.retrieveDatabase(
               args.database_id
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_update_database": {
             const args = request.params
               .arguments as unknown as UpdateDatabaseArgs;
-            const response = await notionClient.updateDatabase(
+            response = await notionClient.updateDatabase(
               args.database_id,
               args.title,
               args.description,
               args.properties
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_create_database_item": {
             const args = request.params
               .arguments as unknown as CreateDatabaseItemArgs;
-            const response = await notionClient.createDatabaseItem(
+            response = await notionClient.createDatabaseItem(
               args.database_id,
               args.properties
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_create_comment": {
@@ -1293,14 +1273,12 @@ async function main() {
               );
             }
 
-            const response = await notionClient.createComment(
+            response = await notionClient.createComment(
               args.parent,
               args.discussion_id,
               args.rich_text
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_retrieve_comments": {
@@ -1309,32 +1287,40 @@ async function main() {
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
-            const response = await notionClient.retrieveComments(
+            response = await notionClient.retrieveComments(
               args.block_id,
               args.start_cursor,
               args.page_size
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_search": {
             const args = request.params.arguments as unknown as SearchArgs;
-            const response = await notionClient.search(
+            response = await notionClient.search(
               args.query,
               args.filter,
               args.sort,
               args.start_cursor,
               args.page_size
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           default:
             throw new Error(`Unknown tool: ${request.params.name}`);
+        }
+
+        // TODO: create new condition for markdown
+        if (true) {
+          const markdown = await notionClient.toMarkdown(response);
+          return {
+            content: [{ type: "text", text: markdown }],
+          };
+        } else {
+          return {
+            content: [{ type: "text", text: JSON.stringify(response) }],
+          };
         }
       } catch (error) {
         console.error("Error executing tool:", error);
