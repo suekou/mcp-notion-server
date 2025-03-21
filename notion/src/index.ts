@@ -1075,6 +1075,7 @@ async function main() {
     process.exit(1);
   }
 
+  console.info("Starting Notion MCP Server...");
   const server = new Server(
     {
       name: "Notion MCP Server",
@@ -1092,7 +1093,7 @@ async function main() {
   server.setRequestHandler(
     CallToolRequestSchema,
     async (request: CallToolRequest) => {
-      console.error("Received CallToolRequest:", request);
+      console.info("Received CallToolRequest:", request);
       try {
         if (!request.params.arguments) {
           throw new Error("No arguments provided");
@@ -1353,6 +1354,7 @@ async function main() {
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
+    console.info("Received ListToolsRequest");
     return {
       tools: [
         appendBlockChildrenTool,
@@ -1377,7 +1379,10 @@ async function main() {
   });
 
   const transport = new StdioServerTransport();
+  console.info("Connecting server to transport...");
   await server.connect(transport);
+
+  console.info("Notion MCP Server running on stdio");
 }
 
 main().catch((error) => {
