@@ -47,11 +47,6 @@ function convertPageToMarkdown(page: PageResponse): string {
   markdown += '\n\n> This page contains child blocks. You can retrieve them using `retrieveBlockChildren`.\n';
   markdown += `> Block ID: \`${page.id}\`\n`;
 
-  // Include page URL if available
-  if (page.url) {
-    markdown += `\n[View in Notion](${page.url})\n`;
-  }
-
   return markdown;
 }
 
@@ -97,18 +92,57 @@ function convertDatabaseToMarkdown(database: DatabaseResponse): string {
         case 'formula':
           details = `Formula: ${prop.formula?.expression || ''}`;
           break;
-        // Add other property types as needed
+        case 'rollup':
+          details = `Rollup: ${prop.rollup?.function || ''}`;
+          break;
+        case 'created_by':
+        case 'last_edited_by':
+          details = 'User reference';
+          break;
+        case 'created_time':
+        case 'last_edited_time':
+          details = 'Timestamp';
+          break;
+        case 'date':
+          details = 'Date or date range';
+          break;
+        case 'email':
+          details = 'Email address';
+          break;
+        case 'files':
+          details = 'File attachments';
+          break;
+        case 'number':
+          details = `Format: ${prop.number?.format || 'plain number'}`;
+          break;
+        case 'people':
+          details = 'People reference';
+          break;
+        case 'phone_number':
+          details = 'Phone number';
+          break;
+        case 'rich_text':
+          details = 'Formatted text';
+          break;
+        case 'status':
+          const statusOptions = prop.status?.options || [];
+          details = `Options: ${statusOptions.map((o: any) => o.name).join(', ')}`;
+          break;
+        case 'title':
+          details = 'Database title';
+          break;
+        case 'url':
+          details = 'URL link';
+          break;
+        case 'checkbox':
+          details = 'Boolean value';
+          break;
       }
       
       markdown += `| ${escapeTableCell(propName)} | ${propType} | ${escapeTableCell(details)} |\n`;
     });
     
     markdown += '\n';
-  }
-
-  // Include database URL if available
-  if (database.url) {
-    markdown += `\n[View in Notion](${database.url})\n`;
   }
 
   return markdown;
@@ -294,6 +328,32 @@ function convertPropertiesToMarkdown(properties: Record<string, PageProperty>): 
         break;
       case 'status':
         propValue = property.status?.name || '';
+        break;
+      case 'relation':
+        propValue = (property.relation || [])
+          .map((relation: any) => `\`${relation.id}\``)
+          .join(', ');
+        break;
+      case 'rollup':
+        if (property.rollup?.type === 'array') {
+          propValue = JSON.stringify(property.rollup.array || []);
+        } else {
+          propValue = property.rollup?.number?.toString() || 
+                     property.rollup?.date?.start || 
+                     property.rollup?.string || '';
+        }
+        break;
+      case 'created_by':
+        propValue = property.created_by?.name || property.created_by?.id || '';
+        break;
+      case 'created_time':
+        propValue = property.created_time || '';
+        break;
+      case 'last_edited_by':
+        propValue = property.last_edited_by?.name || property.last_edited_by?.id || '';
+        break;
+      case 'last_edited_time':
+        propValue = property.last_edited_time || '';
         break;
       default:
         propValue = '(Unsupported property type)';
