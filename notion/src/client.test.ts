@@ -1,13 +1,11 @@
 import { expect, test, describe, vi, beforeEach } from 'vitest';
-import { NotionClientWrapper } from './index.js'; // Import from the module where this class is defined
+import { NotionClientWrapper } from './index.js';
 import { PageResponse } from './types/index.js';
 
-// Mock convertToMarkdown before importing
 vi.mock('./markdown/index.js', () => ({
   convertToMarkdown: vi.fn().mockReturnValue('# Test')
 }));
 
-// Mock global fetch
 global.fetch = vi.fn();
 
 describe('NotionClientWrapper', () => {
@@ -146,7 +144,6 @@ describe('NotionClientWrapper', () => {
   });
 
   test('should call toMarkdown method correctly', async () => {
-    // We already mocked the convertToMarkdown at the top of the file
     const { convertToMarkdown } = await import('./markdown/index.js');
     
     const response: PageResponse = {

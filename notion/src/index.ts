@@ -811,7 +811,7 @@ const searchTool: Tool = {
       },
       page_size: {
         type: "number",
-        description: "Number of results to return (max 100). Default is 5.",
+        description: "Number of results to return (max 100). ",
       },
     },
   },
