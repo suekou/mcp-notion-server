@@ -56,6 +56,11 @@ function convertPageToMarkdown(page: PageResponse): string {
     "\n\n> This page contains child blocks. You can retrieve them using `retrieveBlockChildren`.\n";
   markdown += `> Block ID: \`${page.id}\`\n`;
 
+  // Add link to view the page in Notion
+  if (page.url) {
+    markdown += `\n[View in Notion](${page.url})\n`;
+  }
+
   return markdown;
 }
 
@@ -156,6 +161,11 @@ function convertDatabaseToMarkdown(database: DatabaseResponse): string {
     });
 
     markdown += "\n";
+  }
+
+  // Add link to view the database in Notion
+  if (database.url) {
+    markdown += `\n[View in Notion](${database.url})\n`;
   }
 
   return markdown;
