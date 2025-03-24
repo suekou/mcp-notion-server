@@ -8,12 +8,22 @@ import {
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { convertToMarkdown } from "./markdown/index.js";
+import { 
+  NotionResponse, 
+  BlockResponse, 
+  PageResponse, 
+  DatabaseResponse,
+  ListResponse,
+  UserResponse,
+  CommentResponse,
+  RichTextItemResponse 
+} from "./types/index.js";
 
 // Type definitions for tool arguments
 // Blocks
 interface AppendBlockChildrenArgs {
   block_id: string;
-  children: any[];
+  children: Partial<BlockResponse>[];
 }
 
 interface RetrieveBlockArgs {
@@ -37,7 +47,7 @@ interface RetrievePageArgs {
 
 interface UpdatePagePropertiesArgs {
   page_id: string;
-  properties: any;
+  properties: Record<string, any>;
 }
 
 // Users
@@ -52,15 +62,24 @@ interface RetrieveUserArgs {
 
 // Databases
 interface CreateDatabaseArgs {
-  parent: any;
-  title: any[];
-  properties: any;
+  parent: {
+    type: string;
+    page_id?: string;
+    database_id?: string;
+    workspace?: boolean;
+  };
+  title: RichTextItemResponse[];
+  properties: Record<string, any>;
 }
 
 interface QueryDatabaseArgs {
   database_id: string;
-  filter?: any;
-  sorts?: any;
+  filter?: Record<string, any>;
+  sorts?: Array<{
+    property?: string;
+    timestamp?: string;
+    direction: "ascending" | "descending";
+  }>;
   start_cursor?: string;
   page_size?: number;
 }
@@ -71,21 +90,21 @@ interface RetrieveDatabaseArgs {
 
 interface UpdateDatabaseArgs {
   database_id: string;
-  title?: any[];
-  description?: any[];
-  properties?: any;
+  title?: RichTextItemResponse[];
+  description?: RichTextItemResponse[];
+  properties?: Record<string, any>;
 }
 
 interface CreateDatabaseItemArgs {
   database_id: string;
-  properties: any;
+  properties: Record<string, any>;
 }
 
 // Comments
 interface CreateCommentArgs {
   parent?: { page_id: string };
   discussion_id?: string;
-  rich_text: any[];
+  rich_text: RichTextItemResponse[];
 }
 
 interface RetrieveCommentsArgs {
@@ -792,13 +811,13 @@ const searchTool: Tool = {
       },
       page_size: {
         type: "number",
-        description: "Number of results to return (max 100)",
+        description: "Number of results to return (max 100). Default is 5.",
       },
     },
   },
 };
 
-class NotionClientWrapper {
+export class NotionClientWrapper {
   private notionToken: string;
   private baseUrl: string = "https://api.notion.com/v1";
   private headers: { [key: string]: string };
@@ -812,7 +831,7 @@ class NotionClientWrapper {
     };
   }
 
-  async appendBlockChildren(block_id: string, children: any[]): Promise<any> {
+  async appendBlockChildren(block_id: string, children: Partial<BlockResponse>[]): Promise<BlockResponse> {
     const body = { children };
 
     const response = await fetch(
@@ -827,7 +846,7 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async retrieveBlock(block_id: string): Promise<any> {
+  async retrieveBlock(block_id: string): Promise<BlockResponse> {
     const response = await fetch(`${this.baseUrl}/blocks/${block_id}`, {
       method: "GET",
       headers: this.headers,
@@ -840,7 +859,7 @@ class NotionClientWrapper {
     block_id: string,
     start_cursor?: string,
     page_size?: number
-  ): Promise<any> {
+  ): Promise<ListResponse> {
     const params = new URLSearchParams();
     if (start_cursor) params.append("start_cursor", start_cursor);
     if (page_size) params.append("page_size", page_size.toString());
@@ -856,7 +875,7 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async deleteBlock(block_id: string): Promise<any> {
+  async deleteBlock(block_id: string): Promise<BlockResponse> {
     const response = await fetch(`${this.baseUrl}/blocks/${block_id}`, {
       method: "DELETE",
       headers: this.headers,
@@ -865,7 +884,7 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async retrievePage(page_id: string): Promise<any> {
+  async retrievePage(page_id: string): Promise<PageResponse> {
     const response = await fetch(`${this.baseUrl}/pages/${page_id}`, {
       method: "GET",
       headers: this.headers,
@@ -874,7 +893,7 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async updatePageProperties(page_id: string, properties: any): Promise<any> {
+  async updatePageProperties(page_id: string, properties: Record<string, any>): Promise<PageResponse> {
     const body = { properties };
 
     const response = await fetch(`${this.baseUrl}/pages/${page_id}`, {
@@ -886,7 +905,7 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async listAllUsers(start_cursor?: string, page_size?: number): Promise<any> {
+  async listAllUsers(start_cursor?: string, page_size?: number): Promise<ListResponse> {
     const params = new URLSearchParams();
     if (start_cursor) params.append("start_cursor", start_cursor);
     if (page_size) params.append("page_size", page_size.toString());
@@ -898,7 +917,7 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async retrieveUser(user_id: string): Promise<any> {
+  async retrieveUser(user_id: string): Promise<UserResponse> {
     const response = await fetch(`${this.baseUrl}/users/${user_id}`, {
       method: "GET",
       headers: this.headers,
@@ -906,7 +925,7 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async retrieveBotUser(): Promise<any> {
+  async retrieveBotUser(): Promise<UserResponse> {
     const response = await fetch(`${this.baseUrl}/users/me`, {
       method: "GET",
       headers: this.headers,
@@ -915,10 +934,10 @@ class NotionClientWrapper {
   }
 
   async createDatabase(
-    parent: any,
-    title: any[],
-    properties: any
-  ): Promise<any> {
+    parent: CreateDatabaseArgs["parent"],
+    title: RichTextItemResponse[],
+    properties: Record<string, any>
+  ): Promise<DatabaseResponse> {
     const body = { parent, title, properties };
 
     const response = await fetch(`${this.baseUrl}/databases`, {
@@ -932,12 +951,16 @@ class NotionClientWrapper {
 
   async queryDatabase(
     database_id: string,
-    filter?: any,
-    sorts?: any,
+    filter?: Record<string, any>,
+    sorts?: Array<{
+      property?: string;
+      timestamp?: string;
+      direction: "ascending" | "descending";
+    }>,
     start_cursor?: string,
     page_size?: number
-  ): Promise<any> {
-    const body: any = {};
+  ): Promise<ListResponse> {
+    const body: Record<string, any> = {};
     if (filter) body.filter = filter;
     if (sorts) body.sorts = sorts;
     if (start_cursor) body.start_cursor = start_cursor;
@@ -955,7 +978,7 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async retrieveDatabase(database_id: string): Promise<any> {
+  async retrieveDatabase(database_id: string): Promise<DatabaseResponse> {
     const response = await fetch(`${this.baseUrl}/databases/${database_id}`, {
       method: "GET",
       headers: this.headers,
@@ -966,11 +989,11 @@ class NotionClientWrapper {
 
   async updateDatabase(
     database_id: string,
-    title?: any[],
-    description?: any[],
-    properties?: any
-  ): Promise<any> {
-    const body: any = {};
+    title?: RichTextItemResponse[],
+    description?: RichTextItemResponse[],
+    properties?: Record<string, any>
+  ): Promise<DatabaseResponse> {
+    const body: Record<string, any> = {};
     if (title) body.title = title;
     if (description) body.description = description;
     if (properties) body.properties = properties;
@@ -984,7 +1007,7 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async createDatabaseItem(database_id: string, properties: any): Promise<any> {
+  async createDatabaseItem(database_id: string, properties: Record<string, any>): Promise<PageResponse> {
     const body = {
       parent: { database_id },
       properties,
@@ -1002,9 +1025,9 @@ class NotionClientWrapper {
   async createComment(
     parent?: { page_id: string },
     discussion_id?: string,
-    rich_text?: any[]
-  ): Promise<any> {
-    const body: any = { rich_text };
+    rich_text?: RichTextItemResponse[]
+  ): Promise<CommentResponse> {
+    const body: Record<string, any> = { rich_text };
     if (parent) {
       body.parent = parent;
     }
@@ -1025,7 +1048,7 @@ class NotionClientWrapper {
     block_id: string,
     start_cursor?: string,
     page_size?: number
-  ): Promise<any> {
+  ): Promise<ListResponse> {
     const params = new URLSearchParams();
     params.append("block_id", block_id);
     if (start_cursor) params.append("start_cursor", start_cursor);
@@ -1051,8 +1074,8 @@ class NotionClientWrapper {
     },
     start_cursor?: string,
     page_size?: number
-  ): Promise<any> {
-    const body: any = {};
+  ): Promise<ListResponse> {
+    const body: Record<string, any> = {};
     if (query) body.query = query;
     if (filter) body.filter = filter;
     if (sort) body.sort = sort;
@@ -1068,9 +1091,17 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async toMarkdown(response: any): Promise<string> {
+  async toMarkdown(response: NotionResponse): Promise<string> {
     return convertToMarkdown(response);
   }
+}
+
+// if test environment, do not execute main()
+if (process.env.NODE_ENV !== 'test' && process.env.VITEST !== 'true') {
+  main().catch((error) => {
+    console.error("Fatal error in main():", error);
+    process.exit(1);
+  });
 }
 
 async function main() {
@@ -1318,9 +1349,6 @@ async function main() {
             content: [{ type: "text", text: markdown }],
           };
         } else {
-          return {
-            content: [{ type: "text", text: JSON.stringify(response) }],
-          };
         }
       } catch (error) {
         console.error("Error executing tool:", error);
@@ -1365,8 +1393,3 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
-
-main().catch((error) => {
-  console.error("Fatal error in main():", error);
-  process.exit(1);
-});

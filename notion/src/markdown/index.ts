@@ -1,26 +1,27 @@
 /**
  * Utilities for converting Notion API responses to Markdown
  */
+import { NotionResponse, PageResponse, DatabaseResponse, BlockResponse, ListResponse, RichTextItemResponse, PageProperty } from "../types/index.js";
 
 /**
  * Converts Notion API response to Markdown
  * @param response Response from Notion API
  * @returns Markdown formatted string
  */
-export function convertToMarkdown(response: any): string {
+export function convertToMarkdown(response: NotionResponse): string {
   // Execute appropriate conversion process based on response type
   if (!response) return '';
   
   // Branch processing by object type
   switch (response.object) {
     case 'page':
-      return convertPageToMarkdown(response);
+      return convertPageToMarkdown(response as PageResponse);
     case 'database':
-      return convertDatabaseToMarkdown(response);
+      return convertDatabaseToMarkdown(response as DatabaseResponse);
     case 'block':
-      return convertBlockToMarkdown(response);
+      return convertBlockToMarkdown(response as BlockResponse);
     case 'list':
-      return convertListToMarkdown(response);
+      return convertListToMarkdown(response as ListResponse);
     default:
       // Return JSON string if conversion is not possible
       return `\`\`\`json\n${JSON.stringify(response, null, 2)}\n\`\`\``;
@@ -30,7 +31,7 @@ export function convertToMarkdown(response: any): string {
 /**
  * Converts a Notion page to Markdown
  */
-function convertPageToMarkdown(page: any): string {
+function convertPageToMarkdown(page: PageResponse): string {
   let markdown = '';
 
   // Extract title (from properties)
@@ -57,7 +58,7 @@ function convertPageToMarkdown(page: any): string {
 /**
  * Converts a Notion database to Markdown
  */
-function convertDatabaseToMarkdown(database: any): string {
+function convertDatabaseToMarkdown(database: DatabaseResponse): string {
   let markdown = '';
 
   // Extract database title
@@ -78,7 +79,7 @@ function convertDatabaseToMarkdown(database: any): string {
     markdown += '| Property Name | Type | Details |\n';
     markdown += '|------------|------|------|\n';
 
-    Object.entries(database.properties).forEach(([key, prop]: [string, any]) => {
+    Object.entries(database.properties).forEach(([key, prop]) => {
       const propName = prop.name || key;
       const propType = prop.type || 'unknown';
       
@@ -91,10 +92,10 @@ function convertDatabaseToMarkdown(database: any): string {
           details = `Options: ${options.map((o: any) => o.name).join(', ')}`;
           break;
         case 'relation':
-          details = `Related DB: ${prop.relation.database_id || ''}`;
+          details = `Related DB: ${prop.relation?.database_id || ''}`;
           break;
         case 'formula':
-          details = `Formula: ${prop.formula.expression || ''}`;
+          details = `Formula: ${prop.formula?.expression || ''}`;
           break;
         // Add other property types as needed
       }
@@ -116,7 +117,7 @@ function convertDatabaseToMarkdown(database: any): string {
 /**
  * Converts Notion API block response to Markdown
  */
-function convertBlockToMarkdown(block: any): string {
+function convertBlockToMarkdown(block: BlockResponse): string {
   if (!block) return '';
 
   // Convert based on block type
@@ -126,7 +127,7 @@ function convertBlockToMarkdown(block: any): string {
 /**
  * Converts list response (search results or block children) to Markdown
  */
-function convertListToMarkdown(list: any): string {
+function convertListToMarkdown(list: ListResponse): string {
   if (!list || !list.results || !Array.isArray(list.results)) {
     return '```\nNo results\n```';
   }
@@ -159,14 +160,14 @@ function convertListToMarkdown(list: any): string {
       case 'page':
         if (resultType === 'page') {
           // Display page title and link
-          const title = extractPageTitle(item) || 'Untitled';
-          markdown += `## [${title}](${item.url || '#'})\n\n`;
+          const title = extractPageTitle(item as PageResponse) || 'Untitled';
+          markdown += `## [${title}](${(item as PageResponse).url || '#'})\n\n`;
           markdown += `ID: \`${item.id}\`\n\n`;
           // Separator line
           markdown += '---\n\n';
         } else {
           // Full conversion
-          markdown += convertPageToMarkdown(item);
+          markdown += convertPageToMarkdown(item as PageResponse);
           markdown += '\n\n---\n\n';
         }
         break;
@@ -174,19 +175,19 @@ function convertListToMarkdown(list: any): string {
       case 'database':
         if (resultType === 'database') {
           // Simple display
-          const dbTitle = extractRichText(item.title || []) || 'Untitled Database';
-          markdown += `## [${dbTitle}](${item.url || '#'})\n\n`;
+          const dbTitle = extractRichText((item as DatabaseResponse).title || []) || 'Untitled Database';
+          markdown += `## [${dbTitle}](${(item as DatabaseResponse).url || '#'})\n\n`;
           markdown += `ID: \`${item.id}\`\n\n`;
           markdown += '---\n\n';
         } else {
           // Full conversion
-          markdown += convertDatabaseToMarkdown(item);
+          markdown += convertDatabaseToMarkdown(item as DatabaseResponse);
           markdown += '\n\n---\n\n';
         }
         break;
         
       case 'block':
-        markdown += renderBlock(item);
+        markdown += renderBlock(item as BlockResponse);
         markdown += '\n\n';
         break;
         
@@ -209,12 +210,12 @@ function convertListToMarkdown(list: any): string {
 /**
  * Extracts page title
  */
-function extractPageTitle(page: any): string {
+function extractPageTitle(page: PageResponse): string {
   if (!page || !page.properties) return '';
   
   // Look for the title property
   for (const [_, prop] of Object.entries(page.properties)) {
-    const property = prop as any;
+    const property = prop as PageProperty;
     if (property.type === 'title' && Array.isArray(property.title)) {
       return extractRichText(property.title);
     }
@@ -226,7 +227,7 @@ function extractPageTitle(page: any): string {
 /**
  * Converts page properties to Markdown
  */
-function convertPropertiesToMarkdown(properties: any): string {
+function convertPropertiesToMarkdown(properties: Record<string, PageProperty>): string {
   if (!properties) return '';
   
   let markdown = '## Properties\n\n';
@@ -236,8 +237,8 @@ function convertPropertiesToMarkdown(properties: any): string {
   markdown += '|------------|----|\n';
   
   for (const [key, prop] of Object.entries(properties)) {
-    const property = prop as any;
-    const propName = property.id || key;
+    const property = prop as PageProperty;
+    const propName = key;
     let propValue = '';
     
     // Extract value based on property type
@@ -291,6 +292,9 @@ function convertPropertiesToMarkdown(properties: any): string {
                    property.formula?.number?.toString() || 
                    property.formula?.boolean?.toString() || '';
         break;
+      case 'status':
+        propValue = property.status?.name || '';
+        break;
       default:
         propValue = '(Unsupported property type)';
     }
@@ -304,7 +308,7 @@ function convertPropertiesToMarkdown(properties: any): string {
 /**
  * Extracts plain text from a Notion rich text array
  */
-function extractRichText(richTextArray: any[]): string {
+function extractRichText(richTextArray: RichTextItemResponse[]): string {
   if (!richTextArray || !Array.isArray(richTextArray)) return '';
   
   return richTextArray
@@ -334,7 +338,7 @@ function extractRichText(richTextArray: any[]): string {
 /**
  * Converts a block to Markdown
  */
-function renderBlock(block: any): string {
+function renderBlock(block: BlockResponse): string {
   if (!block) return '';
   
   const blockType = block.type;
@@ -427,5 +431,5 @@ function renderParagraph(paragraph: any): string {
  */
 function escapeTableCell(text: string): string {
   if (!text) return '';
-  return text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+  return text.replace(/\|/g, '\\|').replace(/\n/g, ' ').replace(/\+/g, '\\+');
 } 
