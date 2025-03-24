@@ -721,7 +721,6 @@ describe('convertToMarkdown', () => {
     // @ts-ignore - intentionally testing with unknown type
     const markdown = convertToMarkdown(unknownResponse);
     
-    // Check if it's formatted as JSON
     expect(markdown).toMatch(/^```json\n/); // JSON code block start
     expect(markdown).toMatch(/"object": "unknown"/); // Object type
     expect(markdown).toMatch(/"id": "unknown123"/); // ID
