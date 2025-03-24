@@ -472,6 +472,78 @@ function renderBlock(block: BlockResponse): string {
     case 'child_database':
       return `📊 **Embedded Database**: \`${block.id}\``;
       
+    case 'breadcrumb':
+      return `[breadcrumb navigation]`;
+
+    case 'embed':
+      const embedUrl = blockContent.url || '';
+      return `<iframe src="${embedUrl}" frameborder="0"></iframe>`;
+      
+    case 'equation':
+      const formulaText = blockContent.expression || '';
+      return `$$${formulaText}$$`;
+      
+    case 'file':
+      const fileType = blockContent.type || '';
+      const fileUrl = fileType === 'external' 
+        ? blockContent.external?.url 
+        : blockContent.file?.url;
+      const fileName = blockContent.name || 'File';
+      return `📎 [${fileName}](${fileUrl || '#'})`;
+      
+    case 'link_preview':
+      const previewUrl = blockContent.url || '';
+      return `🔗 [Preview](${previewUrl})`;
+      
+    case 'link_to_page':
+      let linkText = 'Link to page';
+      let linkId = '';
+      if (blockContent.page_id) {
+        linkId = blockContent.page_id;
+        linkText = 'Link to page';
+      } else if (blockContent.database_id) {
+        linkId = blockContent.database_id;
+        linkText = 'Link to database';
+      }
+      return `🔗 **${linkText}**: \`${linkId}\``;
+      
+    case 'pdf':
+      const pdfType = blockContent.type || '';
+      const pdfUrl = pdfType === 'external' 
+        ? blockContent.external?.url 
+        : blockContent.file?.url;
+      const pdfCaption = extractRichText(blockContent.caption || []) || 'PDF';
+      return `📄 [${pdfCaption}](${pdfUrl || '#'})`;
+      
+    case 'synced_block':
+      const syncedFrom = blockContent.synced_from 
+        ? `\`${blockContent.synced_from.block_id}\`` 
+        : 'original';
+      return `*Synced Block (${syncedFrom}) - Additional API request is needed to display content*`;
+      
+    case 'table_of_contents':
+      return `[TOC]`;
+      
+    case 'table_row':
+      if (!blockContent.cells || !Array.isArray(blockContent.cells)) {
+        return '*Empty table row*';
+      }
+      return `| ${blockContent.cells.map((cell: any) => escapeTableCell(extractRichText(cell))).join(' | ')} |`;
+      
+    case 'template':
+      return `*Template Block: ${extractRichText(blockContent.rich_text || [])}*`;
+      
+    case 'video':
+      const videoType = blockContent.type || '';
+      const videoUrl = videoType === 'external' 
+        ? blockContent.external?.url 
+        : blockContent.file?.url;
+      const videoCaption = extractRichText(blockContent.caption || []) || 'Video';
+      return `🎬 [${videoCaption}](${videoUrl || '#'})`;
+      
+    case 'unsupported':
+      return `*Unsupported block*`;
+
     default:
       return `*Unsupported block type: ${blockType}*`;
   }
