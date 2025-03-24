@@ -8,15 +8,15 @@ import {
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { convertToMarkdown } from "./markdown/index.js";
-import { 
-  NotionResponse, 
-  BlockResponse, 
-  PageResponse, 
+import {
+  NotionResponse,
+  BlockResponse,
+  PageResponse,
   DatabaseResponse,
   ListResponse,
   UserResponse,
   CommentResponse,
-  RichTextItemResponse 
+  RichTextItemResponse,
 } from "./types/index.js";
 
 // Type definitions for tool arguments
@@ -125,7 +125,8 @@ interface SearchArgs {
   page_size?: number;
 }
 
-const commonIdDescription = "It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).";
+const commonIdDescription =
+  "It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).";
 
 // common object schema
 const richTextObjectSchema = {
@@ -269,8 +270,7 @@ const richTextObjectSchema = {
             },
             id: {
               type: "string",
-              description:
-                "The ID of the user." + commonIdDescription,
+              description: "The ID of the user." + commonIdDescription,
             },
           },
           required: ["object", "id"],
@@ -402,7 +402,7 @@ const blockObjectSchema = {
     },
   },
   required: ["object", "type"],
-}
+};
 
 // TODO: If modifications are made, since the original source information is necessary, add an explanation that retrieves the raw object that has not been converted to markdown, and create a dedicated tool to convert to markdown.
 // Tool definitions
@@ -416,8 +416,7 @@ const appendBlockChildrenTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description:
-          "The ID of the parent block." + commonIdDescription,
+        description: "The ID of the parent block." + commonIdDescription,
       },
       children: {
         type: "array",
@@ -428,7 +427,8 @@ const appendBlockChildrenTool: Tool = {
       after: {
         type: "string",
         description:
-          "The ID of the existing block that the new block should be appended after." + commonIdDescription,
+          "The ID of the existing block that the new block should be appended after." +
+          commonIdDescription,
       },
     },
     required: ["block_id", "children"],
@@ -443,8 +443,7 @@ const retrieveBlockTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description:
-          "The ID of the block to retrieve." + commonIdDescription,
+        description: "The ID of the block to retrieve." + commonIdDescription,
       },
     },
     required: ["block_id"],
@@ -459,8 +458,7 @@ const retrieveBlockChildrenTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description:
-          "The ID of the block." + commonIdDescription,
+        description: "The ID of the block." + commonIdDescription,
       },
       start_cursor: {
         type: "string",
@@ -483,8 +481,7 @@ const deleteBlockTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description:
-          "The ID of the block to delete." + commonIdDescription,
+        description: "The ID of the block to delete." + commonIdDescription,
       },
     },
     required: ["block_id"],
@@ -500,8 +497,7 @@ const retrievePageTool: Tool = {
     properties: {
       page_id: {
         type: "string",
-        description:
-          "The ID of the page to retrieve." + commonIdDescription,
+        description: "The ID of the page to retrieve." + commonIdDescription,
       },
     },
     required: ["page_id"],
@@ -517,7 +513,8 @@ const updatePagePropertiesTool: Tool = {
       page_id: {
         type: "string",
         description:
-          "The ID of the page or database item to update." + commonIdDescription,
+          "The ID of the page or database item to update." +
+          commonIdDescription,
       },
       properties: {
         type: "object",
@@ -558,8 +555,7 @@ const retrieveUserTool: Tool = {
     properties: {
       user_id: {
         type: "string",
-        description:
-          "The ID of the user to retrieve." + commonIdDescription,
+        description: "The ID of the user to retrieve." + commonIdDescription,
       },
     },
     required: ["user_id"],
@@ -611,8 +607,7 @@ const queryDatabaseTool: Tool = {
     properties: {
       database_id: {
         type: "string",
-        description:
-          "The ID of the database to query." + commonIdDescription,
+        description: "The ID of the database to query." + commonIdDescription,
       },
       filter: {
         type: "object",
@@ -659,8 +654,7 @@ const updateDatabaseTool: Tool = {
     properties: {
       database_id: {
         type: "string",
-        description:
-          "The ID of the database to update." + commonIdDescription,
+        description: "The ID of the database to update." + commonIdDescription,
       },
       title: {
         type: "array",
@@ -727,7 +721,8 @@ const createCommentTool: Tool = {
       discussion_id: {
         type: "string",
         description:
-          "The ID of an existing discussion thread to add a comment to." + commonIdDescription,
+          "The ID of an existing discussion thread to add a comment to." +
+          commonIdDescription,
       },
       rich_text: {
         type: "array",
@@ -750,7 +745,8 @@ const retrieveCommentsTool: Tool = {
       block_id: {
         type: "string",
         description:
-          "The ID of the block or page whose comments you want to retrieve." + commonIdDescription,
+          "The ID of the block or page whose comments you want to retrieve." +
+          commonIdDescription,
       },
       start_cursor: {
         type: "string",
@@ -831,7 +827,10 @@ export class NotionClientWrapper {
     };
   }
 
-  async appendBlockChildren(block_id: string, children: Partial<BlockResponse>[]): Promise<BlockResponse> {
+  async appendBlockChildren(
+    block_id: string,
+    children: Partial<BlockResponse>[]
+  ): Promise<BlockResponse> {
     const body = { children };
 
     const response = await fetch(
@@ -893,7 +892,10 @@ export class NotionClientWrapper {
     return response.json();
   }
 
-  async updatePageProperties(page_id: string, properties: Record<string, any>): Promise<PageResponse> {
+  async updatePageProperties(
+    page_id: string,
+    properties: Record<string, any>
+  ): Promise<PageResponse> {
     const body = { properties };
 
     const response = await fetch(`${this.baseUrl}/pages/${page_id}`, {
@@ -905,7 +907,10 @@ export class NotionClientWrapper {
     return response.json();
   }
 
-  async listAllUsers(start_cursor?: string, page_size?: number): Promise<ListResponse> {
+  async listAllUsers(
+    start_cursor?: string,
+    page_size?: number
+  ): Promise<ListResponse> {
     const params = new URLSearchParams();
     if (start_cursor) params.append("start_cursor", start_cursor);
     if (page_size) params.append("page_size", page_size.toString());
@@ -1007,7 +1012,10 @@ export class NotionClientWrapper {
     return response.json();
   }
 
-  async createDatabaseItem(database_id: string, properties: Record<string, any>): Promise<PageResponse> {
+  async createDatabaseItem(
+    database_id: string,
+    properties: Record<string, any>
+  ): Promise<PageResponse> {
     const body = {
       parent: { database_id },
       properties,
@@ -1097,7 +1105,7 @@ export class NotionClientWrapper {
 }
 
 // if test environment, do not execute main()
-if (process.env.NODE_ENV !== 'test' && process.env.VITEST !== 'true') {
+if (process.env.NODE_ENV !== "test" && process.env.VITEST !== "true") {
   main().catch((error) => {
     console.error("Fatal error in main():", error);
     process.exit(1);
@@ -1266,9 +1274,7 @@ async function main() {
           case "notion_retrieve_database": {
             const args = request.params
               .arguments as unknown as RetrieveDatabaseArgs;
-            response = await notionClient.retrieveDatabase(
-              args.database_id
-            );
+            response = await notionClient.retrieveDatabase(args.database_id);
             break;
           }
 
