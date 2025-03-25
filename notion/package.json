@@ -23,7 +23,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "0.6.1",
+    "@modelcontextprotocol/sdk": "^1.7.0",
     "vitest": "3.0.9"
   },
   "devDependencies": {
