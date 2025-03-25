@@ -59,6 +59,56 @@ or
 }
 ```
 
+## Environment Variables
+
+- `NOTION_API_TOKEN` (required): Your Notion API integration token.
+- `NOTION_MARKDOWN_CONVERSION`: Set to "true" to enable experimental Markdown conversion. This can significantly reduce token consumption when viewing content, but may cause issues when trying to edit page content.
+
+## Advanced Configuration
+
+### Markdown Conversion
+
+By default, all responses are returned in JSON format. You can enable experimental Markdown conversion to reduce token consumption:
+
+```json
+{
+  "mcpServers": {
+    "notion": {
+      "command": "npx",
+      "args": ["-y", "@suekou/mcp-notion-server"],
+      "env": {
+        "NOTION_API_TOKEN": "your-integration-token",
+        "NOTION_MARKDOWN_CONVERSION": true
+      }
+    }
+  }
+}
+```
+
+or
+
+```json
+{
+  "mcpServers": {
+    "notion": {
+      "command": "node",
+      "args": ["your-built-file-path"],
+      "env": {
+        "NOTION_API_TOKEN": "your-integration-token",
+        "NOTION_MARKDOWN_CONVERSION": true
+      }
+    }
+  }
+}
+```
+
+When `NOTION_MARKDOWN_CONVERSION` is set to `"true"`, responses will be converted to Markdown format (when `format` parameter is set to `"markdown"`), making them more human-readable and significantly reducing token consumption. However, since this feature is experimental, it may cause issues when trying to edit page content as the original structure is lost in conversion.
+
+You can control the format on a per-request basis by setting the `format` parameter to either `"json"` or `"markdown"` in your tool calls:
+
+- Use `"markdown"` for better readability when only viewing content
+- Use `"json"` when you need to modify the returned content
+
 ## Troubleshooting
 
 If you encounter permission errors:
@@ -68,6 +118,10 @@ If you encounter permission errors:
 3. Confirm the token and configuration are correctly set in `claude_desktop_config.json`.
 
 ## Tools
+
+All tools support the following optional parameter:
+
+- `format` (string, "json" or "markdown", default: "markdown"): Controls the response format. Use "markdown" for human-readable output, "json" for programmatic access to the original data structure. Note: Markdown conversion only works when the `NOTION_MARKDOWN_CONVERSION` environment variable is set to "true".
 
 1. `notion_append_block_children`
 

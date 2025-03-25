@@ -1,4 +1,16 @@
 #!/usr/bin/env node
+/**
+ * All API endpoints support both JSON and Markdown response formats.
+ * Set the "format" parameter to "json" or "markdown" (default is "markdown").
+ * - Use "markdown" for human-readable output when only reading content
+ * - Use "json" when you need to process or modify the data programmatically
+ * 
+ * Environment Variables:
+ * - NOTION_API_TOKEN: Required. Your Notion API integration token.
+ * - NOTION_MARKDOWN_CONVERSION: Optional. Set to "true" to enable
+ *   experimental Markdown conversion. If not set or set to any other value,
+ *   all responses will be in JSON format regardless of the "format" parameter.
+ */
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -24,40 +36,54 @@ import {
 interface AppendBlockChildrenArgs {
   block_id: string;
   children: Partial<BlockResponse>[];
+  after?: string;
+  format?: "json" | "markdown";
 }
 
 interface RetrieveBlockArgs {
   block_id: string;
+  format?: "json" | "markdown";
 }
 
 interface RetrieveBlockChildrenArgs {
   block_id: string;
   start_cursor?: string;
   page_size?: number;
+  format?: "json" | "markdown";
 }
 
 interface DeleteBlockArgs {
   block_id: string;
+  format?: "json" | "markdown";
 }
 
 // Pages
 interface RetrievePageArgs {
   page_id: string;
+  format?: "json" | "markdown";
 }
 
 interface UpdatePagePropertiesArgs {
   page_id: string;
   properties: Record<string, any>;
+  format?: "json" | "markdown";
 }
 
 // Users
 interface ListAllUsersArgs {
   start_cursor?: string;
   page_size?: number;
+  format?: "json" | "markdown";
 }
 
 interface RetrieveUserArgs {
   user_id: string;
+  format?: "json" | "markdown";
+}
+
+interface RetrieveBotUserArgs {
+  random_string: string;
+  format?: "json" | "markdown";
 }
 
 // Databases
@@ -70,6 +96,7 @@ interface CreateDatabaseArgs {
   };
   title: RichTextItemResponse[];
   properties: Record<string, any>;
+  format?: "json" | "markdown";
 }
 
 interface QueryDatabaseArgs {
@@ -82,10 +109,12 @@ interface QueryDatabaseArgs {
   }>;
   start_cursor?: string;
   page_size?: number;
+  format?: "json" | "markdown";
 }
 
 interface RetrieveDatabaseArgs {
   database_id: string;
+  format?: "json" | "markdown";
 }
 
 interface UpdateDatabaseArgs {
@@ -93,11 +122,13 @@ interface UpdateDatabaseArgs {
   title?: RichTextItemResponse[];
   description?: RichTextItemResponse[];
   properties?: Record<string, any>;
+  format?: "json" | "markdown";
 }
 
 interface CreateDatabaseItemArgs {
   database_id: string;
   properties: Record<string, any>;
+  format?: "json" | "markdown";
 }
 
 // Comments
@@ -105,12 +136,14 @@ interface CreateCommentArgs {
   parent?: { page_id: string };
   discussion_id?: string;
   rich_text: RichTextItemResponse[];
+  format?: "json" | "markdown";
 }
 
 interface RetrieveCommentsArgs {
   block_id: string;
   start_cursor?: string;
   page_size?: number;
+  format?: "json" | "markdown";
 }
 
 // Search
@@ -123,10 +156,20 @@ interface SearchArgs {
   };
   start_cursor?: string;
   page_size?: number;
+  format?: "json" | "markdown";
 }
 
 const commonIdDescription =
   "It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).";
+
+// Add format parameter to common schema
+const formatParameter = {
+  type: "string",
+  enum: ["json", "markdown"],
+  description:
+    "Specify the response format. 'json' returns the original data structure, 'markdown' returns a more readable format. Use 'markdown' when the user only needs to read the page and isn't planning to write or modify it. Use 'json' when the user needs to read the page with the intention of writing to or modifying it.",
+  default: "markdown",
+};
 
 // common object schema
 const richTextObjectSchema = {
@@ -430,6 +473,7 @@ const appendBlockChildrenTool: Tool = {
           "The ID of the existing block that the new block should be appended after." +
           commonIdDescription,
       },
+      format: formatParameter,
     },
     required: ["block_id", "children"],
   },
@@ -445,6 +489,7 @@ const retrieveBlockTool: Tool = {
         type: "string",
         description: "The ID of the block to retrieve." + commonIdDescription,
       },
+      format: formatParameter,
     },
     required: ["block_id"],
   },
@@ -468,6 +513,7 @@ const retrieveBlockChildrenTool: Tool = {
         type: "number",
         description: "Number of results per page (max 100)",
       },
+      format: formatParameter,
     },
     required: ["block_id"],
   },
@@ -483,6 +529,7 @@ const deleteBlockTool: Tool = {
         type: "string",
         description: "The ID of the block to delete." + commonIdDescription,
       },
+      format: formatParameter,
     },
     required: ["block_id"],
   },
@@ -499,6 +546,7 @@ const retrievePageTool: Tool = {
         type: "string",
         description: "The ID of the page to retrieve." + commonIdDescription,
       },
+      format: formatParameter,
     },
     required: ["page_id"],
   },
@@ -521,6 +569,7 @@ const updatePagePropertiesTool: Tool = {
         description:
           "Properties to update. These correspond to the columns or fields in the database.",
       },
+      format: formatParameter,
     },
     required: ["page_id", "properties"],
   },
@@ -542,6 +591,7 @@ const listAllUsersTool: Tool = {
         type: "number",
         description: "Number of users to retrieve (max 100)",
       },
+      format: formatParameter,
     },
   },
 };
@@ -557,6 +607,7 @@ const retrieveUserTool: Tool = {
         type: "string",
         description: "The ID of the user to retrieve." + commonIdDescription,
       },
+      format: formatParameter,
     },
     required: ["user_id"],
   },
@@ -568,7 +619,14 @@ const retrieveBotUserTool: Tool = {
     "Retrieve the bot user associated with the current token in Notion",
   inputSchema: {
     type: "object",
-    properties: {},
+    properties: {
+      random_string: {
+        type: "string",
+        description: "Dummy parameter for no-parameter tools",
+      },
+      format: formatParameter,
+    },
+    required: ["random_string"],
   },
 };
 
@@ -594,6 +652,7 @@ const createDatabaseTool: Tool = {
         description:
           "Property schema of database. The keys are the names of properties as they appear in Notion and the values are property schema objects.",
       },
+      format: formatParameter,
     },
     required: ["parent", "properties"],
   },
@@ -625,6 +684,7 @@ const queryDatabaseTool: Tool = {
         type: "number",
         description: "Number of results per page (max 100)",
       },
+      format: formatParameter,
     },
     required: ["database_id"],
   },
@@ -641,6 +701,7 @@ const retrieveDatabaseTool: Tool = {
         description:
           "The ID of the database to retrieve." + commonIdDescription,
       },
+      format: formatParameter,
     },
     required: ["database_id"],
   },
@@ -672,6 +733,7 @@ const updateDatabaseTool: Tool = {
         description:
           "The properties of a database to be changed in the request, in the form of a JSON object.",
       },
+      format: formatParameter,
     },
     required: ["database_id"],
   },
@@ -693,6 +755,7 @@ const createDatabaseItemTool: Tool = {
         description:
           "Properties of the new database item. These should match the database schema.",
       },
+      format: formatParameter,
     },
     required: ["database_id", "properties"],
   },
@@ -730,6 +793,7 @@ const createCommentTool: Tool = {
           "Array of rich text objects representing the comment content.",
         items: richTextObjectSchema,
       },
+      format: formatParameter,
     },
     required: ["rich_text"],
   },
@@ -757,6 +821,7 @@ const retrieveCommentsTool: Tool = {
         type: "number",
         description: "Number of comments to retrieve (max 100).",
       },
+      format: formatParameter,
     },
     required: ["block_id"],
   },
@@ -809,6 +874,7 @@ const searchTool: Tool = {
         type: "number",
         description: "Number of results to return (max 100). ",
       },
+      format: formatParameter,
     },
   },
 };
@@ -1114,6 +1180,7 @@ if (process.env.NODE_ENV !== "test" && process.env.VITEST !== "true") {
 
 async function main() {
   const notionToken = process.env.NOTION_API_TOKEN;
+  const enableMarkdownConversion = process.env.NOTION_MARKDOWN_CONVERSION === "true";
 
   if (!notionToken) {
     console.error("Please set NOTION_API_TOKEN environment variable");
@@ -1348,13 +1415,21 @@ async function main() {
             throw new Error(`Unknown tool: ${request.params.name}`);
         }
 
-        // TODO: create new condition for markdown
-        if (true) {
+        // Check format parameter and return appropriate response
+        const requestedFormat = (request.params.arguments as any)?.format || "markdown";
+        
+        // Only convert to markdown if both conditions are met:
+        // 1. The requested format is markdown
+        // 2. The experimental markdown conversion is enabled via environment variable
+        if (enableMarkdownConversion && requestedFormat === "markdown") {
           const markdown = await notionClient.toMarkdown(response);
           return {
             content: [{ type: "text", text: markdown }],
           };
         } else {
+          return {
+            content: [{ type: "text", text: JSON.stringify(response, null, 2) }],
+          };
         }
       } catch (error) {
         console.error("Error executing tool:", error);
