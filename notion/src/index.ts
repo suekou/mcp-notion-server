@@ -1,4 +1,16 @@
 #!/usr/bin/env node
+/**
+ * All API endpoints support both JSON and Markdown response formats.
+ * Set the "format" parameter to "json" or "markdown" (default is "markdown").
+ * - Use "markdown" for human-readable output when only reading content
+ * - Use "json" when you need to process or modify the data programmatically
+ * 
+ * Environment Variables:
+ * - NOTION_API_TOKEN: Required. Your Notion API integration token.
+ * - NOTION_MARKDOWN_CONVERSION: Optional. Set to "true" to enable
+ *   experimental Markdown conversion. If not set or set to any other value,
+ *   all responses will be in JSON format regardless of the "format" parameter.
+ */
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -7,90 +19,131 @@ import {
   ListToolsRequestSchema,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
+import { convertToMarkdown } from "./markdown/index.js";
+import {
+  NotionResponse,
+  BlockResponse,
+  PageResponse,
+  DatabaseResponse,
+  ListResponse,
+  UserResponse,
+  CommentResponse,
+  RichTextItemResponse,
+} from "./types/index.js";
 
 // Type definitions for tool arguments
 // Blocks
 interface AppendBlockChildrenArgs {
   block_id: string;
-  children: any[];
+  children: Partial<BlockResponse>[];
+  after?: string;
+  format?: "json" | "markdown";
 }
 
 interface RetrieveBlockArgs {
   block_id: string;
+  format?: "json" | "markdown";
 }
 
 interface RetrieveBlockChildrenArgs {
   block_id: string;
   start_cursor?: string;
   page_size?: number;
+  format?: "json" | "markdown";
 }
 
 interface DeleteBlockArgs {
   block_id: string;
+  format?: "json" | "markdown";
 }
 
 // Pages
 interface RetrievePageArgs {
   page_id: string;
+  format?: "json" | "markdown";
 }
 
 interface UpdatePagePropertiesArgs {
   page_id: string;
-  properties: any;
+  properties: Record<string, any>;
+  format?: "json" | "markdown";
 }
 
 // Users
 interface ListAllUsersArgs {
   start_cursor?: string;
   page_size?: number;
+  format?: "json" | "markdown";
 }
 
 interface RetrieveUserArgs {
   user_id: string;
+  format?: "json" | "markdown";
+}
+
+interface RetrieveBotUserArgs {
+  random_string: string;
+  format?: "json" | "markdown";
 }
 
 // Databases
 interface CreateDatabaseArgs {
-  parent: any;
-  title: any[];
-  properties: any;
+  parent: {
+    type: string;
+    page_id?: string;
+    database_id?: string;
+    workspace?: boolean;
+  };
+  title: RichTextItemResponse[];
+  properties: Record<string, any>;
+  format?: "json" | "markdown";
 }
 
 interface QueryDatabaseArgs {
   database_id: string;
-  filter?: any;
-  sorts?: any;
+  filter?: Record<string, any>;
+  sorts?: Array<{
+    property?: string;
+    timestamp?: string;
+    direction: "ascending" | "descending";
+  }>;
   start_cursor?: string;
   page_size?: number;
+  format?: "json" | "markdown";
 }
 
 interface RetrieveDatabaseArgs {
   database_id: string;
+  format?: "json" | "markdown";
 }
 
 interface UpdateDatabaseArgs {
   database_id: string;
-  title?: any[];
-  description?: any[];
-  properties?: any;
+  title?: RichTextItemResponse[];
+  description?: RichTextItemResponse[];
+  properties?: Record<string, any>;
+  format?: "json" | "markdown";
 }
 
 interface CreateDatabaseItemArgs {
   database_id: string;
-  properties: any;
+  properties: Record<string, any>;
+  format?: "json" | "markdown";
 }
 
 // Comments
 interface CreateCommentArgs {
   parent?: { page_id: string };
   discussion_id?: string;
-  rich_text: any[];
+  rich_text: RichTextItemResponse[];
+  format?: "json" | "markdown";
 }
 
 interface RetrieveCommentsArgs {
   block_id: string;
   start_cursor?: string;
   page_size?: number;
+  format?: "json" | "markdown";
 }
 
 // Search
@@ -103,9 +156,22 @@ interface SearchArgs {
   };
   start_cursor?: string;
   page_size?: number;
+  format?: "json" | "markdown";
 }
 
-const commonIdDescription = "It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).";
+
+// TODO: Define Type-safe request/response handling using Zod schemas
+const commonIdDescription =
+  "It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).";
+
+// Add format parameter to common schema
+const formatParameter = {
+  type: "string",
+  enum: ["json", "markdown"],
+  description:
+    "Specify the response format. 'json' returns the original data structure, 'markdown' returns a more readable format. Use 'markdown' when the user only needs to read the page and isn't planning to write or modify it. Use 'json' when the user needs to read the page with the intention of writing to or modifying it.",
+  default: "markdown",
+};
 
 // common object schema
 const richTextObjectSchema = {
@@ -249,8 +315,7 @@ const richTextObjectSchema = {
             },
             id: {
               type: "string",
-              description:
-                "The ID of the user." + commonIdDescription,
+              description: "The ID of the user." + commonIdDescription,
             },
           },
           required: ["object", "id"],
@@ -382,8 +447,9 @@ const blockObjectSchema = {
     },
   },
   required: ["object", "type"],
-}
+};
 
+// TODO: If modifications are made, since the original source information is necessary, add an explanation that retrieves the raw object that has not been converted to markdown, and create a dedicated tool to convert to markdown.
 // Tool definitions
 // Blocks
 const appendBlockChildrenTool: Tool = {
@@ -395,8 +461,7 @@ const appendBlockChildrenTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description:
-          "The ID of the parent block." + commonIdDescription,
+        description: "The ID of the parent block." + commonIdDescription,
       },
       children: {
         type: "array",
@@ -407,8 +472,10 @@ const appendBlockChildrenTool: Tool = {
       after: {
         type: "string",
         description:
-          "The ID of the existing block that the new block should be appended after." + commonIdDescription,
+          "The ID of the existing block that the new block should be appended after." +
+          commonIdDescription,
       },
+      format: formatParameter,
     },
     required: ["block_id", "children"],
   },
@@ -422,9 +489,9 @@ const retrieveBlockTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description:
-          "The ID of the block to retrieve." + commonIdDescription,
+        description: "The ID of the block to retrieve." + commonIdDescription,
       },
+      format: formatParameter,
     },
     required: ["block_id"],
   },
@@ -438,8 +505,7 @@ const retrieveBlockChildrenTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description:
-          "The ID of the block." + commonIdDescription,
+        description: "The ID of the block." + commonIdDescription,
       },
       start_cursor: {
         type: "string",
@@ -449,6 +515,7 @@ const retrieveBlockChildrenTool: Tool = {
         type: "number",
         description: "Number of results per page (max 100)",
       },
+      format: formatParameter,
     },
     required: ["block_id"],
   },
@@ -462,9 +529,9 @@ const deleteBlockTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description:
-          "The ID of the block to delete." + commonIdDescription,
+        description: "The ID of the block to delete." + commonIdDescription,
       },
+      format: formatParameter,
     },
     required: ["block_id"],
   },
@@ -479,9 +546,9 @@ const retrievePageTool: Tool = {
     properties: {
       page_id: {
         type: "string",
-        description:
-          "The ID of the page to retrieve." + commonIdDescription,
+        description: "The ID of the page to retrieve." + commonIdDescription,
       },
+      format: formatParameter,
     },
     required: ["page_id"],
   },
@@ -496,13 +563,15 @@ const updatePagePropertiesTool: Tool = {
       page_id: {
         type: "string",
         description:
-          "The ID of the page or database item to update." + commonIdDescription,
+          "The ID of the page or database item to update." +
+          commonIdDescription,
       },
       properties: {
         type: "object",
         description:
           "Properties to update. These correspond to the columns or fields in the database.",
       },
+      format: formatParameter,
     },
     required: ["page_id", "properties"],
   },
@@ -524,6 +593,7 @@ const listAllUsersTool: Tool = {
         type: "number",
         description: "Number of users to retrieve (max 100)",
       },
+      format: formatParameter,
     },
   },
 };
@@ -537,9 +607,9 @@ const retrieveUserTool: Tool = {
     properties: {
       user_id: {
         type: "string",
-        description:
-          "The ID of the user to retrieve." + commonIdDescription,
+        description: "The ID of the user to retrieve." + commonIdDescription,
       },
+      format: formatParameter,
     },
     required: ["user_id"],
   },
@@ -551,7 +621,14 @@ const retrieveBotUserTool: Tool = {
     "Retrieve the bot user associated with the current token in Notion",
   inputSchema: {
     type: "object",
-    properties: {},
+    properties: {
+      random_string: {
+        type: "string",
+        description: "Dummy parameter for no-parameter tools",
+      },
+      format: formatParameter,
+    },
+    required: ["random_string"],
   },
 };
 
@@ -577,6 +654,7 @@ const createDatabaseTool: Tool = {
         description:
           "Property schema of database. The keys are the names of properties as they appear in Notion and the values are property schema objects.",
       },
+      format: formatParameter,
     },
     required: ["parent", "properties"],
   },
@@ -590,8 +668,7 @@ const queryDatabaseTool: Tool = {
     properties: {
       database_id: {
         type: "string",
-        description:
-          "The ID of the database to query." + commonIdDescription,
+        description: "The ID of the database to query." + commonIdDescription,
       },
       filter: {
         type: "object",
@@ -609,6 +686,7 @@ const queryDatabaseTool: Tool = {
         type: "number",
         description: "Number of results per page (max 100)",
       },
+      format: formatParameter,
     },
     required: ["database_id"],
   },
@@ -625,6 +703,7 @@ const retrieveDatabaseTool: Tool = {
         description:
           "The ID of the database to retrieve." + commonIdDescription,
       },
+      format: formatParameter,
     },
     required: ["database_id"],
   },
@@ -638,8 +717,7 @@ const updateDatabaseTool: Tool = {
     properties: {
       database_id: {
         type: "string",
-        description:
-          "The ID of the database to update." + commonIdDescription,
+        description: "The ID of the database to update." + commonIdDescription,
       },
       title: {
         type: "array",
@@ -657,6 +735,7 @@ const updateDatabaseTool: Tool = {
         description:
           "The properties of a database to be changed in the request, in the form of a JSON object.",
       },
+      format: formatParameter,
     },
     required: ["database_id"],
   },
@@ -678,6 +757,7 @@ const createDatabaseItemTool: Tool = {
         description:
           "Properties of the new database item. These should match the database schema.",
       },
+      format: formatParameter,
     },
     required: ["database_id", "properties"],
   },
@@ -706,7 +786,8 @@ const createCommentTool: Tool = {
       discussion_id: {
         type: "string",
         description:
-          "The ID of an existing discussion thread to add a comment to." + commonIdDescription,
+          "The ID of an existing discussion thread to add a comment to." +
+          commonIdDescription,
       },
       rich_text: {
         type: "array",
@@ -714,6 +795,7 @@ const createCommentTool: Tool = {
           "Array of rich text objects representing the comment content.",
         items: richTextObjectSchema,
       },
+      format: formatParameter,
     },
     required: ["rich_text"],
   },
@@ -729,7 +811,8 @@ const retrieveCommentsTool: Tool = {
       block_id: {
         type: "string",
         description:
-          "The ID of the block or page whose comments you want to retrieve." + commonIdDescription,
+          "The ID of the block or page whose comments you want to retrieve." +
+          commonIdDescription,
       },
       start_cursor: {
         type: "string",
@@ -740,6 +823,7 @@ const retrieveCommentsTool: Tool = {
         type: "number",
         description: "Number of comments to retrieve (max 100).",
       },
+      format: formatParameter,
     },
     required: ["block_id"],
   },
@@ -790,13 +874,14 @@ const searchTool: Tool = {
       },
       page_size: {
         type: "number",
-        description: "Number of results to return (max 100)",
+        description: "Number of results to return (max 100). ",
       },
+      format: formatParameter,
     },
   },
 };
 
-class NotionClientWrapper {
+export class NotionClientWrapper {
   private notionToken: string;
   private baseUrl: string = "https://api.notion.com/v1";
   private headers: { [key: string]: string };
@@ -810,7 +895,10 @@ class NotionClientWrapper {
     };
   }
 
-  async appendBlockChildren(block_id: string, children: any[]): Promise<any> {
+  async appendBlockChildren(
+    block_id: string,
+    children: Partial<BlockResponse>[]
+  ): Promise<BlockResponse> {
     const body = { children };
 
     const response = await fetch(
@@ -825,7 +913,7 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async retrieveBlock(block_id: string): Promise<any> {
+  async retrieveBlock(block_id: string): Promise<BlockResponse> {
     const response = await fetch(`${this.baseUrl}/blocks/${block_id}`, {
       method: "GET",
       headers: this.headers,
@@ -838,7 +926,7 @@ class NotionClientWrapper {
     block_id: string,
     start_cursor?: string,
     page_size?: number
-  ): Promise<any> {
+  ): Promise<ListResponse> {
     const params = new URLSearchParams();
     if (start_cursor) params.append("start_cursor", start_cursor);
     if (page_size) params.append("page_size", page_size.toString());
@@ -854,7 +942,7 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async deleteBlock(block_id: string): Promise<any> {
+  async deleteBlock(block_id: string): Promise<BlockResponse> {
     const response = await fetch(`${this.baseUrl}/blocks/${block_id}`, {
       method: "DELETE",
       headers: this.headers,
@@ -863,7 +951,7 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async retrievePage(page_id: string): Promise<any> {
+  async retrievePage(page_id: string): Promise<PageResponse> {
     const response = await fetch(`${this.baseUrl}/pages/${page_id}`, {
       method: "GET",
       headers: this.headers,
@@ -872,7 +960,10 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async updatePageProperties(page_id: string, properties: any): Promise<any> {
+  async updatePageProperties(
+    page_id: string,
+    properties: Record<string, any>
+  ): Promise<PageResponse> {
     const body = { properties };
 
     const response = await fetch(`${this.baseUrl}/pages/${page_id}`, {
@@ -884,7 +975,10 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async listAllUsers(start_cursor?: string, page_size?: number): Promise<any> {
+  async listAllUsers(
+    start_cursor?: string,
+    page_size?: number
+  ): Promise<ListResponse> {
     const params = new URLSearchParams();
     if (start_cursor) params.append("start_cursor", start_cursor);
     if (page_size) params.append("page_size", page_size.toString());
@@ -896,7 +990,7 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async retrieveUser(user_id: string): Promise<any> {
+  async retrieveUser(user_id: string): Promise<UserResponse> {
     const response = await fetch(`${this.baseUrl}/users/${user_id}`, {
       method: "GET",
       headers: this.headers,
@@ -904,7 +998,7 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async retrieveBotUser(): Promise<any> {
+  async retrieveBotUser(): Promise<UserResponse> {
     const response = await fetch(`${this.baseUrl}/users/me`, {
       method: "GET",
       headers: this.headers,
@@ -913,10 +1007,10 @@ class NotionClientWrapper {
   }
 
   async createDatabase(
-    parent: any,
-    title: any[],
-    properties: any
-  ): Promise<any> {
+    parent: CreateDatabaseArgs["parent"],
+    title: RichTextItemResponse[],
+    properties: Record<string, any>
+  ): Promise<DatabaseResponse> {
     const body = { parent, title, properties };
 
     const response = await fetch(`${this.baseUrl}/databases`, {
@@ -930,12 +1024,16 @@ class NotionClientWrapper {
 
   async queryDatabase(
     database_id: string,
-    filter?: any,
-    sorts?: any,
+    filter?: Record<string, any>,
+    sorts?: Array<{
+      property?: string;
+      timestamp?: string;
+      direction: "ascending" | "descending";
+    }>,
     start_cursor?: string,
     page_size?: number
-  ): Promise<any> {
-    const body: any = {};
+  ): Promise<ListResponse> {
+    const body: Record<string, any> = {};
     if (filter) body.filter = filter;
     if (sorts) body.sorts = sorts;
     if (start_cursor) body.start_cursor = start_cursor;
@@ -953,7 +1051,7 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async retrieveDatabase(database_id: string): Promise<any> {
+  async retrieveDatabase(database_id: string): Promise<DatabaseResponse> {
     const response = await fetch(`${this.baseUrl}/databases/${database_id}`, {
       method: "GET",
       headers: this.headers,
@@ -964,11 +1062,11 @@ class NotionClientWrapper {
 
   async updateDatabase(
     database_id: string,
-    title?: any[],
-    description?: any[],
-    properties?: any
-  ): Promise<any> {
-    const body: any = {};
+    title?: RichTextItemResponse[],
+    description?: RichTextItemResponse[],
+    properties?: Record<string, any>
+  ): Promise<DatabaseResponse> {
+    const body: Record<string, any> = {};
     if (title) body.title = title;
     if (description) body.description = description;
     if (properties) body.properties = properties;
@@ -982,7 +1080,10 @@ class NotionClientWrapper {
     return response.json();
   }
 
-  async createDatabaseItem(database_id: string, properties: any): Promise<any> {
+  async createDatabaseItem(
+    database_id: string,
+    properties: Record<string, any>
+  ): Promise<PageResponse> {
     const body = {
       parent: { database_id },
       properties,
@@ -1000,9 +1101,9 @@ class NotionClientWrapper {
   async createComment(
     parent?: { page_id: string },
     discussion_id?: string,
-    rich_text?: any[]
-  ): Promise<any> {
-    const body: any = { rich_text };
+    rich_text?: RichTextItemResponse[]
+  ): Promise<CommentResponse> {
+    const body: Record<string, any> = { rich_text };
     if (parent) {
       body.parent = parent;
     }
@@ -1023,7 +1124,7 @@ class NotionClientWrapper {
     block_id: string,
     start_cursor?: string,
     page_size?: number
-  ): Promise<any> {
+  ): Promise<ListResponse> {
     const params = new URLSearchParams();
     params.append("block_id", block_id);
     if (start_cursor) params.append("start_cursor", start_cursor);
@@ -1049,8 +1150,8 @@ class NotionClientWrapper {
     },
     start_cursor?: string,
     page_size?: number
-  ): Promise<any> {
-    const body: any = {};
+  ): Promise<ListResponse> {
+    const body: Record<string, any> = {};
     if (query) body.query = query;
     if (filter) body.filter = filter;
     if (sort) body.sort = sort;
@@ -1065,10 +1166,23 @@ class NotionClientWrapper {
 
     return response.json();
   }
+
+  async toMarkdown(response: NotionResponse): Promise<string> {
+    return convertToMarkdown(response);
+  }
+}
+
+// if test environment, do not execute main()
+if (process.env.NODE_ENV !== "test" && process.env.VITEST !== "true") {
+  main().catch((error) => {
+    console.error("Fatal error in main():", error);
+    process.exit(1);
+  });
 }
 
 async function main() {
   const notionToken = process.env.NOTION_API_TOKEN;
+  const enableMarkdownConversion = process.env.NOTION_MARKDOWN_CONVERSION === "true";
 
   if (!notionToken) {
     console.error("Please set NOTION_API_TOKEN environment variable");
@@ -1098,6 +1212,8 @@ async function main() {
           throw new Error("No arguments provided");
         }
 
+        let response;
+
         switch (request.params.name) {
           case "notion_append_block_children": {
             const args = request.params
@@ -1107,13 +1223,11 @@ async function main() {
                 "Missing required arguments: block_id and children"
               );
             }
-            const response = await notionClient.appendBlockChildren(
+            response = await notionClient.appendBlockChildren(
               args.block_id,
               args.children
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_retrieve_block": {
@@ -1122,10 +1236,8 @@ async function main() {
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
-            const response = await notionClient.retrieveBlock(args.block_id);
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            response = await notionClient.retrieveBlock(args.block_id);
+            break;
           }
 
           case "notion_retrieve_block_children": {
@@ -1134,14 +1246,12 @@ async function main() {
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
-            const response = await notionClient.retrieveBlockChildren(
+            response = await notionClient.retrieveBlockChildren(
               args.block_id,
               args.start_cursor,
               args.page_size
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_delete_block": {
@@ -1149,10 +1259,8 @@ async function main() {
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
-            const response = await notionClient.deleteBlock(args.block_id);
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            response = await notionClient.deleteBlock(args.block_id);
+            break;
           }
 
           case "notion_retrieve_page": {
@@ -1161,10 +1269,8 @@ async function main() {
             if (!args.page_id) {
               throw new Error("Missing required argument: page_id");
             }
-            const response = await notionClient.retrievePage(args.page_id);
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            response = await notionClient.retrievePage(args.page_id);
+            break;
           }
 
           case "notion_update_page_properties": {
@@ -1175,25 +1281,21 @@ async function main() {
                 "Missing required arguments: page_id and properties"
               );
             }
-            const response = await notionClient.updatePageProperties(
+            response = await notionClient.updatePageProperties(
               args.page_id,
               args.properties
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_list_all_users": {
             const args = request.params
               .arguments as unknown as ListAllUsersArgs;
-            const response = await notionClient.listAllUsers(
+            response = await notionClient.listAllUsers(
               args.start_cursor,
               args.page_size
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_retrieve_user": {
@@ -1202,17 +1304,13 @@ async function main() {
             if (!args.user_id) {
               throw new Error("Missing required argument: user_id");
             }
-            const response = await notionClient.retrieveUser(args.user_id);
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            response = await notionClient.retrieveUser(args.user_id);
+            break;
           }
 
           case "notion_retrieve_bot_user": {
-            const response = await notionClient.retrieveBotUser();
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            response = await notionClient.retrieveBotUser();
+            break;
           }
 
           case "notion_query_database": {
@@ -1221,66 +1319,54 @@ async function main() {
             if (!args.database_id) {
               throw new Error("Missing required argument: database_id");
             }
-            const response = await notionClient.queryDatabase(
+            response = await notionClient.queryDatabase(
               args.database_id,
               args.filter,
               args.sorts,
               args.start_cursor,
               args.page_size
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_create_database": {
             const args = request.params
               .arguments as unknown as CreateDatabaseArgs;
-            const response = await notionClient.createDatabase(
+            response = await notionClient.createDatabase(
               args.parent,
               args.title,
               args.properties
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_retrieve_database": {
             const args = request.params
               .arguments as unknown as RetrieveDatabaseArgs;
-            const response = await notionClient.retrieveDatabase(
-              args.database_id
-            );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            response = await notionClient.retrieveDatabase(args.database_id);
+            break;
           }
 
           case "notion_update_database": {
             const args = request.params
               .arguments as unknown as UpdateDatabaseArgs;
-            const response = await notionClient.updateDatabase(
+            response = await notionClient.updateDatabase(
               args.database_id,
               args.title,
               args.description,
               args.properties
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_create_database_item": {
             const args = request.params
               .arguments as unknown as CreateDatabaseItemArgs;
-            const response = await notionClient.createDatabaseItem(
+            response = await notionClient.createDatabaseItem(
               args.database_id,
               args.properties
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_create_comment": {
@@ -1293,14 +1379,12 @@ async function main() {
               );
             }
 
-            const response = await notionClient.createComment(
+            response = await notionClient.createComment(
               args.parent,
               args.discussion_id,
               args.rich_text
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_retrieve_comments": {
@@ -1309,32 +1393,45 @@ async function main() {
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
-            const response = await notionClient.retrieveComments(
+            response = await notionClient.retrieveComments(
               args.block_id,
               args.start_cursor,
               args.page_size
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           case "notion_search": {
             const args = request.params.arguments as unknown as SearchArgs;
-            const response = await notionClient.search(
+            response = await notionClient.search(
               args.query,
               args.filter,
               args.sort,
               args.start_cursor,
               args.page_size
             );
-            return {
-              content: [{ type: "text", text: JSON.stringify(response) }],
-            };
+            break;
           }
 
           default:
             throw new Error(`Unknown tool: ${request.params.name}`);
+        }
+
+        // Check format parameter and return appropriate response
+        const requestedFormat = (request.params.arguments as any)?.format || "markdown";
+        
+        // Only convert to markdown if both conditions are met:
+        // 1. The requested format is markdown
+        // 2. The experimental markdown conversion is enabled via environment variable
+        if (enableMarkdownConversion && requestedFormat === "markdown") {
+          const markdown = await notionClient.toMarkdown(response);
+          return {
+            content: [{ type: "text", text: markdown }],
+          };
+        } else {
+          return {
+            content: [{ type: "text", text: JSON.stringify(response, null, 2) }],
+          };
         }
       } catch (error) {
         console.error("Error executing tool:", error);
@@ -1379,8 +1476,3 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
-
-main().catch((error) => {
-  console.error("Fatal error in main():", error);
-  process.exit(1);
-});
