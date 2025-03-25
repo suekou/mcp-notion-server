@@ -159,6 +159,8 @@ interface SearchArgs {
   format?: "json" | "markdown";
 }
 
+
+// TODO: Define Type-safe request/response handling using Zod schemas
 const commonIdDescription =
   "It should be a 32-character string (excluding hyphens) formatted as 8-4-4-4-12 with hyphens (-).";
 
