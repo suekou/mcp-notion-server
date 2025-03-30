@@ -78,7 +78,7 @@ By default, all responses are returned in JSON format. You can enable experiment
       "args": ["-y", "@suekou/mcp-notion-server"],
       "env": {
         "NOTION_API_TOKEN": "your-integration-token",
-        "NOTION_MARKDOWN_CONVERSION": true
+        "NOTION_MARKDOWN_CONVERSION": "true"
       }
     }
   }
@@ -95,7 +95,7 @@ or
       "args": ["your-built-file-path"],
       "env": {
         "NOTION_API_TOKEN": "your-integration-token",
-        "NOTION_MARKDOWN_CONVERSION": true
+        "NOTION_MARKDOWN_CONVERSION": "true"
       }
     }
   }
