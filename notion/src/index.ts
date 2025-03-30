@@ -537,6 +537,26 @@ const deleteBlockTool: Tool = {
   },
 };
 
+const updateBlockTool: Tool = {
+  name: "notion_update_block",
+  description: "Update the content of a block in Notion based on its type. The update replaces the entire value for a given field.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      block_id: {
+        type: "string",
+        description: "The ID of the block to update." + commonIdDescription,
+      },
+      block: {
+        type: "object",
+        description: "The updated content for the block. Must match the block's type schema.",
+      },
+      format: formatParameter,
+    },
+    required: ["block_id", "block"],
+  },
+};
+
 // Pages
 const retrievePageTool: Tool = {
   name: "notion_retrieve_page",
@@ -951,6 +971,16 @@ export class NotionClientWrapper {
     return response.json();
   }
 
+  async updateBlock(block_id: string, block: Partial<BlockResponse>): Promise<BlockResponse> {
+    const response = await fetch(`${this.baseUrl}/blocks/${block_id}`, {
+      method: "PATCH",
+      headers: this.headers,
+      body: JSON.stringify(block),
+    });
+
+    return response.json();
+  }
+
   async retrievePage(page_id: string): Promise<PageResponse> {
     const response = await fetch(`${this.baseUrl}/pages/${page_id}`, {
       method: "GET",
@@ -1263,6 +1293,18 @@ async function main() {
             break;
           }
 
+          case "notion_update_block": {
+            const args = request.params.arguments as unknown as {
+              block_id: string;
+              block: Partial<BlockResponse>;
+            };
+            if (!args.block_id || !args.block) {
+              throw new Error("Missing required arguments: block_id and block");
+            }
+            response = await notionClient.updateBlock(args.block_id, args.block);
+            break;
+          }
+
           case "notion_retrieve_page": {
             const args = request.params
               .arguments as unknown as RetrievePageArgs;
@@ -1456,6 +1498,7 @@ async function main() {
         retrieveBlockTool,
         retrieveBlockChildrenTool,
         deleteBlockTool,
+        updateBlockTool,
         retrievePageTool,
         updatePagePropertiesTool,
         listAllUsersTool,
