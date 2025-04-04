@@ -28,6 +28,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
-    "typescript": "^5.3.3"
+    "@types/yargs": "^17.0.33",
+    "typescript": "^5.3.3",
+    "yargs": "^17.7.2"
   }
 }
