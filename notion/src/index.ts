@@ -4,10 +4,10 @@
  * Set the "format" parameter to "json" or "markdown" (default is "markdown").
  * - Use "markdown" for human-readable output when only reading content
  * - Use "json" when you need to process or modify the data programmatically
- * 
+ *
  * Command-line Arguments:
  * --enabledTools: Comma-separated list of tools to enable (e.g. "notion_retrieve_page,notion_query_database")
- * 
+ *
  * Environment Variables:
  * - NOTION_API_TOKEN: Required. Your Notion API integration token.
  * - NOTION_MARKDOWN_CONVERSION: Optional. Set to "true" to enable
@@ -1485,7 +1485,7 @@ async function main() {
 
         // Check format parameter and return appropriate response
         const requestedFormat = (request.params.arguments as any)?.format || "markdown";
-        
+
         // Only convert to markdown if both conditions are met:
         // 1. The requested format is markdown
         // 2. The experimental markdown conversion is enabled via environment variable
@@ -1537,7 +1537,7 @@ async function main() {
       searchTool,
     ];
     return {
-      tools: filterTools(allTools),
+      tools: filterTools(allTools, enabledToolsSet),
     };
   });
 
