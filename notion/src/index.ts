@@ -5,6 +5,9 @@
  * - Use "markdown" for human-readable output when only reading content
  * - Use "json" when you need to process or modify the data programmatically
  * 
+ * Command-line Arguments:
+ * --enabledTools: Comma-separated list of tools to enable (e.g. "notion_retrieve_page,notion_query_database")
+ * 
  * Environment Variables:
  * - NOTION_API_TOKEN: Required. Your Notion API integration token.
  * - NOTION_MARKDOWN_CONVERSION: Optional. Set to "true" to enable
@@ -13,6 +16,8 @@
  */
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 import {
   CallToolRequest,
   CallToolRequestSchema,
@@ -20,6 +25,19 @@ import {
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { convertToMarkdown } from "./markdown/index.js";
+
+// Parse command line arguments
+const argv = yargs(hideBin(process.argv))
+  .option('enabledTools', {
+    type: 'string',
+    description: 'Comma-separated list of tools to enable',
+  })
+  .parseSync();
+
+const enabledToolsSet = new Set(
+  argv.enabledTools ? argv.enabledTools.split(',') : []
+);
+
 import {
   NotionResponse,
   BlockResponse,
@@ -159,6 +177,12 @@ interface SearchArgs {
   format?: "json" | "markdown";
 }
 
+
+// Filter tools based on enabledTools parameter
+function filterTools(tools: Tool[]): Tool[] {
+  if (enabledToolsSet.size === 0) return tools;
+  return tools.filter(tool => enabledToolsSet.has(tool.name));
+}
 
 // TODO: Define Type-safe request/response handling using Zod schemas
 const commonIdDescription =
@@ -1492,27 +1516,28 @@ async function main() {
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
+    const allTools = [
+      appendBlockChildrenTool,
+      retrieveBlockTool,
+      retrieveBlockChildrenTool,
+      deleteBlockTool,
+      updateBlockTool,
+      retrievePageTool,
+      updatePagePropertiesTool,
+      listAllUsersTool,
+      retrieveUserTool,
+      retrieveBotUserTool,
+      createDatabaseTool,
+      queryDatabaseTool,
+      retrieveDatabaseTool,
+      updateDatabaseTool,
+      createDatabaseItemTool,
+      createCommentTool,
+      retrieveCommentsTool,
+      searchTool,
+    ];
     return {
-      tools: [
-        appendBlockChildrenTool,
-        retrieveBlockTool,
-        retrieveBlockChildrenTool,
-        deleteBlockTool,
-        updateBlockTool,
-        retrievePageTool,
-        updatePagePropertiesTool,
-        listAllUsersTool,
-        retrieveUserTool,
-        retrieveBotUserTool,
-        createDatabaseTool,
-        queryDatabaseTool,
-        retrieveDatabaseTool,
-        updateDatabaseTool,
-        createDatabaseItemTool,
-        createCommentTool,
-        retrieveCommentsTool,
-        searchTool,
-      ],
+      tools: filterTools(allTools),
     };
   });
 
