@@ -8,12 +8,21 @@ vi.mock("./markdown/index.js", () => ({
 }));
 
 // Mock tool list
+const mockInputSchema = { type: "object" as const }
 const mockTools = [
-  { name: "notion_retrieve_block" },
-  { name: "notion_retrieve_page" },
-  { name: "notion_query_database" },
+    {
+        name: "notion_retrieve_block",
+        inputSchema: mockInputSchema
+    },
+    {
+        name: "notion_retrieve_page",
+        inputSchema: mockInputSchema
+    },
+    {
+        name: "notion_query_database",
+        inputSchema: mockInputSchema
+    }
 ];
-
 global.fetch = vi.fn();
 
 describe("NotionClientWrapper", () => {
@@ -181,8 +190,8 @@ describe("NotionClientWrapper", () => {
       const enabledToolsSet = new Set(["notion_retrieve_block", "notion_query_database"]);
       const result = filterTools(mockTools, enabledToolsSet);
       expect(result).toEqual([
-        { name: "notion_retrieve_block" },
-        { name: "notion_query_database" }
+        { name: "notion_retrieve_block", inputSchema: mockInputSchema },
+        { name: "notion_query_database", inputSchema: mockInputSchema }
       ]);
     });
 
