@@ -64,6 +64,15 @@ or
 - `NOTION_API_TOKEN` (required): Your Notion API integration token.
 - `NOTION_MARKDOWN_CONVERSION`: Set to "true" to enable experimental Markdown conversion. This can significantly reduce token consumption when viewing content, but may cause issues when trying to edit page content.
 
+## Command Line Arguments
+
+- `--enabledTools`: Comma-separated list of tools to enable (e.g. "notion_retrieve_page,notion_query_database"). When specified, only the listed tools will be available. If not specified, all tools are enabled.
+
+Read-only tools example (copy-paste friendly):
+```bash
+node build/index.js --enabledTools=notion_retrieve_block,notion_retrieve_block_children,notion_retrieve_page,notion_query_database,notion_retrieve_database,notion_search,notion_list_all_users,notion_retrieve_user,notion_retrieve_bot_user,notion_retrieve_comments
+```
+
 ## Advanced Configuration
 
 ### Markdown Conversion
