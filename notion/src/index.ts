@@ -179,7 +179,7 @@ interface SearchArgs {
 
 
 // Filter tools based on enabledTools parameter
-function filterTools(tools: Tool[]): Tool[] {
+export function filterTools(tools: Tool[], enabledToolsSet: Set<string> = new Set()): Tool[] {
   if (enabledToolsSet.size === 0) return tools;
   return tools.filter(tool => enabledToolsSet.has(tool.name));
 }
