@@ -112,7 +112,7 @@ interface CreateDatabaseArgs {
     database_id?: string;
     workspace?: boolean;
   };
-  title: RichTextItemResponse[];
+  title?: RichTextItemResponse[];
   properties: Record<string, any>;
   format?: "json" | "markdown";
 }
@@ -1075,8 +1075,8 @@ export class NotionClientWrapper {
 
   async createDatabase(
     parent: CreateDatabaseArgs["parent"],
-    title: RichTextItemResponse[],
-    properties: Record<string, any>
+    properties: Record<string, any>,
+    title?: RichTextItemResponse[],
   ): Promise<DatabaseResponse> {
     const body = { parent, title, properties };
 
@@ -1413,8 +1413,8 @@ async function main() {
               .arguments as unknown as CreateDatabaseArgs;
             response = await notionClient.createDatabase(
               args.parent,
-              args.title,
-              args.properties
+              args.properties,
+              args.title
             );
             break;
           }
