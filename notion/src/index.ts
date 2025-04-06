@@ -697,6 +697,18 @@ const queryDatabaseTool: Tool = {
       sorts: {
         type: "array",
         description: "Sort conditions",
+        items: {
+          type: "object",
+          properties: {
+            property: { type: "string" },
+            timestamp: { type: "string" },
+            direction: {
+              type: "string",
+              enum: ["ascending", "descending"]
+            }
+          },
+          required: ["direction"]
+        }
       },
       start_cursor: {
         type: "string",
@@ -749,6 +761,7 @@ const updateDatabaseTool: Tool = {
         type: "array",
         description:
           "An array of rich text objects that represents the description of the database that is displayed in the Notion UI.",
+        items: richTextObjectSchema,
       },
       properties: {
         type: "object",
