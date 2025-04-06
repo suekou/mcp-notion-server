@@ -1,11 +1,28 @@
 import { expect, test, describe, vi, beforeEach } from "vitest";
 import { NotionClientWrapper } from "./index.js";
 import { PageResponse } from "./types/index.js";
+import { filterTools } from "./index.js";
 
 vi.mock("./markdown/index.js", () => ({
   convertToMarkdown: vi.fn().mockReturnValue("# Test"),
 }));
 
+// Mock tool list
+const mockInputSchema = { type: "object" as const }
+const mockTools = [
+    {
+        name: "notion_retrieve_block",
+        inputSchema: mockInputSchema
+    },
+    {
+        name: "notion_retrieve_page",
+        inputSchema: mockInputSchema
+    },
+    {
+        name: "notion_query_database",
+        inputSchema: mockInputSchema
+    }
+];
 global.fetch = vi.fn();
 
 describe("NotionClientWrapper", () => {
@@ -161,5 +178,27 @@ describe("NotionClientWrapper", () => {
     await wrapper.toMarkdown(response);
 
     expect(convertToMarkdown).toHaveBeenCalledWith(response);
+  });
+
+  describe("filterTools", () => {
+    test("should return all tools when no filter specified", () => {
+      const result = filterTools(mockTools);
+      expect(result).toEqual(mockTools);
+    });
+
+    test("should filter tools based on enabledTools", () => {
+      const enabledToolsSet = new Set(["notion_retrieve_block", "notion_query_database"]);
+      const result = filterTools(mockTools, enabledToolsSet);
+      expect(result).toEqual([
+        { name: "notion_retrieve_block", inputSchema: mockInputSchema },
+        { name: "notion_query_database", inputSchema: mockInputSchema }
+      ]);
+    });
+
+    test("should return empty array when no tools match", () => {
+      const enabledToolsSet = new Set(["non_existent_tool"]);
+      const result = filterTools(mockTools, enabledToolsSet);
+      expect(result).toEqual([]);
+    });
   });
 });
