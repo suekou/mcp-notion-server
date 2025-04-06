@@ -184,8 +184,9 @@ All tools support the following optional parameter:
    - Create a new database.
    - Required inputs:
      - `parent` (object): Parent object of the database.
-     - `title` (array): Title of the database as a rich text array.
      - `properties` (object): Property schema of the database.
+   - Optional inputs:
+     - `title` (array): Title of the database as a rich text array.
    - Returns: Information about the created database.
 
 8. `notion_query_database`
