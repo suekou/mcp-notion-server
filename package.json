@@ -11,8 +11,7 @@
   },
   "files": [
     "build",
-    "Readme.md",
-    "notion"
+    "Readme.md"
   ],
   "scripts": {
     "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
