@@ -69,6 +69,7 @@ or
 - `--enabledTools`: Comma-separated list of tools to enable (e.g. "notion_retrieve_page,notion_query_database"). When specified, only the listed tools will be available. If not specified, all tools are enabled.
 
 Read-only tools example (copy-paste friendly):
+
 ```bash
 node build/index.js --enabledTools=notion_retrieve_block,notion_retrieve_block_children,notion_retrieve_page,notion_query_database,notion_retrieve_database,notion_search,notion_list_all_users,notion_retrieve_user,notion_retrieve_bot_user,notion_retrieve_comments
 ```
@@ -125,6 +126,48 @@ If you encounter permission errors:
 1. Ensure the integration has the required permissions.
 2. Verify that the integration is invited to the relevant pages or databases.
 3. Confirm the token and configuration are correctly set in `claude_desktop_config.json`.
+
+## Project Structure
+
+The project is organized in a modular way to improve maintainability and readability:
+
+```
+./
+├── src/
+│   ├── index.ts              # Entry point and command-line handling
+│   ├── client/
+│   │   └── index.ts          # NotionClientWrapper class for API interactions
+│   ├── server/
+│   │   └── index.ts          # MCP server setup and request handling
+│   ├── types/
+│   │   ├── index.ts          # Type exports
+│   │   ├── args.ts           # Tool argument interfaces
+│   │   ├── common.ts         # Common schema definitions
+│   │   ├── responses.ts      # API response type definitions
+│   │   └── schemas.ts        # Tool schema definitions
+│   ├── utils/
+│   │   └── index.ts          # Utility functions
+│   └── markdown/
+│       └── index.ts          # Markdown conversion utilities
+```
+
+### Directory Descriptions
+
+- **index.ts**: Application entry point. Parses command-line arguments and starts the server.
+- **client/**: Module responsible for communication with the Notion API.
+  - **index.ts**: NotionClientWrapper class implements all API calls.
+- **server/**: MCP server implementation.
+  - **index.ts**: Processes requests received from Claude and calls appropriate client methods.
+- **types/**: Type definition module.
+  - **index.ts**: Exports for all types.
+  - **args.ts**: Interface definitions for tool arguments.
+  - **common.ts**: Definitions for common schemas (ID formats, rich text, etc.).
+  - **responses.ts**: Type definitions for Notion API responses.
+  - **schemas.ts**: Definitions for MCP tool schemas.
+- **utils/**: Utility functions.
+  - **index.ts**: Functions like filtering enabled tools.
+- **markdown/**: Markdown conversion functionality.
+  - **index.ts**: Logic for converting JSON responses to Markdown format.
 
 ## Tools
 

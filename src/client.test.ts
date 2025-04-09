@@ -1,27 +1,27 @@
 import { expect, test, describe, vi, beforeEach } from "vitest";
-import { NotionClientWrapper } from "./index.js";
+import { NotionClientWrapper } from "./client/index.js";
 import { PageResponse } from "./types/index.js";
-import { filterTools } from "./index.js";
+import { filterTools } from "./utils/index.js";
 
 vi.mock("./markdown/index.js", () => ({
   convertToMarkdown: vi.fn().mockReturnValue("# Test"),
 }));
 
 // Mock tool list
-const mockInputSchema = { type: "object" as const }
+const mockInputSchema = { type: "object" as const };
 const mockTools = [
-    {
-        name: "notion_retrieve_block",
-        inputSchema: mockInputSchema
-    },
-    {
-        name: "notion_retrieve_page",
-        inputSchema: mockInputSchema
-    },
-    {
-        name: "notion_query_database",
-        inputSchema: mockInputSchema
-    }
+  {
+    name: "notion_retrieve_block",
+    inputSchema: mockInputSchema,
+  },
+  {
+    name: "notion_retrieve_page",
+    inputSchema: mockInputSchema,
+  },
+  {
+    name: "notion_query_database",
+    inputSchema: mockInputSchema,
+  },
 ];
 global.fetch = vi.fn();
 
@@ -187,11 +187,14 @@ describe("NotionClientWrapper", () => {
     });
 
     test("should filter tools based on enabledTools", () => {
-      const enabledToolsSet = new Set(["notion_retrieve_block", "notion_query_database"]);
+      const enabledToolsSet = new Set([
+        "notion_retrieve_block",
+        "notion_query_database",
+      ]);
       const result = filterTools(mockTools, enabledToolsSet);
       expect(result).toEqual([
         { name: "notion_retrieve_block", inputSchema: mockInputSchema },
-        { name: "notion_query_database", inputSchema: mockInputSchema }
+        { name: "notion_query_database", inputSchema: mockInputSchema },
       ]);
     });
 
