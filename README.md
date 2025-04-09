@@ -1,6 +1,6 @@
 # Notion MCP Server
 
-MCP Server for the Notion API, enabling Claude to interact with Notion workspaces.
+MCP Server for the Notion API, enabling LLM to interact with Notion workspaces. Additionally, it employs Markdown conversion to reduce context size when communicating with LLMs, optimizing token usage and making interactions more efficient.
 
 ## Setup
 
