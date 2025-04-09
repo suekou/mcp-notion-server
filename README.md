@@ -132,7 +132,7 @@ If you encounter permission errors:
 The project is organized in a modular way to improve maintainability and readability:
 
 ```
-notion/
+./
 ├── src/
 │   ├── index.ts              # Entry point and command-line handling
 │   ├── client/
