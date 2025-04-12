@@ -13,6 +13,7 @@ import { NotionClientWrapper } from "../client/index.js";
 import { filterTools } from "../utils/index.js";
 import * as schemas from "../types/schemas.js";
 import * as args from "../types/args.js";
+import { convertMdToBlocks } from "../markdown/md-to-blocks.js";
 
 /**
  * Start the MCP server
@@ -60,6 +61,25 @@ export async function startServer(
               args.block_id,
               args.children
             );
+            break;
+          }
+
+          case "notion_append_block_content": {
+            const args = request.params
+              .arguments as unknown as args.AppendBlockContentArgs;
+
+            if (!args.block_id || !args.content) {
+              throw new Error(
+                "Missing required arguments: block_id and content"
+              );
+            }
+
+            const blocks = convertMdToBlocks(args.content);
+            response = await notionClient.appendBlockChildren(
+              args.block_id,
+              blocks
+            );
+
             break;
           }
 
@@ -302,6 +322,7 @@ export async function startServer(
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     const allTools = [
       schemas.appendBlockChildrenTool,
+      schemas.appendBlockContentTool,
       schemas.retrieveBlockTool,
       schemas.retrieveBlockChildrenTool,
       schemas.deleteBlockTool,

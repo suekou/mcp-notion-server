@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
+    "@tryfabric/martian": "^1.2.4",
     "vitest": "3.0.9",
     "yargs": "^17.7.2"
   },
