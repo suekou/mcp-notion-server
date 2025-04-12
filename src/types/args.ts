@@ -12,6 +12,12 @@ export interface AppendBlockChildrenArgs {
   format?: "json" | "markdown";
 }
 
+export interface AppendBlockContentArgs {
+  block_id: string;
+  content: string;
+  format?: "json" | "markdown";
+}
+
 export interface RetrieveBlockArgs {
   block_id: string;
   format?: "json" | "markdown";

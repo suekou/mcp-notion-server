@@ -40,6 +40,34 @@ export const appendBlockChildrenTool: Tool = {
   },
 };
 
+export const appendBlockContentTool: Tool = {
+  name: "notion_append_block_content",
+  description:
+    "Append new content (as Markdown) to a specified parent block in Notion. Requires insert content capabilities. You can optionally specify the 'after' parameter to append after a certain block.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      block_id: {
+        type: "string",
+        description: "The ID of the parent block." + commonIdDescription,
+      },
+      content: {
+        type: "string",
+        description:
+          "The Markdown formatted content to append.",
+      },
+      after: {
+        type: "string",
+        description:
+          "The ID of the existing block that the new block should be appended after." +
+          commonIdDescription,
+      },
+      format: formatParameter,
+    },
+    required: ["block_id", "content"],
+  },
+};
+
 export const retrieveBlockTool: Tool = {
   name: "notion_retrieve_block",
   description: "Retrieve a block from Notion",
