@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
-    "vitest": "3.0.9",
+    "vitest": "^3.2.10",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
