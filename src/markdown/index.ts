@@ -10,6 +10,7 @@ import {
   RichTextItemResponse,
   PageProperty,
 } from "../types/index.js";
+import { sanitizeString, safeStringify } from "../utils/index.js";
 
 /**
  * Converts Notion API response to Markdown
@@ -20,19 +21,25 @@ export function convertToMarkdown(response: NotionResponse): string {
   // Execute appropriate conversion process based on response type
   if (!response) return "";
 
-  // Branch processing by object type
-  switch (response.object) {
-    case "page":
-      return convertPageToMarkdown(response as PageResponse);
-    case "database":
-      return convertDatabaseToMarkdown(response as DatabaseResponse);
-    case "block":
-      return convertBlockToMarkdown(response as BlockResponse);
-    case "list":
-      return convertListToMarkdown(response as ListResponse);
-    default:
-      // Return JSON string if conversion is not possible
-      return `\`\`\`json\n${JSON.stringify(response, null, 2)}\n\`\`\``;
+  try {
+    // Branch processing by object type
+    switch (response.object) {
+      case "page":
+        return convertPageToMarkdown(response as PageResponse);
+      case "database":
+        return convertDatabaseToMarkdown(response as DatabaseResponse);
+      case "block":
+        return convertBlockToMarkdown(response as BlockResponse);
+      case "list":
+        return convertListToMarkdown(response as ListResponse);
+      default:
+        // Return JSON string if conversion is not possible
+        // Using safeStringify to prevent issues with circular references
+        return `\`\`\`json\n${safeStringify(response)}\n\`\`\``;
+    }
+  } catch (error) {
+    console.error("Error in Markdown conversion:", error);
+    return "Error converting response to Markdown. Please try using the JSON format instead.";
   }
 }
 
@@ -40,10 +47,12 @@ export function convertToMarkdown(response: NotionResponse): string {
  * Converts a Notion page to Markdown
  */
 function convertPageToMarkdown(page: PageResponse): string {
+  if (!page) return "";
+  
   let markdown = "";
 
   // Extract title (from properties)
-  const title = extractPageTitle(page);
+  const title = sanitizeString(extractPageTitle(page));
   if (title) {
     markdown += `# ${title}\n\n`;
   }
@@ -54,11 +63,13 @@ function convertPageToMarkdown(page: PageResponse): string {
   // Include additional information if there are child blocks
   markdown +=
     "\n\n> This page contains child blocks. You can retrieve them using `retrieveBlockChildren`.\n";
-  markdown += `> Block ID: \`${page.id}\`\n`;
+  markdown += `> Block ID: \`${sanitizeString(page.id)}\`\n`;
 
   // Add link to view the page in Notion
   if (page.url) {
-    markdown += `\n[View in Notion](${page.url})\n`;
+    // Sanitize URL to prevent potential XSS via markdown links
+    const safeUrl = sanitizeString(page.url);
+    markdown += `\n[View in Notion](${safeUrl})\n`;
   }
 
   return markdown;
@@ -68,16 +79,18 @@ function convertPageToMarkdown(page: PageResponse): string {
  * Converts a Notion database to Markdown
  */
 function convertDatabaseToMarkdown(database: DatabaseResponse): string {
+  if (!database) return "";
+  
   let markdown = "";
 
   // Extract database title
-  const title = extractRichText(database.title || []);
+  const title = sanitizeString(extractRichText(database.title || []));
   if (title) {
     markdown += `# ${title} (Database)\n\n`;
   }
 
   // Add description if available
-  const description = extractRichText(database.description || []);
+  const description = sanitizeString(extractRichText(database.description || []));
   if (description) {
     markdown += `${description}\n\n`;
   }
@@ -89,8 +102,8 @@ function convertDatabaseToMarkdown(database: DatabaseResponse): string {
     markdown += "|------------|------|------|\n";
 
     Object.entries(database.properties).forEach(([key, prop]) => {
-      const propName = prop.name || key;
-      const propType = prop.type || "unknown";
+      const propName = sanitizeString(prop.name || key);
+      const propType = sanitizeString(prop.type || "unknown");
 
       // Additional information based on property type
       let details = "";
@@ -98,16 +111,16 @@ function convertDatabaseToMarkdown(database: DatabaseResponse): string {
         case "select":
         case "multi_select":
           const options = prop[propType]?.options || [];
-          details = `Options: ${options.map((o: any) => o.name).join(", ")}`;
+          details = `Options: ${options.map((o: any) => sanitizeString(o.name)).join(", ")}`;
           break;
         case "relation":
-          details = `Related DB: ${prop.relation?.database_id || ""}`;
+          details = `Related DB: ${sanitizeString(prop.relation?.database_id || "")}`;
           break;
         case "formula":
-          details = `Formula: ${prop.formula?.expression || ""}`;
+          details = `Formula: ${sanitizeString(prop.formula?.expression || "")}`;
           break;
         case "rollup":
-          details = `Rollup: ${prop.rollup?.function || ""}`;
+          details = `Rollup: ${sanitizeString(prop.rollup?.function || "")}`;
           break;
         case "created_by":
         case "last_edited_by":
@@ -127,7 +140,7 @@ function convertDatabaseToMarkdown(database: DatabaseResponse): string {
           details = "File attachments";
           break;
         case "number":
-          details = `Format: ${prop.number?.format || "plain number"}`;
+          details = `Format: ${sanitizeString(prop.number?.format || "plain number")}`;
           break;
         case "people":
           details = "People reference";
@@ -141,7 +154,7 @@ function convertDatabaseToMarkdown(database: DatabaseResponse): string {
         case "status":
           const statusOptions = prop.status?.options || [];
           details = `Options: ${statusOptions
-            .map((o: any) => o.name)
+            .map((o: any) => sanitizeString(o.name))
             .join(", ")}`;
           break;
         case "title":
@@ -165,7 +178,9 @@ function convertDatabaseToMarkdown(database: DatabaseResponse): string {
 
   // Add link to view the database in Notion
   if (database.url) {
-    markdown += `\n[View in Notion](${database.url})\n`;
+    // Sanitize URL
+    const safeUrl = sanitizeString(database.url);
+    markdown += `\n[View in Notion](${safeUrl})\n`;
   }
 
   return markdown;
@@ -217,9 +232,10 @@ function convertListToMarkdown(list: ListResponse): string {
       case "page":
         if (resultType === "page") {
           // Display page title and link
-          const title = extractPageTitle(item as PageResponse) || "Untitled";
-          markdown += `## [${title}](${(item as PageResponse).url || "#"})\n\n`;
-          markdown += `ID: \`${item.id}\`\n\n`;
+          const title = sanitizeString(extractPageTitle(item as PageResponse) || "Untitled");
+          const safeUrl = sanitizeString((item as PageResponse).url || "#");
+          markdown += `## [${title}](${safeUrl})\n\n`;
+          markdown += `ID: \`${sanitizeString(item.id)}\`\n\n`;
           // Separator line
           markdown += "---\n\n";
         } else {
@@ -232,13 +248,13 @@ function convertListToMarkdown(list: ListResponse): string {
       case "database":
         if (resultType === "database") {
           // Simple display
-          const dbTitle =
+          const dbTitle = sanitizeString(
             extractRichText((item as DatabaseResponse).title || []) ||
-            "Untitled Database";
-          markdown += `## [${dbTitle}](${
-            (item as DatabaseResponse).url || "#"
-          })\n\n`;
-          markdown += `ID: \`${item.id}\`\n\n`;
+            "Untitled Database"
+          );
+          const safeUrl = sanitizeString((item as DatabaseResponse).url || "#");
+          markdown += `## [${dbTitle}](${safeUrl})\n\n`;
+          markdown += `ID: \`${sanitizeString(item.id)}\`\n\n`;
           markdown += "---\n\n";
         } else {
           // Full conversion
@@ -253,7 +269,7 @@ function convertListToMarkdown(list: ListResponse): string {
         break;
 
       default:
-        markdown += `\`\`\`json\n${JSON.stringify(item, null, 2)}\n\`\`\`\n\n`;
+        markdown += `\`\`\`json\n${safeStringify(item)}\n\`\`\`\n\n`;
     }
   }
 
@@ -262,7 +278,7 @@ function convertListToMarkdown(list: ListResponse): string {
     markdown +=
       "\n> More results available. Use `start_cursor` parameter with the next request.\n";
     if (list.next_cursor) {
-      markdown += `> Next cursor: \`${list.next_cursor}\`\n`;
+      markdown += `> Next cursor: \`${sanitizeString(list.next_cursor)}\`\n`;
     }
   }
 
@@ -298,11 +314,12 @@ function convertPropertiesToMarkdown(
 
   // Display properties as a key-value table
   markdown += "| Property | Value |\n";
-  markdown += "|------------|----|\n";
+  markdown += "|------------|----|";
+  markdown += "\n";
 
   for (const [key, prop] of Object.entries(properties)) {
     const property = prop as PageProperty;
-    const propName = key;
+    const propName = sanitizeString(key);
     let propValue = "";
 
     // Extract value based on property type
@@ -317,30 +334,31 @@ function convertPropertiesToMarkdown(
         propValue = property.number?.toString() || "";
         break;
       case "select":
-        propValue = property.select?.name || "";
+        propValue = sanitizeString(property.select?.name || "");
         break;
       case "multi_select":
         propValue = (property.multi_select || [])
-          .map((item: any) => item.name)
+          .map((item: any) => sanitizeString(item.name))
           .join(", ");
         break;
       case "date":
-        const start = property.date?.start || "";
-        const end = property.date?.end ? ` → ${property.date.end}` : "";
+        const start = sanitizeString(property.date?.start || "");
+        const end = property.date?.end ? ` → ${sanitizeString(property.date.end)}` : "";
         propValue = start + end;
         break;
       case "people":
         propValue = (property.people || [])
-          .map((person: any) => person.name || person.id)
+          .map((person: any) => sanitizeString(person.name || person.id))
           .join(", ");
         break;
       case "files":
         propValue = (property.files || [])
           .map(
-            (file: any) =>
-              `[${file.name || "Attachment"}](${
-                file.file?.url || file.external?.url || "#"
-              })`
+            (file: any) => {
+              const name = sanitizeString(file.name || "Attachment");
+              const url = sanitizeString(file.file?.url || file.external?.url || "#");
+              return `[${name}](${url})`;
+            }
           )
           .join(", ");
         break;
@@ -348,52 +366,55 @@ function convertPropertiesToMarkdown(
         propValue = property.checkbox ? "✓" : "✗";
         break;
       case "url":
-        propValue = property.url || "";
+        propValue = sanitizeString(property.url || "");
         break;
       case "email":
-        propValue = property.email || "";
+        propValue = sanitizeString(property.email || "");
         break;
       case "phone_number":
-        propValue = property.phone_number || "";
+        propValue = sanitizeString(property.phone_number || "");
         break;
       case "formula":
-        propValue =
+        propValue = sanitizeString(
           property.formula?.string ||
           property.formula?.number?.toString() ||
           property.formula?.boolean?.toString() ||
-          "";
+          ""
+        );
         break;
       case "status":
-        propValue = property.status?.name || "";
+        propValue = sanitizeString(property.status?.name || "");
         break;
       case "relation":
         propValue = (property.relation || [])
-          .map((relation: any) => `\`${relation.id}\``)
+          .map((relation: any) => `\`${sanitizeString(relation.id)}\``)
           .join(", ");
         break;
       case "rollup":
         if (property.rollup?.type === "array") {
-          propValue = JSON.stringify(property.rollup.array || []);
+          propValue = safeStringify(property.rollup.array || []);
         } else {
-          propValue =
+          propValue = sanitizeString(
             property.rollup?.number?.toString() ||
             property.rollup?.date?.start ||
             property.rollup?.string ||
-            "";
+            ""
+          );
         }
         break;
       case "created_by":
-        propValue = property.created_by?.name || property.created_by?.id || "";
+        propValue = sanitizeString(property.created_by?.name || property.created_by?.id || "");
         break;
       case "created_time":
-        propValue = property.created_time || "";
+        propValue = sanitizeString(property.created_time || "");
         break;
       case "last_edited_by":
-        propValue =
-          property.last_edited_by?.name || property.last_edited_by?.id || "";
+        propValue = sanitizeString(
+          property.last_edited_by?.name || property.last_edited_by?.id || ""
+        );
         break;
       case "last_edited_time":
-        propValue = property.last_edited_time || "";
+        propValue = sanitizeString(property.last_edited_time || "");
         break;
       default:
         propValue = "(Unsupported property type)";
@@ -415,7 +436,7 @@ function extractRichText(richTextArray: RichTextItemResponse[]): string {
 
   return richTextArray
     .map((item) => {
-      let text = item.plain_text || "";
+      let text = sanitizeString(item.plain_text || "");
 
       // Process annotations
       if (item.annotations) {
@@ -429,7 +450,9 @@ function extractRichText(richTextArray: RichTextItemResponse[]): string {
 
       // Process links
       if (item.href) {
-        text = `[${text}](${item.href})`;
+        // Sanitize href to prevent potential XSS via markdown links
+        const safeHref = sanitizeString(item.href);
+        text = `[${text}](${safeHref})`;
       }
 
       return text;
@@ -479,14 +502,15 @@ function renderBlock(block: BlockResponse): string {
       )}</summary>\n\n*Additional API request is needed to display child blocks*\n\n</details>`;
 
     case "child_page":
-      return `📄 **Child Page**: ${blockContent.title || "Untitled"}`;
+      return `📄 **Child Page**: ${sanitizeString(blockContent.title || "Untitled")}`;
 
     case "image":
       const imageType = blockContent.type || "";
-      const imageUrl =
+      const imageUrl = sanitizeString(
         imageType === "external"
           ? blockContent.external?.url
-          : blockContent.file?.url;
+          : blockContent.file?.url
+      );
       const imageCaption =
         extractRichText(blockContent.caption || []) || "image";
       return `![${imageCaption}](${imageUrl || "#"})`;
@@ -498,17 +522,17 @@ function renderBlock(block: BlockResponse): string {
       return `> ${extractRichText(blockContent.rich_text || [])}`;
 
     case "code":
-      const codeLanguage = blockContent.language || "plaintext";
+      const codeLanguage = sanitizeString(blockContent.language || "plaintext");
       const codeContent = extractRichText(blockContent.rich_text || []);
       return `\`\`\`${codeLanguage}\n${codeContent}\n\`\`\``;
 
     case "callout":
-      const calloutIcon = blockContent.icon?.emoji || "";
+      const calloutIcon = sanitizeString(blockContent.icon?.emoji || "");
       const calloutText = extractRichText(blockContent.rich_text || []);
       return `> ${calloutIcon} ${calloutText}`;
 
     case "bookmark":
-      const bookmarkUrl = blockContent.url || "";
+      const bookmarkUrl = sanitizeString(blockContent.url || "");
       const bookmarkCaption =
         extractRichText(blockContent.caption || []) || bookmarkUrl;
       return `[${bookmarkCaption}](${bookmarkUrl})`;
@@ -519,56 +543,59 @@ function renderBlock(block: BlockResponse): string {
       } columns) - Additional API request is needed to display details*`;
 
     case "child_database":
-      return `📊 **Embedded Database**: \`${block.id}\``;
+      return `📊 **Embedded Database**: \`${sanitizeString(block.id)}\``;
 
     case "breadcrumb":
       return `[breadcrumb navigation]`;
 
     case "embed":
-      const embedUrl = blockContent.url || "";
-      return `<iframe src="${embedUrl}" frameborder="0"></iframe>`;
+      const embedUrl = sanitizeString(blockContent.url || "");
+      // Using a more secure approach for iframe embedding
+      return `[Embedded content](${embedUrl})`;
 
     case "equation":
-      const formulaText = blockContent.expression || "";
+      const formulaText = sanitizeString(blockContent.expression || "");
       return `$$${formulaText}$$`;
 
     case "file":
       const fileType = blockContent.type || "";
-      const fileUrl =
+      const fileUrl = sanitizeString(
         fileType === "external"
           ? blockContent.external?.url
-          : blockContent.file?.url;
-      const fileName = blockContent.name || "File";
+          : blockContent.file?.url
+      );
+      const fileName = sanitizeString(blockContent.name || "File");
       return `📎 [${fileName}](${fileUrl || "#"})`;
 
     case "link_preview":
-      const previewUrl = blockContent.url || "";
+      const previewUrl = sanitizeString(blockContent.url || "");
       return `🔗 [Preview](${previewUrl})`;
 
     case "link_to_page":
       let linkText = "Link to page";
       let linkId = "";
       if (blockContent.page_id) {
-        linkId = blockContent.page_id;
+        linkId = sanitizeString(blockContent.page_id);
         linkText = "Link to page";
       } else if (blockContent.database_id) {
-        linkId = blockContent.database_id;
+        linkId = sanitizeString(blockContent.database_id);
         linkText = "Link to database";
       }
       return `🔗 **${linkText}**: \`${linkId}\``;
 
     case "pdf":
       const pdfType = blockContent.type || "";
-      const pdfUrl =
+      const pdfUrl = sanitizeString(
         pdfType === "external"
           ? blockContent.external?.url
-          : blockContent.file?.url;
+          : blockContent.file?.url
+      );
       const pdfCaption = extractRichText(blockContent.caption || []) || "PDF";
       return `📄 [${pdfCaption}](${pdfUrl || "#"})`;
 
     case "synced_block":
       const syncedFrom = blockContent.synced_from
-        ? `\`${blockContent.synced_from.block_id}\``
+        ? `\`${sanitizeString(blockContent.synced_from.block_id)}\``
         : "original";
       return `*Synced Block (${syncedFrom}) - Additional API request is needed to display content*`;
 
@@ -590,10 +617,11 @@ function renderBlock(block: BlockResponse): string {
 
     case "video":
       const videoType = blockContent.type || "";
-      const videoUrl =
+      const videoUrl = sanitizeString(
         videoType === "external"
           ? blockContent.external?.url
-          : blockContent.file?.url;
+          : blockContent.file?.url
+      );
       const videoCaption =
         extractRichText(blockContent.caption || []) || "Video";
       return `🎬 [${videoCaption}](${videoUrl || "#"})`;
@@ -602,7 +630,7 @@ function renderBlock(block: BlockResponse): string {
       return `*Unsupported block*`;
 
     default:
-      return `*Unsupported block type: ${blockType}*`;
+      return `*Unsupported block type: ${sanitizeString(blockType)}*`;
   }
 }
 
@@ -620,5 +648,13 @@ function renderParagraph(paragraph: any): string {
  */
 function escapeTableCell(text: string): string {
   if (!text) return "";
-  return text.replace(/\|/g, "\\|").replace(/\n/g, " ").replace(/\+/g, "\\+");
+  
+  // First sanitize the text to prevent potential XSS or injection
+  const sanitized = sanitizeString(text);
+  
+  // Then escape special characters for Markdown tables
+  return sanitized
+    .replace(/\|/g, "\\|")
+    .replace(/\n/g, " ")
+    .replace(/\+/g, "\\+");
 }
