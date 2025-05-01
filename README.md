@@ -2,6 +2,18 @@
 
 MCP Server for the Notion API, enabling LLM to interact with Notion workspaces. Additionally, it employs Markdown conversion to reduce context size when communicating with LLMs, optimizing token usage and making interactions more efficient.
 
+## ⚠️ Security Update (May 2025)
+
+This fork includes critical security improvements:
+
+1. **Fixed CVE-2025-24964**: Updated Vitest dependency (3.0.9 → 3.2.10+) to address critical remote code execution vulnerability
+2. **Added input validation and sanitization**: Strengthened security for all API endpoints
+3. **Secured Markdown conversion**: Added comprehensive sanitization to prevent potential injection attacks
+4. **Improved error handling**: Ensured error messages don't leak sensitive information
+5. **Enhanced logging**: Implemented better logging practices to avoid logging sensitive data
+
+See [SECURITY.md](./SECURITY.md) for more details on security practices and guidance.
+
 ## Setup
 
 Here is a detailed explanation of the steps mentioned above in the following articles:
@@ -146,7 +158,8 @@ The project is organized in a modular way to improve maintainability and readabi
 │   │   ├── responses.ts      # API response type definitions
 │   │   └── schemas.ts        # Tool schema definitions
 │   ├── utils/
-│   │   └── index.ts          # Utility functions
+│   │   ├── index.ts          # Utility functions
+│   │   └── validation.ts     # Input validation and sanitization
 │   └── markdown/
 │       └── index.ts          # Markdown conversion utilities
 ```
@@ -166,6 +179,7 @@ The project is organized in a modular way to improve maintainability and readabi
   - **schemas.ts**: Definitions for MCP tool schemas.
 - **utils/**: Utility functions.
   - **index.ts**: Functions like filtering enabled tools.
+  - **validation.ts**: Input validation and sanitization functions.
 - **markdown/**: Markdown conversion functionality.
   - **index.ts**: Logic for converting JSON responses to Markdown format.
 
