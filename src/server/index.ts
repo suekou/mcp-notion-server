@@ -10,7 +10,13 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { NotionClientWrapper } from "../client/index.js";
-import { filterTools } from "../utils/index.js";
+import { 
+  filterTools, 
+  validateId, 
+  validatePagination, 
+  sanitizeString, 
+  safeStringify 
+} from "../utils/index.js";
 import * as schemas from "../types/schemas.js";
 import * as args from "../types/args.js";
 
@@ -39,7 +45,17 @@ export async function startServer(
   server.setRequestHandler(
     CallToolRequestSchema,
     async (request: CallToolRequest) => {
-      console.error("Received CallToolRequest:", request);
+      // Log request details without sensitive information
+      const sanitizedRequest = {
+        ...request,
+        params: {
+          ...request.params,
+          // Avoid logging any potential secrets in the arguments
+          arguments: request.params.arguments ? "..." : undefined
+        }
+      };
+      console.error("Received CallToolRequest:", sanitizedRequest);
+      
       try {
         if (!request.params.arguments) {
           throw new Error("No arguments provided");
@@ -56,8 +72,14 @@ export async function startServer(
                 "Missing required arguments: block_id and children"
               );
             }
+            // Validate block_id
+            const blockId = validateId(args.block_id);
+            // Validate children array
+            if (!Array.isArray(args.children)) {
+              throw new Error("Children must be an array");
+            }
             response = await notionClient.appendBlockChildren(
-              args.block_id,
+              blockId,
               args.children
             );
             break;
@@ -69,7 +91,9 @@ export async function startServer(
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
-            response = await notionClient.retrieveBlock(args.block_id);
+            // Validate block_id
+            const blockId = validateId(args.block_id);
+            response = await notionClient.retrieveBlock(blockId);
             break;
           }
 
@@ -79,10 +103,17 @@ export async function startServer(
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
-            response = await notionClient.retrieveBlockChildren(
-              args.block_id,
+            // Validate block_id
+            const blockId = validateId(args.block_id);
+            // Validate pagination parameters
+            const { start_cursor, page_size } = validatePagination(
               args.start_cursor,
               args.page_size
+            );
+            response = await notionClient.retrieveBlockChildren(
+              blockId,
+              start_cursor,
+              page_size
             );
             break;
           }
@@ -93,7 +124,9 @@ export async function startServer(
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
-            response = await notionClient.deleteBlock(args.block_id);
+            // Validate block_id
+            const blockId = validateId(args.block_id);
+            response = await notionClient.deleteBlock(blockId);
             break;
           }
 
@@ -103,8 +136,10 @@ export async function startServer(
             if (!args.block_id || !args.block) {
               throw new Error("Missing required arguments: block_id and block");
             }
+            // Validate block_id
+            const blockId = validateId(args.block_id);
             response = await notionClient.updateBlock(
-              args.block_id,
+              blockId,
               args.block
             );
             break;
@@ -116,7 +151,9 @@ export async function startServer(
             if (!args.page_id) {
               throw new Error("Missing required argument: page_id");
             }
-            response = await notionClient.retrievePage(args.page_id);
+            // Validate page_id
+            const pageId = validateId(args.page_id);
+            response = await notionClient.retrievePage(pageId);
             break;
           }
 
@@ -128,8 +165,10 @@ export async function startServer(
                 "Missing required arguments: page_id and properties"
               );
             }
+            // Validate page_id
+            const pageId = validateId(args.page_id);
             response = await notionClient.updatePageProperties(
-              args.page_id,
+              pageId,
               args.properties
             );
             break;
@@ -138,9 +177,14 @@ export async function startServer(
           case "notion_list_all_users": {
             const args = request.params
               .arguments as unknown as args.ListAllUsersArgs;
-            response = await notionClient.listAllUsers(
+            // Validate pagination parameters
+            const { start_cursor, page_size } = validatePagination(
               args.start_cursor,
               args.page_size
+            );
+            response = await notionClient.listAllUsers(
+              start_cursor,
+              page_size
             );
             break;
           }
@@ -151,7 +195,9 @@ export async function startServer(
             if (!args.user_id) {
               throw new Error("Missing required argument: user_id");
             }
-            response = await notionClient.retrieveUser(args.user_id);
+            // Validate user_id
+            const userId = validateId(args.user_id);
+            response = await notionClient.retrieveUser(userId);
             break;
           }
 
@@ -166,12 +212,19 @@ export async function startServer(
             if (!args.database_id) {
               throw new Error("Missing required argument: database_id");
             }
-            response = await notionClient.queryDatabase(
-              args.database_id,
-              args.filter,
-              args.sorts,
+            // Validate database_id
+            const databaseId = validateId(args.database_id);
+            // Validate pagination parameters
+            const { start_cursor, page_size } = validatePagination(
               args.start_cursor,
               args.page_size
+            );
+            response = await notionClient.queryDatabase(
+              databaseId,
+              args.filter,
+              args.sorts,
+              start_cursor,
+              page_size
             );
             break;
           }
@@ -190,15 +243,19 @@ export async function startServer(
           case "notion_retrieve_database": {
             const args = request.params
               .arguments as unknown as args.RetrieveDatabaseArgs;
-            response = await notionClient.retrieveDatabase(args.database_id);
+            // Validate database_id
+            const databaseId = validateId(args.database_id);
+            response = await notionClient.retrieveDatabase(databaseId);
             break;
           }
 
           case "notion_update_database": {
             const args = request.params
               .arguments as unknown as args.UpdateDatabaseArgs;
+            // Validate database_id
+            const databaseId = validateId(args.database_id);
             response = await notionClient.updateDatabase(
-              args.database_id,
+              databaseId,
               args.title,
               args.description,
               args.properties
@@ -209,8 +266,10 @@ export async function startServer(
           case "notion_create_database_item": {
             const args = request.params
               .arguments as unknown as args.CreateDatabaseItemArgs;
+            // Validate database_id
+            const databaseId = validateId(args.database_id);
             response = await notionClient.createDatabaseItem(
-              args.database_id,
+              databaseId,
               args.properties
             );
             break;
@@ -226,9 +285,24 @@ export async function startServer(
               );
             }
 
+            // Validate discussion_id if provided
+            let validatedDiscussionId;
+            if (args.discussion_id) {
+              validatedDiscussionId = validateId(args.discussion_id);
+            }
+
+            // Validate parent.page_id if provided
+            let validatedParent = args.parent;
+            if (args.parent && args.parent.page_id) {
+              validatedParent = {
+                ...args.parent,
+                page_id: validateId(args.parent.page_id)
+              };
+            }
+
             response = await notionClient.createComment(
-              args.parent,
-              args.discussion_id,
+              validatedParent,
+              validatedDiscussionId,
               args.rich_text
             );
             break;
@@ -240,22 +314,36 @@ export async function startServer(
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
-            response = await notionClient.retrieveComments(
-              args.block_id,
+            // Validate block_id
+            const blockId = validateId(args.block_id);
+            // Validate pagination parameters
+            const { start_cursor, page_size } = validatePagination(
               args.start_cursor,
               args.page_size
+            );
+            response = await notionClient.retrieveComments(
+              blockId,
+              start_cursor,
+              page_size
             );
             break;
           }
 
           case "notion_search": {
             const args = request.params.arguments as unknown as args.SearchArgs;
-            response = await notionClient.search(
-              args.query,
-              args.filter,
-              args.sort,
+            // Sanitize search query if provided
+            const query = args.query ? sanitizeString(args.query) : undefined;
+            // Validate pagination parameters
+            const { start_cursor, page_size } = validatePagination(
               args.start_cursor,
               args.page_size
+            );
+            response = await notionClient.search(
+              query,
+              args.filter,
+              args.sort,
+              start_cursor,
+              page_size
             );
             break;
           }
@@ -273,24 +361,32 @@ export async function startServer(
         // 2. The experimental markdown conversion is enabled via environment variable
         if (enableMarkdownConversion && requestedFormat === "markdown") {
           const markdown = await notionClient.toMarkdown(response);
+          // Sanitize markdown output
+          const sanitizedMarkdown = sanitizeString(markdown);
           return {
-            content: [{ type: "text", text: markdown }],
+            content: [{ type: "text", text: sanitizedMarkdown }],
           };
         } else {
+          // Use safe stringify to avoid potential issues
           return {
             content: [
-              { type: "text", text: JSON.stringify(response, null, 2) },
+              { type: "text", text: safeStringify(response) },
             ],
           };
         }
       } catch (error) {
         console.error("Error executing tool:", error);
+        // Ensure error messages don't reveal sensitive details
+        const errorMessage = error instanceof Error 
+          ? sanitizeString(error.message) 
+          : "An error occurred";
+          
         return {
           content: [
             {
               type: "text",
               text: JSON.stringify({
-                error: error instanceof Error ? error.message : String(error),
+                error: errorMessage,
               }),
             },
           ],
