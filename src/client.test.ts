@@ -2,10 +2,17 @@ import { expect, test, describe, vi, beforeEach } from "vitest";
 import { NotionClientWrapper } from "./client/index.js";
 import { PageResponse } from "./types/index.js";
 import { filterTools } from "./utils/index.js";
+import fetch from "node-fetch";
 
 vi.mock("./markdown/index.js", () => ({
   convertToMarkdown: vi.fn().mockReturnValue("# Test"),
 }));
+
+vi.mock("node-fetch", () => {
+  return {
+    default: vi.fn(),
+  };
+});
 
 // Mock tool list
 const mockInputSchema = { type: "object" as const };
@@ -23,7 +30,6 @@ const mockTools = [
     inputSchema: mockInputSchema,
   },
 ];
-global.fetch = vi.fn();
 
 describe("NotionClientWrapper", () => {
   let wrapper: any;
@@ -36,7 +42,7 @@ describe("NotionClientWrapper", () => {
     wrapper = new NotionClientWrapper("test-token");
 
     // Mock fetch to return JSON
-    (global.fetch as any).mockImplementation(() =>
+    (fetch as any).mockImplementation(() =>
       Promise.resolve({
         json: () => Promise.resolve({ success: true }),
       })
@@ -57,7 +63,7 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.appendBlockChildren(blockId, children);
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(fetch).toHaveBeenCalledWith(
       `https://api.notion.com/v1/blocks/${blockId}/children`,
       {
         method: "PATCH",
@@ -72,7 +78,7 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.retrieveBlock(blockId);
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(fetch).toHaveBeenCalledWith(
       `https://api.notion.com/v1/blocks/${blockId}`,
       {
         method: "GET",
@@ -88,7 +94,7 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.retrieveBlockChildren(blockId, startCursor, pageSize);
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(fetch).toHaveBeenCalledWith(
       `https://api.notion.com/v1/blocks/${blockId}/children?start_cursor=${startCursor}&page_size=${pageSize}`,
       {
         method: "GET",
@@ -102,7 +108,7 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.retrievePage(pageId);
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(fetch).toHaveBeenCalledWith(
       `https://api.notion.com/v1/pages/${pageId}`,
       {
         method: "GET",
@@ -119,7 +125,7 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.updatePageProperties(pageId, properties);
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(fetch).toHaveBeenCalledWith(
       `https://api.notion.com/v1/pages/${pageId}`,
       {
         method: "PATCH",
@@ -136,7 +142,7 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.queryDatabase(databaseId, filter, sorts);
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(fetch).toHaveBeenCalledWith(
       `https://api.notion.com/v1/databases/${databaseId}/query`,
       {
         method: "POST",
@@ -152,7 +158,7 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.search(query, filter);
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(fetch).toHaveBeenCalledWith(
       "https://api.notion.com/v1/search",
       {
         method: "POST",
