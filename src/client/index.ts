@@ -14,6 +14,7 @@ import {
   RichTextItemResponse,
   CreateDatabaseArgs,
 } from "../types/index.js";
+import fetch from "node-fetch";
 
 export class NotionClientWrapper {
   private notionToken: string;
