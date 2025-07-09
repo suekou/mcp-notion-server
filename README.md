@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/suekou-mcp-notion-server-badge.png)](https://mseep.ai/app/suekou-mcp-notion-server)
+
 # Notion MCP Server
 
 MCP Server for the Notion API, enabling LLM to interact with Notion workspaces. Additionally, it employs Markdown conversion to reduce context size when communicating with LLMs, optimizing token usage and making interactions more efficient.
