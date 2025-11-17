@@ -135,6 +135,122 @@ describe("NotionClientWrapper", () => {
     );
   });
 
+  test("should call updatePageProperties with archived parameter", async () => {
+    const pageId = "page123";
+    const properties = {
+      title: { title: [{ text: { content: "New Title" } }] },
+    };
+    const archived = true;
+
+    await wrapper.updatePageProperties(pageId, properties, archived);
+
+    expect(fetch).toHaveBeenCalledWith(
+      `https://api.notion.com/v1/pages/${pageId}`,
+      {
+        method: "PATCH",
+        headers: (wrapper as any).headers,
+        body: JSON.stringify({ properties, archived }),
+      }
+    );
+  });
+
+  test("should call createPage with database parent", async () => {
+    const parent = { database_id: "db123" };
+    const properties = {
+      Name: { title: [{ text: { content: "New Page" } }] },
+    };
+
+    await wrapper.createPage(parent, properties);
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.notion.com/v1/pages",
+      {
+        method: "POST",
+        headers: (wrapper as any).headers,
+        body: JSON.stringify({ parent, properties }),
+      }
+    );
+  });
+
+  test("should call createPage with page parent and children", async () => {
+    const parent = { page_id: "page123" };
+    const properties = {
+      title: { title: [{ text: { content: "Child Page" } }] },
+    };
+    const children = [
+      {
+        type: "paragraph",
+        paragraph: { rich_text: [{ text: { content: "Initial content" } }] },
+      },
+    ];
+
+    await wrapper.createPage(parent, properties, children);
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.notion.com/v1/pages",
+      {
+        method: "POST",
+        headers: (wrapper as any).headers,
+        body: JSON.stringify({ parent, properties, children }),
+      }
+    );
+  });
+
+  test("should call createPage with workspace parent", async () => {
+    const parent = { workspace: true };
+    const properties = {
+      title: { title: [{ text: { content: "Workspace Page" } }] },
+    };
+
+    await wrapper.createPage(parent, properties);
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.notion.com/v1/pages",
+      {
+        method: "POST",
+        headers: (wrapper as any).headers,
+        body: JSON.stringify({ parent, properties }),
+      }
+    );
+  });
+
+  test("should call retrievePagePropertyItem without pagination", async () => {
+    const pageId = "page123";
+    const propertyId = "prop123";
+
+    await wrapper.retrievePagePropertyItem(pageId, propertyId);
+
+    expect(fetch).toHaveBeenCalledWith(
+      `https://api.notion.com/v1/pages/${pageId}/properties/${propertyId}`,
+      {
+        method: "GET",
+        headers: (wrapper as any).headers,
+      }
+    );
+  });
+
+  test("should call retrievePagePropertyItem with pagination parameters", async () => {
+    const pageId = "page123";
+    const propertyId = "prop123";
+    const startCursor = "cursor456";
+    const pageSize = 50;
+
+    await wrapper.retrievePagePropertyItem(
+      pageId,
+      propertyId,
+      startCursor,
+      pageSize
+    );
+
+    expect(fetch).toHaveBeenCalledWith(
+      `https://api.notion.com/v1/pages/${pageId}/properties/${propertyId}?start_cursor=${startCursor}&page_size=${pageSize}`,
+      {
+        method: "GET",
+        headers: (wrapper as any).headers,
+      }
+    );
+  });
+
   test("should call queryDatabase with correct parameters", async () => {
     const databaseId = "db123";
     const filter = { property: "Status", equals: "Done" };

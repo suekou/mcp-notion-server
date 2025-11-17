@@ -99,6 +99,25 @@ export class NotionClientWrapper {
     return response.json();
   }
 
+  async createPage(
+    parent: { database_id?: string; page_id?: string; workspace?: boolean },
+    properties: Record<string, any>,
+    children?: Partial<BlockResponse>[]
+  ): Promise<PageResponse> {
+    const body: Record<string, any> = { parent, properties };
+    if (children && children.length > 0) {
+      body.children = children;
+    }
+
+    const response = await fetch(`${this.baseUrl}/pages`, {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+
+    return response.json();
+  }
+
   async retrievePage(page_id: string): Promise<PageResponse> {
     const response = await fetch(`${this.baseUrl}/pages/${page_id}`, {
       method: "GET",
@@ -108,11 +127,37 @@ export class NotionClientWrapper {
     return response.json();
   }
 
+  async retrievePagePropertyItem(
+    page_id: string,
+    property_id: string,
+    start_cursor?: string,
+    page_size?: number
+  ): Promise<any> {
+    const params = new URLSearchParams();
+    if (start_cursor) params.append("start_cursor", start_cursor);
+    if (page_size) params.append("page_size", page_size.toString());
+
+    const url = `${this.baseUrl}/pages/${page_id}/properties/${property_id}${
+      params.toString() ? `?${params.toString()}` : ""
+    }`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: this.headers,
+    });
+
+    return response.json();
+  }
+
   async updatePageProperties(
     page_id: string,
-    properties: Record<string, any>
+    properties: Record<string, any>,
+    archived?: boolean
   ): Promise<PageResponse> {
-    const body = { properties };
+    const body: Record<string, any> = { properties };
+    if (archived !== undefined) {
+      body.archived = archived;
+    }
 
     const response = await fetch(`${this.baseUrl}/pages/${page_id}`, {
       method: "PATCH",

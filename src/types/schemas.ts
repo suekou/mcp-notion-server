@@ -119,9 +119,57 @@ export const updateBlockTool: Tool = {
 };
 
 // Pages tools
+export const createPageTool: Tool = {
+  name: "notion_create_page",
+  description:
+    "Create a new page in Notion. Can create a standalone page, a child page, or a database row (database rows are pages with a database_id parent). Optionally include initial children blocks (max 100, 2-level nesting).",
+  inputSchema: {
+    type: "object",
+    properties: {
+      parent: {
+        type: "object",
+        description:
+          "Parent object specifying where to create the page. Must include one of: database_id (for database rows), page_id (for child pages), or workspace: true (for top-level pages).",
+        properties: {
+          database_id: {
+            type: "string",
+            description:
+              "The ID of the database to create a row in." + commonIdDescription,
+          },
+          page_id: {
+            type: "string",
+            description:
+              "The ID of the page to create a child page under." +
+              commonIdDescription,
+          },
+          workspace: {
+            type: "boolean",
+            description:
+              "Set to true to create a top-level page in the workspace.",
+          },
+        },
+      },
+      properties: {
+        type: "object",
+        description:
+          "Properties of the page. For database rows, these should match the database schema. For standalone pages, must include a title property.",
+      },
+      children: {
+        type: "array",
+        description:
+          "Optional array of block objects to include as initial content (max 100 blocks, 2-level nesting).",
+        items: blockObjectSchema,
+      },
+      format: formatParameter,
+    },
+    required: ["parent", "properties"],
+  },
+};
+
 export const retrievePageTool: Tool = {
   name: "notion_retrieve_page",
-  description: "Retrieve a page from Notion",
+  description:
+    "Retrieve a page from Notion. Returns page metadata and properties, but NOT content blocks. To get page content, use notion_retrieve_block_children with the page_id as block_id.",
   inputSchema: {
     type: "object",
     properties: {
@@ -135,9 +183,41 @@ export const retrievePageTool: Tool = {
   },
 };
 
+export const retrievePagePropertyItemTool: Tool = {
+  name: "notion_retrieve_page_property_item",
+  description:
+    "Retrieve a specific property value from a page. Required for complex properties like relations and rollups with more than 25 items, which are truncated in standard page responses. Supports pagination for large property values.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      page_id: {
+        type: "string",
+        description:
+          "The ID of the page containing the property." + commonIdDescription,
+      },
+      property_id: {
+        type: "string",
+        description:
+          "The ID or name of the property to retrieve. Use the property name as it appears in the database schema.",
+      },
+      start_cursor: {
+        type: "string",
+        description: "Pagination cursor for next page of property items.",
+      },
+      page_size: {
+        type: "number",
+        description: "Number of property items per page (max 100).",
+      },
+      format: formatParameter,
+    },
+    required: ["page_id", "property_id"],
+  },
+};
+
 export const updatePagePropertiesTool: Tool = {
   name: "notion_update_page_properties",
-  description: "Update properties of a page or an item in a Notion database",
+  description:
+    "Update properties of a page or an item in a Notion database. Can also archive/unarchive pages.",
   inputSchema: {
     type: "object",
     properties: {
@@ -151,6 +231,11 @@ export const updatePagePropertiesTool: Tool = {
         type: "object",
         description:
           "Properties to update. These correspond to the columns or fields in the database.",
+      },
+      archived: {
+        type: "boolean",
+        description:
+          "Set to true to archive (move to trash) or false to restore the page.",
       },
       format: formatParameter,
     },

@@ -110,6 +110,22 @@ export async function startServer(
             break;
           }
 
+          case "notion_create_page": {
+            const args = request.params
+              .arguments as unknown as args.CreatePageArgs;
+            if (!args.parent || !args.properties) {
+              throw new Error(
+                "Missing required arguments: parent and properties"
+              );
+            }
+            response = await notionClient.createPage(
+              args.parent,
+              args.properties,
+              args.children
+            );
+            break;
+          }
+
           case "notion_retrieve_page": {
             const args = request.params
               .arguments as unknown as args.RetrievePageArgs;
@@ -117,6 +133,23 @@ export async function startServer(
               throw new Error("Missing required argument: page_id");
             }
             response = await notionClient.retrievePage(args.page_id);
+            break;
+          }
+
+          case "notion_retrieve_page_property_item": {
+            const args = request.params
+              .arguments as unknown as args.RetrievePagePropertyItemArgs;
+            if (!args.page_id || !args.property_id) {
+              throw new Error(
+                "Missing required arguments: page_id and property_id"
+              );
+            }
+            response = await notionClient.retrievePagePropertyItem(
+              args.page_id,
+              args.property_id,
+              args.start_cursor,
+              args.page_size
+            );
             break;
           }
 
@@ -130,7 +163,8 @@ export async function startServer(
             }
             response = await notionClient.updatePageProperties(
               args.page_id,
-              args.properties
+              args.properties,
+              args.archived
             );
             break;
           }
@@ -306,7 +340,9 @@ export async function startServer(
       schemas.retrieveBlockChildrenTool,
       schemas.deleteBlockTool,
       schemas.updateBlockTool,
+      schemas.createPageTool,
       schemas.retrievePageTool,
+      schemas.retrievePagePropertyItemTool,
       schemas.updatePagePropertiesTool,
       schemas.listAllUsersTool,
       schemas.retrieveUserTool,

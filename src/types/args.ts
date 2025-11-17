@@ -36,14 +36,34 @@ export interface UpdateBlockArgs {
 }
 
 // Pages
+export interface CreatePageArgs {
+  parent: {
+    database_id?: string;
+    page_id?: string;
+    workspace?: boolean;
+  };
+  properties: Record<string, any>;
+  children?: Partial<BlockResponse>[];
+  format?: "json" | "markdown";
+}
+
 export interface RetrievePageArgs {
   page_id: string;
+  format?: "json" | "markdown";
+}
+
+export interface RetrievePagePropertyItemArgs {
+  page_id: string;
+  property_id: string;
+  start_cursor?: string;
+  page_size?: number;
   format?: "json" | "markdown";
 }
 
 export interface UpdatePagePropertiesArgs {
   page_id: string;
   properties: Record<string, any>;
+  archived?: boolean;
   format?: "json" | "markdown";
 }
 
