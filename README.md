@@ -2,6 +2,10 @@
 
 MCP Server for the Notion API, enabling LLM to interact with Notion workspaces. Additionally, it employs Markdown conversion to reduce context size when communicating with LLMs, optimizing token usage and making interactions more efficient.
 
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/suekou-mcp-notion-server).
+
 ## Setup
 
 Here is a detailed explanation of the steps mentioned above in the following articles:
