@@ -15,13 +15,14 @@ import * as schemas from "../types/schemas.js";
 import * as args from "../types/args.js";
 
 /**
- * Start the MCP server
+ * Create a configured MCP server with all tool handlers registered.
+ * Returns the Server instance before any transport is connected.
  */
-export async function startServer(
+export function createConfiguredServer(
   notionToken: string,
   enabledToolsSet: Set<string>,
   enableMarkdownConversion: boolean
-) {
+): Server {
   const server = new Server(
     {
       name: "Notion MCP Server",
@@ -325,6 +326,18 @@ export async function startServer(
     };
   });
 
+  return server;
+}
+
+/**
+ * Start the MCP server with stdio transport
+ */
+export async function startServer(
+  notionToken: string,
+  enabledToolsSet: Set<string>,
+  enableMarkdownConversion: boolean
+) {
+  const server = createConfiguredServer(notionToken, enabledToolsSet, enableMarkdownConversion);
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }

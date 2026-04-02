@@ -19,15 +19,19 @@
     "watch": "tsc --watch",
     "inspector": "npx @modelcontextprotocol/inspector build/index.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "generate-oauth": "node -e \"const c=require('crypto'); console.log('OAUTH_CLIENT_ID='+c.randomBytes(16).toString('hex')); console.log('OAUTH_CLIENT_SECRET='+c.randomBytes(32).toString('hex'))\""
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.2",
+    "dotenv": "^17.4.0",
+    "express": "^5.2.1",
     "node-fetch": "^2.7.0",
     "vitest": "3.0.9",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^20.11.24",
     "@types/node-fetch": "^2.6.12",
     "@types/yargs": "^17.0.33",

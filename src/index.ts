@@ -14,15 +14,28 @@
  *   experimental Markdown conversion. If not set or set to any other value,
  *   all responses will be in JSON format regardless of the "format" parameter.
  */
+import "dotenv/config";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { startServer } from "./server/index.js";
+import { startHttpServer } from "./server/httpServer.js";
 
 // Parse command line arguments
 const argv = yargs(hideBin(process.argv))
   .option("enabledTools", {
     type: "string",
     description: "Comma-separated list of tools to enable",
+  })
+  .option("transport", {
+    type: "string",
+    choices: ["stdio", "http"] as const,
+    default: "stdio",
+    description: "Transport type: stdio or http",
+  })
+  .option("port", {
+    type: "number",
+    default: 3000,
+    description: "HTTP server port (only used with --transport http)",
   })
   .parseSync();
 
@@ -48,5 +61,19 @@ async function main() {
     process.exit(1);
   }
 
-  await startServer(notionToken, enabledToolsSet, enableMarkdownConversion);
+  if (argv.transport === "http") {
+    const oauthClientId = process.env.OAUTH_CLIENT_ID;
+    const oauthClientSecret = process.env.OAUTH_CLIENT_SECRET;
+
+    await startHttpServer(
+      notionToken,
+      enabledToolsSet,
+      enableMarkdownConversion,
+      argv.port,
+      oauthClientId,
+      oauthClientSecret
+    );
+  } else {
+    await startServer(notionToken, enabledToolsSet, enableMarkdownConversion);
+  }
 }
