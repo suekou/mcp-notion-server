@@ -24,6 +24,17 @@ const argv = yargs(hideBin(process.argv))
     type: "string",
     description: "Comma-separated list of tools to enable",
   })
+  .option("transport", {
+    type: "string",
+    choices: ["stdio", "http"] as const,
+    default: "stdio",
+    description: "Transport type: stdio or http (Streamable HTTP)",
+  })
+  .option("port", {
+    type: "number",
+    default: 3000,
+    description: "Port for HTTP transport",
+  })
   .parseSync();
 
 const enabledToolsSet = new Set(
@@ -48,5 +59,5 @@ async function main() {
     process.exit(1);
   }
 
-  await startServer(notionToken, enabledToolsSet, enableMarkdownConversion);
+  await startServer(notionToken, enabledToolsSet, enableMarkdownConversion, argv.transport as "stdio" | "http", argv.port);
 }

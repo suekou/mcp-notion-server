@@ -22,7 +22,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@hono/node-server": "^1.19.12",
     "@modelcontextprotocol/sdk": "^1.11.2",
+    "hono": "^4.12.10",
     "node-fetch": "^2.7.0",
     "vitest": "3.0.9",
     "yargs": "^17.7.2"

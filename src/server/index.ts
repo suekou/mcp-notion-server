@@ -4,24 +4,27 @@
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import {
   CallToolRequest,
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import { Hono } from "hono";
+import { serve } from "@hono/node-server";
+import type { HttpBindings } from "@hono/node-server";
 import { NotionClientWrapper } from "../client/index.js";
 import { filterTools } from "../utils/index.js";
 import * as schemas from "../types/schemas.js";
 import * as args from "../types/args.js";
 
-/**
- * Start the MCP server
- */
-export async function startServer(
+const ALREADY_SENT = new Response(null, { headers: { "x-hono-already-sent": "1" } });
+
+function createMcpServer(
   notionToken: string,
   enabledToolsSet: Set<string>,
   enableMarkdownConversion: boolean
-) {
+): Server {
   const server = new Server(
     {
       name: "Notion MCP Server",
@@ -325,6 +328,48 @@ export async function startServer(
     };
   });
 
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  return server;
+}
+
+/**
+ * Start the MCP server
+ */
+export async function startServer(
+  notionToken: string,
+  enabledToolsSet: Set<string>,
+  enableMarkdownConversion: boolean,
+  transport: "stdio" | "http" = "stdio",
+  port: number = 3000
+) {
+  if (transport === "stdio") {
+    const server = createMcpServer(notionToken, enabledToolsSet, enableMarkdownConversion);
+    await server.connect(new StdioServerTransport());
+    return;
+  }
+
+  const app = new Hono<{ Bindings: HttpBindings }>();
+
+  app.post("/mcp", async (c) => {
+    const { incoming, outgoing } = c.env;
+    const server = createMcpServer(notionToken, enabledToolsSet, enableMarkdownConversion);
+    const httpTransport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+    await server.connect(httpTransport);
+
+    outgoing.on("close", () => {
+      httpTransport.close();
+      server.close();
+    });
+
+    const body = await c.req.json();
+    await httpTransport.handleRequest(incoming, outgoing, body);
+    return ALREADY_SENT;
+  });
+
+  app.on(["GET", "DELETE"], "/mcp", (c) =>
+    c.json({ jsonrpc: "2.0", error: { code: -32000, message: "Method not allowed." }, id: null }, 405)
+  );
+
+  serve({ fetch: app.fetch, port }, () => {
+    console.log(`MCP Streamable HTTP Server listening on port ${port}`);
+  });
 }
