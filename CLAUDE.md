@@ -2,6 +2,8 @@
 
 Unified MCP server for the Notion API, replacing both the official Notion MCP and the suekou MCP with a single, complete implementation built on the public Notion REST API.
 
+Forked from [@suekou/mcp-notion-server](https://github.com/suekou/mcp-notion-server). Modifications are AI-assisted (vibe coded with Claude).
+
 ## Architecture
 
 ```
@@ -19,12 +21,14 @@ src/
     index.ts            # Notion response → Markdown conversion
     index.test.ts       # Tests for markdown conversion
   utils/index.ts        # Tool filtering utility
+skills/                 # Usage guides for common Notion operations
+agents/                 # Agent definitions for complex workflows
 ```
 
 ## Tools (21 total)
 
 **Blocks:** append_block_children, retrieve_block, retrieve_block_children, delete_block, update_block
-**Pages:** retrieve_page, update_page_properties, create_page, archive_page, retrieve_page_property_item
+**Pages:** retrieve_page, create_page, update_page_properties, archive_page, retrieve_page_property_item
 **Databases:** create_database, query_database (auto-paginated), retrieve_database, update_database, create_database_item
 **Users:** list_all_users, retrieve_user, retrieve_bot_user
 **Comments:** create_comment, retrieve_comments
@@ -34,6 +38,8 @@ src/
 
 `notion_query_database` and `notion_search` automatically loop through all pages of results (100 per request) until exhausted, returning the complete dataset in a single response. No manual cursor management needed.
 
+`notion_retrieve_page_property_item` also auto-paginates for property types that return paginated lists (relations, rollups, rich_text, title, people).
+
 ## Build & Run
 
 ```bash
@@ -41,6 +47,12 @@ npm install
 npm run build        # Compile TypeScript → build/
 npm test             # Run vitest tests
 npm run watch        # TypeScript watch mode
+```
+
+### Quick install
+
+```bash
+./install.sh
 ```
 
 ### Run locally
