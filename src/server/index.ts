@@ -169,9 +169,7 @@ export async function startServer(
             response = await notionClient.queryDatabase(
               args.database_id,
               args.filter,
-              args.sorts,
-              args.start_cursor,
-              args.page_size
+              args.sorts
             );
             break;
           }
@@ -216,6 +214,54 @@ export async function startServer(
             break;
           }
 
+          case "notion_create_page": {
+            const args = request.params
+              .arguments as unknown as args.CreatePageArgs;
+            if (!args.parent || !args.properties) {
+              throw new Error(
+                "Missing required arguments: parent and properties"
+              );
+            }
+            response = await notionClient.createPage(
+              args.parent,
+              args.properties,
+              args.children,
+              args.icon,
+              args.cover
+            );
+            break;
+          }
+
+          case "notion_archive_page": {
+            const args = request.params
+              .arguments as unknown as args.ArchivePageArgs;
+            if (!args.page_id || args.archived === undefined) {
+              throw new Error(
+                "Missing required arguments: page_id and archived"
+              );
+            }
+            response = await notionClient.archivePage(
+              args.page_id,
+              args.archived
+            );
+            break;
+          }
+
+          case "notion_retrieve_page_property_item": {
+            const args = request.params
+              .arguments as unknown as args.RetrievePagePropertyItemArgs;
+            if (!args.page_id || !args.property_id) {
+              throw new Error(
+                "Missing required arguments: page_id and property_id"
+              );
+            }
+            response = await notionClient.retrievePagePropertyItem(
+              args.page_id,
+              args.property_id
+            );
+            break;
+          }
+
           case "notion_create_comment": {
             const args = request.params
               .arguments as unknown as args.CreateCommentArgs;
@@ -253,9 +299,7 @@ export async function startServer(
             response = await notionClient.search(
               args.query,
               args.filter,
-              args.sort,
-              args.start_cursor,
-              args.page_size
+              args.sort
             );
             break;
           }
@@ -316,6 +360,9 @@ export async function startServer(
       schemas.retrieveDatabaseTool,
       schemas.updateDatabaseTool,
       schemas.createDatabaseItemTool,
+      schemas.createPageTool,
+      schemas.archivePageTool,
+      schemas.retrievePagePropertyItemTool,
       schemas.createCommentTool,
       schemas.retrieveCommentsTool,
       schemas.searchTool,

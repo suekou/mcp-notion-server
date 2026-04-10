@@ -177,26 +177,37 @@ export class NotionClientWrapper {
       property?: string;
       timestamp?: string;
       direction: "ascending" | "descending";
-    }>,
-    start_cursor?: string,
-    page_size?: number
+    }>
   ): Promise<ListResponse> {
-    const body: Record<string, any> = {};
-    if (filter) body.filter = filter;
-    if (sorts) body.sorts = sorts;
-    if (start_cursor) body.start_cursor = start_cursor;
-    if (page_size) body.page_size = page_size;
+    const allResults: ListResponse["results"] = [];
+    let cursor: string | undefined;
 
-    const response = await fetch(
-      `${this.baseUrl}/databases/${database_id}/query`,
-      {
-        method: "POST",
-        headers: this.headers,
-        body: JSON.stringify(body),
-      }
-    );
+    do {
+      const body: Record<string, any> = { page_size: 100 };
+      if (filter) body.filter = filter;
+      if (sorts) body.sorts = sorts;
+      if (cursor) body.start_cursor = cursor;
 
-    return response.json();
+      const response = await fetch(
+        `${this.baseUrl}/databases/${database_id}/query`,
+        {
+          method: "POST",
+          headers: this.headers,
+          body: JSON.stringify(body),
+        }
+      );
+
+      const page: ListResponse = await response.json();
+      allResults.push(...page.results);
+      cursor = page.has_more ? (page.next_cursor ?? undefined) : undefined;
+    } while (cursor);
+
+    return {
+      object: "list",
+      results: allResults,
+      has_more: false,
+      next_cursor: null,
+    };
   }
 
   async retrieveDatabase(database_id: string): Promise<DatabaseResponse> {
@@ -228,6 +239,27 @@ export class NotionClientWrapper {
     return response.json();
   }
 
+  async createPage(
+    parent: { type: string; page_id?: string; database_id?: string },
+    properties: Record<string, any>,
+    children?: Partial<BlockResponse>[],
+    icon?: { type: string; emoji?: string; external?: { url: string } },
+    cover?: { type: string; external?: { url: string } }
+  ): Promise<PageResponse> {
+    const body: Record<string, any> = { parent, properties };
+    if (children) body.children = children;
+    if (icon) body.icon = icon;
+    if (cover) body.cover = cover;
+
+    const response = await fetch(`${this.baseUrl}/pages`, {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+
+    return response.json();
+  }
+
   async createDatabaseItem(
     database_id: string,
     properties: Record<string, any>
@@ -244,6 +276,62 @@ export class NotionClientWrapper {
     });
 
     return response.json();
+  }
+
+  async archivePage(
+    page_id: string,
+    archived: boolean
+  ): Promise<PageResponse> {
+    const response = await fetch(`${this.baseUrl}/pages/${page_id}`, {
+      method: "PATCH",
+      headers: this.headers,
+      body: JSON.stringify({ archived }),
+    });
+
+    return response.json();
+  }
+
+  async retrievePagePropertyItem(
+    page_id: string,
+    property_id: string
+  ): Promise<any> {
+    const allResults: any[] = [];
+    let cursor: string | undefined;
+    let propertyItem: any;
+
+    do {
+      const params = new URLSearchParams();
+      if (cursor) params.append("start_cursor", cursor);
+      params.append("page_size", "100");
+
+      const response = await fetch(
+        `${this.baseUrl}/pages/${page_id}/properties/${property_id}?${params}`,
+        {
+          method: "GET",
+          headers: this.headers,
+        }
+      );
+
+      propertyItem = await response.json();
+
+      if (propertyItem.object === "list") {
+        allResults.push(...propertyItem.results);
+        cursor = propertyItem.has_more
+          ? (propertyItem.next_cursor ?? undefined)
+          : undefined;
+      } else {
+        return propertyItem;
+      }
+    } while (cursor);
+
+    return {
+      object: "list",
+      results: allResults,
+      has_more: false,
+      next_cursor: null,
+      type: propertyItem?.type,
+      property_item: propertyItem?.property_item,
+    };
   }
 
   async createComment(
@@ -295,24 +383,35 @@ export class NotionClientWrapper {
     sort?: {
       direction: "ascending" | "descending";
       timestamp: "last_edited_time";
-    },
-    start_cursor?: string,
-    page_size?: number
+    }
   ): Promise<ListResponse> {
-    const body: Record<string, any> = {};
-    if (query) body.query = query;
-    if (filter) body.filter = filter;
-    if (sort) body.sort = sort;
-    if (start_cursor) body.start_cursor = start_cursor;
-    if (page_size) body.page_size = page_size;
+    const allResults: ListResponse["results"] = [];
+    let cursor: string | undefined;
 
-    const response = await fetch(`${this.baseUrl}/search`, {
-      method: "POST",
-      headers: this.headers,
-      body: JSON.stringify(body),
-    });
+    do {
+      const body: Record<string, any> = { page_size: 100 };
+      if (query) body.query = query;
+      if (filter) body.filter = filter;
+      if (sort) body.sort = sort;
+      if (cursor) body.start_cursor = cursor;
 
-    return response.json();
+      const response = await fetch(`${this.baseUrl}/search`, {
+        method: "POST",
+        headers: this.headers,
+        body: JSON.stringify(body),
+      });
+
+      const page: ListResponse = await response.json();
+      allResults.push(...page.results);
+      cursor = page.has_more ? (page.next_cursor ?? undefined) : undefined;
+    } while (cursor);
+
+    return {
+      object: "list",
+      results: allResults,
+      has_more: false,
+      next_cursor: null,
+    };
   }
 
   async toMarkdown(response: NotionResponse): Promise<string> {

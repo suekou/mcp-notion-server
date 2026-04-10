@@ -140,32 +140,126 @@ describe("NotionClientWrapper", () => {
     const filter = { property: "Status", equals: "Done" };
     const sorts = [{ property: "Due Date", direction: "ascending" }];
 
-    await wrapper.queryDatabase(databaseId, filter, sorts);
+    (fetch as any).mockImplementation(() =>
+      Promise.resolve({
+        json: () =>
+          Promise.resolve({
+            object: "list",
+            results: [{ id: "page1" }],
+            has_more: false,
+            next_cursor: null,
+          }),
+      })
+    );
+
+    const result = await wrapper.queryDatabase(databaseId, filter, sorts);
 
     expect(fetch).toHaveBeenCalledWith(
       `https://api.notion.com/v1/databases/${databaseId}/query`,
       {
         method: "POST",
         headers: (wrapper as any).headers,
-        body: JSON.stringify({ filter, sorts }),
+        body: JSON.stringify({ page_size: 100, filter, sorts }),
       }
     );
+    expect(result.results).toEqual([{ id: "page1" }]);
+    expect(result.has_more).toBe(false);
+  });
+
+  test("should auto-paginate queryDatabase through multiple pages", async () => {
+    const databaseId = "db123";
+    let callCount = 0;
+
+    (fetch as any).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        return Promise.resolve({
+          json: () =>
+            Promise.resolve({
+              object: "list",
+              results: [{ id: "page1" }],
+              has_more: true,
+              next_cursor: "cursor_2",
+            }),
+        });
+      }
+      return Promise.resolve({
+        json: () =>
+          Promise.resolve({
+            object: "list",
+            results: [{ id: "page2" }],
+            has_more: false,
+            next_cursor: null,
+          }),
+      });
+    });
+
+    const result = await wrapper.queryDatabase(databaseId);
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(result.results).toEqual([{ id: "page1" }, { id: "page2" }]);
+    expect(result.has_more).toBe(false);
   });
 
   test("should call search with correct parameters", async () => {
     const query = "test query";
     const filter = { property: "object", value: "page" };
 
-    await wrapper.search(query, filter);
-
-    expect(fetch).toHaveBeenCalledWith(
-      "https://api.notion.com/v1/search",
-      {
-        method: "POST",
-        headers: (wrapper as any).headers,
-        body: JSON.stringify({ query, filter }),
-      }
+    (fetch as any).mockImplementation(() =>
+      Promise.resolve({
+        json: () =>
+          Promise.resolve({
+            object: "list",
+            results: [{ id: "result1" }],
+            has_more: false,
+            next_cursor: null,
+          }),
+      })
     );
+
+    const result = await wrapper.search(query, filter);
+
+    expect(fetch).toHaveBeenCalledWith("https://api.notion.com/v1/search", {
+      method: "POST",
+      headers: (wrapper as any).headers,
+      body: JSON.stringify({ page_size: 100, query, filter }),
+    });
+    expect(result.results).toEqual([{ id: "result1" }]);
+    expect(result.has_more).toBe(false);
+  });
+
+  test("should auto-paginate search through multiple pages", async () => {
+    let callCount = 0;
+
+    (fetch as any).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        return Promise.resolve({
+          json: () =>
+            Promise.resolve({
+              object: "list",
+              results: [{ id: "r1" }],
+              has_more: true,
+              next_cursor: "cur2",
+            }),
+        });
+      }
+      return Promise.resolve({
+        json: () =>
+          Promise.resolve({
+            object: "list",
+            results: [{ id: "r2" }],
+            has_more: false,
+            next_cursor: null,
+          }),
+      });
+    });
+
+    const result = await wrapper.search("test");
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(result.results).toEqual([{ id: "r1" }, { id: "r2" }]);
+    expect(result.has_more).toBe(false);
   });
 
   test("should call toMarkdown method correctly", async () => {

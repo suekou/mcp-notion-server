@@ -243,7 +243,8 @@ export const createDatabaseTool: Tool = {
 
 export const queryDatabaseTool: Tool = {
   name: "notion_query_database",
-  description: "Query a database in Notion",
+  description:
+    "Query a database in Notion. Automatically paginates through all results and returns the complete dataset.",
   inputSchema: {
     type: "object",
     properties: {
@@ -270,14 +271,6 @@ export const queryDatabaseTool: Tool = {
           },
           required: ["direction"],
         },
-      },
-      start_cursor: {
-        type: "string",
-        description: "Pagination cursor for next page of results",
-      },
-      page_size: {
-        type: "number",
-        description: "Number of results per page (max 100)",
       },
       format: formatParameter,
     },
@@ -357,6 +350,137 @@ export const createDatabaseItemTool: Tool = {
   },
 };
 
+// Page creation tool
+export const createPageTool: Tool = {
+  name: "notion_create_page",
+  description:
+    "Create a new page in Notion. The page can be created as a child of another page or as an item in a database. Supports setting properties, content blocks, icon, and cover image.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      parent: {
+        type: "object",
+        description:
+          "Parent object specifying where to create the page. Use page_id to create a subpage, or database_id to create a database item.",
+        properties: {
+          type: {
+            type: "string",
+            description: "Type of parent: 'page_id' or 'database_id'",
+            enum: ["page_id", "database_id"],
+          },
+          page_id: {
+            type: "string",
+            description:
+              "The ID of the parent page (when type is 'page_id')." +
+              commonIdDescription,
+          },
+          database_id: {
+            type: "string",
+            description:
+              "The ID of the parent database (when type is 'database_id')." +
+              commonIdDescription,
+          },
+        },
+        required: ["type"],
+      },
+      properties: {
+        type: "object",
+        description:
+          "Page properties. For pages under a page, use a 'title' property with a rich text array. For database items, match the database schema.",
+      },
+      children: {
+        type: "array",
+        description: "Array of block objects to add as page content.",
+        items: blockObjectSchema,
+      },
+      icon: {
+        type: "object",
+        description: "Page icon. Use type 'emoji' with an emoji character, or type 'external' with an image URL.",
+        properties: {
+          type: {
+            type: "string",
+            enum: ["emoji", "external"],
+          },
+          emoji: {
+            type: "string",
+            description: "Emoji character (when type is 'emoji')",
+          },
+          external: {
+            type: "object",
+            description: "External image (when type is 'external')",
+            properties: {
+              url: { type: "string", description: "URL of the icon image" },
+            },
+          },
+        },
+      },
+      cover: {
+        type: "object",
+        description: "Page cover image. Must be type 'external' with an image URL.",
+        properties: {
+          type: {
+            type: "string",
+            enum: ["external"],
+          },
+          external: {
+            type: "object",
+            properties: {
+              url: { type: "string", description: "URL of the cover image" },
+            },
+          },
+        },
+      },
+      format: formatParameter,
+    },
+    required: ["parent", "properties"],
+  },
+};
+
+// Archive page tool
+export const archivePageTool: Tool = {
+  name: "notion_archive_page",
+  description:
+    "Archive or restore a page in Notion. Set archived to true to archive, false to restore.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      page_id: {
+        type: "string",
+        description: "The ID of the page to archive or restore." + commonIdDescription,
+      },
+      archived: {
+        type: "boolean",
+        description: "True to archive the page, false to restore it.",
+      },
+      format: formatParameter,
+    },
+    required: ["page_id", "archived"],
+  },
+};
+
+// Retrieve page property item tool
+export const retrievePagePropertyItemTool: Tool = {
+  name: "notion_retrieve_page_property_item",
+  description:
+    "Retrieve a specific property value from a Notion page. Useful for paginated properties like relations, rollups, rich_text, and title. Automatically paginates through all results.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      page_id: {
+        type: "string",
+        description: "The ID of the page." + commonIdDescription,
+      },
+      property_id: {
+        type: "string",
+        description:
+          "The ID of the property to retrieve. You can get property IDs from the page object returned by notion_retrieve_page.",
+      },
+      format: formatParameter,
+    },
+    required: ["page_id", "property_id"],
+  },
+};
+
 // Comments tools
 export const createCommentTool: Tool = {
   name: "notion_create_comment",
@@ -426,7 +550,8 @@ export const retrieveCommentsTool: Tool = {
 // Search tool
 export const searchTool: Tool = {
   name: "notion_search",
-  description: "Search pages or databases by title in Notion",
+  description:
+    "Search pages or databases by title in Notion. Automatically paginates through all results and returns the complete dataset.",
   inputSchema: {
     type: "object",
     properties: {
@@ -461,14 +586,6 @@ export const searchTool: Tool = {
             enum: ["last_edited_time"],
           },
         },
-      },
-      start_cursor: {
-        type: "string",
-        description: "Pagination start cursor",
-      },
-      page_size: {
-        type: "number",
-        description: "Number of results to return (max 100). ",
       },
       format: formatParameter,
     },

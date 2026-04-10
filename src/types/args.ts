@@ -85,8 +85,6 @@ export interface QueryDatabaseArgs {
     timestamp?: string;
     direction: "ascending" | "descending";
   }>;
-  start_cursor?: string;
-  page_size?: number;
   format?: "json" | "markdown";
 }
 
@@ -106,6 +104,27 @@ export interface UpdateDatabaseArgs {
 export interface CreateDatabaseItemArgs {
   database_id: string;
   properties: Record<string, any>;
+  format?: "json" | "markdown";
+}
+
+export interface CreatePageArgs {
+  parent: { type: string; page_id?: string; database_id?: string };
+  properties: Record<string, any>;
+  children?: Partial<BlockResponse>[];
+  icon?: { type: string; emoji?: string; external?: { url: string } };
+  cover?: { type: string; external?: { url: string } };
+  format?: "json" | "markdown";
+}
+
+export interface ArchivePageArgs {
+  page_id: string;
+  archived: boolean;
+  format?: "json" | "markdown";
+}
+
+export interface RetrievePagePropertyItemArgs {
+  page_id: string;
+  property_id: string;
   format?: "json" | "markdown";
 }
 
@@ -132,7 +151,5 @@ export interface SearchArgs {
     direction: "ascending" | "descending";
     timestamp: "last_edited_time";
   };
-  start_cursor?: string;
-  page_size?: number;
   format?: "json" | "markdown";
 }
