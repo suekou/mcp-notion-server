@@ -369,6 +369,8 @@ export async function startServer(
     c.json({ jsonrpc: "2.0", error: { code: -32000, message: "Method not allowed." }, id: null }, 405)
   );
 
+  app.get('/health', async (c) => c.text('ok'));
+
   serve({ fetch: app.fetch, port }, () => {
     console.log(`MCP Streamable HTTP Server listening on port ${port}`);
   });
