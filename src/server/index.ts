@@ -123,14 +123,18 @@ export async function startServer(
           case "notion_update_page_properties": {
             const args = request.params
               .arguments as unknown as args.UpdatePagePropertiesArgs;
-            if (!args.page_id || !args.properties) {
+            if (!args.page_id) {
+              throw new Error("Missing required argument: page_id");
+            }
+            if (args.properties === undefined && args.archived === undefined) {
               throw new Error(
-                "Missing required arguments: page_id and properties"
+                "Missing required arguments: at least one of properties or archived must be provided"
               );
             }
             response = await notionClient.updatePageProperties(
               args.page_id,
-              args.properties
+              args.properties,
+              args.archived
             );
             break;
           }

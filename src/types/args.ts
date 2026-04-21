@@ -43,7 +43,8 @@ export interface RetrievePageArgs {
 
 export interface UpdatePagePropertiesArgs {
   page_id: string;
-  properties: Record<string, any>;
+  properties?: Record<string, any>;
+  archived?: boolean;
   format?: "json" | "markdown";
 }
 

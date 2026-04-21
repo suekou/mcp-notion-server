@@ -152,9 +152,14 @@ export const updatePagePropertiesTool: Tool = {
         description:
           "Properties to update. These correspond to the columns or fields in the database.",
       },
+      archived: {
+        type: "boolean",
+        description:
+          "Set to false to restore a page from trash, or true to move it to trash.",
+      },
       format: formatParameter,
     },
-    required: ["page_id", "properties"],
+    required: ["page_id"],
   },
 };
 

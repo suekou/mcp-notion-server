@@ -110,9 +110,12 @@ export class NotionClientWrapper {
 
   async updatePageProperties(
     page_id: string,
-    properties: Record<string, any>
+    properties?: Record<string, any>,
+    archived?: boolean
   ): Promise<PageResponse> {
-    const body = { properties };
+    const body: Record<string, any> = {};
+    if (properties !== undefined) body.properties = properties;
+    if (archived !== undefined) body.archived = archived;
 
     const response = await fetch(`${this.baseUrl}/pages/${page_id}`, {
       method: "PATCH",
