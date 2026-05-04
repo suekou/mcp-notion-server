@@ -59,6 +59,9 @@ describe("page read helpers", () => {
     });
     expect(summary.content.markdown).toContain("# Plan");
     expect(summary.content.markdown).toContain("- [ ] Ship MCP refresh");
+    expect(summary.content.markdown).toContain(
+      '<!-- notion:block id="todo1" type="to_do" -->'
+    );
   });
 
   test("should mark content as truncated when max_blocks is reached", async () => {
@@ -80,6 +83,7 @@ describe("page read helpers", () => {
           id: "heading1",
           type: "heading_1",
           text: "Plan",
+          markdown: "# Plan",
           has_children: false,
           in_trash: false,
         },

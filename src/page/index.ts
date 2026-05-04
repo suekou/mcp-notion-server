@@ -3,8 +3,13 @@ import type {
   ListResponse,
   PageProperty,
   PageResponse,
-  RichTextItemResponse,
 } from "../types/index.js";
+import {
+  renderBlockToMarkdown,
+  renderMarkdownBlockTree,
+  renderRichTextToMarkdown,
+  renderRichTextToPlainText,
+} from "../markdown/index.js";
 
 export type PageContentFormat = "outline" | "markdown" | "json";
 
@@ -20,6 +25,7 @@ export type PageBlockNode = {
   id: string;
   type: string;
   text: string;
+  markdown: string;
   has_children: boolean;
   in_trash?: boolean;
   children?: PageBlockNode[];
@@ -153,7 +159,7 @@ export function buildPageReadSummary(
   }
 
   if (contentFormat === "markdown") {
-    summary.content.markdown = renderBlocksAsMarkdown(tree.blocks);
+    summary.content.markdown = renderMarkdownBlockTree(tree.blocks);
   }
 
   return summary;
@@ -221,49 +227,10 @@ function summarizeBlock(block: BlockResponse): PageBlockNode {
     id: block.id,
     type: block.type,
     text: extractBlockText(block),
+    markdown: renderBlockToMarkdown(block),
     has_children: !!block.has_children,
     in_trash: block.in_trash,
   };
-}
-
-function renderBlocksAsMarkdown(blocks: PageBlockNode[], depth = 0): string {
-  return blocks
-    .map((block) => {
-      const rendered = renderBlockAsMarkdown(block, depth);
-      const children = block.children?.length
-        ? renderBlocksAsMarkdown(block.children, depth + 1)
-        : "";
-      return [rendered, children].filter(Boolean).join("\n");
-    })
-    .filter(Boolean)
-    .join("\n\n");
-}
-
-function renderBlockAsMarkdown(block: PageBlockNode, depth: number): string {
-  const indent = "  ".repeat(depth);
-
-  switch (block.type) {
-    case "heading_1":
-      return `# ${block.text}`;
-    case "heading_2":
-      return `## ${block.text}`;
-    case "heading_3":
-      return `### ${block.text}`;
-    case "bulleted_list_item":
-      return `${indent}- ${block.text}`;
-    case "numbered_list_item":
-      return `${indent}1. ${block.text}`;
-    case "to_do":
-      return `${indent}- [ ] ${block.text}`;
-    case "quote":
-      return `${indent}> ${block.text}`;
-    case "code":
-      return `\`\`\`\n${block.text}\n\`\`\``;
-    case "divider":
-      return "---";
-    default:
-      return block.text;
-  }
 }
 
 function extractBlockText(block: BlockResponse): string {
@@ -282,7 +249,7 @@ function extractBlockText(block: BlockResponse): string {
     case "callout":
     case "code":
     case "meeting_notes":
-      return extractRichText(content.rich_text || []);
+      return renderRichTextToPlainText(content.rich_text || []);
     case "child_page":
     case "child_database":
       return content.title || "";
@@ -296,9 +263,9 @@ function extractBlockText(block: BlockResponse): string {
     case "file":
     case "pdf":
     case "video":
-      return extractRichText(content.caption || []) || content.name || "";
+      return renderRichTextToPlainText(content.caption || []) || content.name || "";
     default:
-      return extractRichText(content.rich_text || []);
+      return renderRichTextToPlainText(content.rich_text || []);
   }
 }
 
@@ -318,9 +285,9 @@ function summarizePagePropertyValue(
 ): string | number | boolean | string[] | null {
   switch (property.type) {
     case "title":
-      return extractRichText(property.title || []);
+      return renderRichTextToMarkdown(property.title || []);
     case "rich_text":
-      return extractRichText(property.rich_text || []);
+      return renderRichTextToMarkdown(property.rich_text || []);
     case "number":
       return property.number ?? null;
     case "checkbox":
@@ -349,17 +316,11 @@ function summarizePagePropertyValue(
 function extractPageTitle(page: PageResponse): string {
   for (const property of Object.values(page.properties || {})) {
     if (property.type === "title" && Array.isArray(property.title)) {
-      return extractRichText(property.title);
+      return renderRichTextToPlainText(property.title);
     }
   }
 
   return "";
-}
-
-function extractRichText(richTextArray: RichTextItemResponse[]): string {
-  return (richTextArray || [])
-    .map((item) => item.plain_text || item.text?.content || "")
-    .join("");
 }
 
 function isBlockResponse(item: unknown): item is BlockResponse {
