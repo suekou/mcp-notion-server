@@ -74,6 +74,22 @@ Read-only tools example (copy-paste friendly):
 node build/index.js --enabledTools=notion_retrieve_block,notion_retrieve_block_children,notion_retrieve_page,notion_query_data_source,notion_retrieve_database,notion_retrieve_data_source,notion_find,notion_inspect_data_source,notion_search,notion_list_all_users,notion_retrieve_user,notion_retrieve_bot_user,notion_retrieve_comments
 ```
 
+## Development
+
+This project uses Node.js 24 LTS and pnpm.
+
+```bash
+pnpm install --frozen-lockfile
+pnpm run build
+pnpm test
+```
+
+Use the MCP inspector during local development:
+
+```bash
+pnpm run inspector
+```
+
 ## Advanced Configuration
 
 ### Markdown Conversion
