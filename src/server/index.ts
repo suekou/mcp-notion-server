@@ -12,6 +12,10 @@ import {
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { NotionClientWrapper } from "../client/index.js";
+import {
+  summarizeDataSourceSchema,
+  summarizeFindResults,
+} from "../summary/index.js";
 import { filterTools } from "../utils/index.js";
 import * as schemas from "../types/schemas.js";
 import * as args from "../types/args.js";
@@ -36,6 +40,8 @@ export function getAllTools(): Tool[] {
     schemas.createDataSourceItemTool,
     schemas.createCommentTool,
     schemas.retrieveCommentsTool,
+    schemas.findTool,
+    schemas.inspectDataSourceTool,
     schemas.searchTool,
   ];
 }
@@ -89,7 +95,7 @@ export async function startServer(
           throw new Error("No arguments provided");
         }
 
-        let response;
+        let response: unknown;
 
         switch (request.params.name) {
           case "notion_append_block_children": {
@@ -314,6 +320,35 @@ export async function startServer(
             break;
           }
 
+          case "notion_find": {
+            const args = request.params.arguments as unknown as args.FindArgs;
+            const filter = args.object_type
+              ? { property: "object", value: args.object_type }
+              : undefined;
+            const searchResponse = await notionClient.search(
+              args.query,
+              filter,
+              undefined,
+              args.start_cursor,
+              args.page_size
+            );
+            response = summarizeFindResults(searchResponse, args.query);
+            break;
+          }
+
+          case "notion_inspect_data_source": {
+            const args = request.params
+              .arguments as unknown as args.InspectDataSourceArgs;
+            if (!args.data_source_id) {
+              throw new Error("Missing required argument: data_source_id");
+            }
+            const dataSource = await notionClient.retrieveDataSource(
+              args.data_source_id
+            );
+            response = summarizeDataSourceSchema(dataSource);
+            break;
+          }
+
           default:
             throw new Error(`Unknown tool: ${request.params.name}`);
         }
@@ -325,7 +360,11 @@ export async function startServer(
         // Only convert to markdown if both conditions are met:
         // 1. The requested format is markdown
         // 2. The experimental markdown conversion is enabled via environment variable
-        if (enableMarkdownConversion && requestedFormat === "markdown") {
+        if (
+          enableMarkdownConversion &&
+          requestedFormat === "markdown" &&
+          isMarkdownConvertibleResponse(response)
+        ) {
           const markdown = await notionClient.toMarkdown(response);
           return {
             content: [{ type: "text", text: markdown }],
@@ -356,4 +395,23 @@ function toStructuredContent(response: unknown): Record<string, unknown> {
   }
 
   return { value: response };
+}
+
+function isMarkdownConvertibleResponse(
+  response: unknown
+): response is Parameters<NotionClientWrapper["toMarkdown"]>[0] {
+  return (
+    !!response &&
+    typeof response === "object" &&
+    "object" in response &&
+    [
+      "page",
+      "database",
+      "data_source",
+      "block",
+      "list",
+      "user",
+      "comment",
+    ].includes((response as { object: string }).object)
+  );
 }

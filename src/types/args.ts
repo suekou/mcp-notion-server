@@ -143,6 +143,19 @@ export interface RetrieveCommentsArgs {
 }
 
 // Search
+export interface FindArgs {
+  query?: string;
+  object_type?: "page" | "data_source";
+  start_cursor?: string;
+  page_size?: number;
+  format?: "json" | "markdown";
+}
+
+export interface InspectDataSourceArgs {
+  data_source_id: string;
+  format?: "json" | "markdown";
+}
+
 export interface SearchArgs {
   query?: string;
   filter?: { property: string; value: string };

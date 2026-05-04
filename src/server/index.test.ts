@@ -10,6 +10,7 @@ describe("MCP server helpers", () => {
     const tools = getAllTools();
     const retrievePage = tools.find((tool) => tool.name === "notion_retrieve_page");
     const deleteBlock = tools.find((tool) => tool.name === "notion_delete_block");
+    const find = tools.find((tool) => tool.name === "notion_find");
 
     expect(retrievePage?.annotations).toMatchObject({
       title: "Retrieve Page",
@@ -20,6 +21,11 @@ describe("MCP server helpers", () => {
       title: "Delete Block",
       readOnlyHint: false,
       destructiveHint: true,
+    });
+    expect(find?.annotations).toMatchObject({
+      title: "Find Notion Targets",
+      readOnlyHint: true,
+      destructiveHint: false,
     });
   });
 
