@@ -7,7 +7,7 @@ import type {
   SimpleContentUpdate,
   SimpleEditableContentItem,
 } from "../content/index.js";
-import type { PageContentFormat, PageEditAppend } from "../page/index.js";
+import type { PageContentFormat } from "../page/index.js";
 import type { SimplePropertyValues } from "../properties/index.js";
 import type {
   SimpleDataSourceFilter,
@@ -98,17 +98,6 @@ export interface ReadPageArgs {
   max_blocks?: number;
   page_size?: number;
   include_properties?: boolean;
-  format?: "json" | "markdown";
-}
-
-export interface PlanPageEditArgs {
-  page_id: string;
-  updates?: SimpleContentUpdate[];
-  appends?: PageEditAppend[];
-  max_depth?: number;
-  max_blocks?: number;
-  page_size?: number;
-  include_outline?: boolean;
   format?: "json" | "markdown";
 }
 

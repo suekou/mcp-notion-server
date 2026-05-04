@@ -12,9 +12,6 @@ describe("MCP server helpers", () => {
     const tools = getAllTools();
     const retrievePage = tools.find((tool) => tool.name === "notion_retrieve_page");
     const readPage = tools.find((tool) => tool.name === "notion_read_page");
-    const planPageEdit = tools.find(
-      (tool) => tool.name === "notion_plan_page_edit"
-    );
     const deleteBlock = tools.find((tool) => tool.name === "notion_delete_block");
     const find = tools.find((tool) => tool.name === "notion_find");
     const queryByValues = tools.find(
@@ -43,11 +40,6 @@ describe("MCP server helpers", () => {
     });
     expect(readPage?.annotations).toMatchObject({
       title: "Read Page Content",
-      readOnlyHint: true,
-      destructiveHint: false,
-    });
-    expect(planPageEdit?.annotations).toMatchObject({
-      title: "Plan Page Edit",
       readOnlyHint: true,
       destructiveHint: false,
     });
