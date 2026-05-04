@@ -19,7 +19,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node scripts/build-apps.mjs",
+    "build:apps": "node scripts/build-apps.mjs",
     "prepare": "pnpm run build",
     "watch": "tsc --watch",
     "inspector": "pnpm dlx @modelcontextprotocol/inspector build/index.js",
@@ -34,14 +35,24 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "yargs": "^17.7.2",
     "zod": "^4.4.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.13",
     "@types/node": "^24.0.0",
+    "@types/react": "18.3.18",
+    "@types/react-dom": "18.3.5",
     "@types/yargs": "^17.0.33",
+    "@vitejs/plugin-react": "4.3.4",
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.49",
+    "tailwindcss": "3.4.17",
     "typescript": "^5.3.3",
+    "vite": "5.4.21",
+    "vite-plugin-singlefile": "2.3.0",
     "vitest": "3.0.9"
   }
 }

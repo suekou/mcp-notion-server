@@ -1,18 +1,6 @@
 import type { ToolHandlerMap } from "../types.js";
 
 export const appToolHandlers: ToolHandlerMap = {
-  notion_open_finder_app: async (args) => ({
-    object: "notion_mcp_app",
-    app: "finder",
-    resource_uri: "ui://notion/finder",
-    query: typeof args.query === "string" ? args.query : undefined,
-    object_type:
-      args.object_type === "page" || args.object_type === "data_source"
-        ? args.object_type
-        : undefined,
-    fallback:
-      "Use notion_find to search Notion targets when the host does not support MCP Apps.",
-  }),
   notion_open_data_source_app: async (args) => ({
     object: "notion_mcp_app",
     app: "data_source_explorer",
