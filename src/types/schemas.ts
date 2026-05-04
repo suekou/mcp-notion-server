@@ -14,7 +14,7 @@ import {
 export const appendBlockChildrenTool: Tool = {
   name: "notion_append_block_children",
   description:
-    "Append new children blocks to a specified parent block in Notion. Requires insert content capabilities. You can optionally specify the 'after' parameter to append after a certain block.",
+    "Append new children blocks to a specified parent block in Notion. Requires insert content capabilities. Use the optional 'position' object to insert at the start, end, or after a specific block.",
   inputSchema: {
     type: "object",
     properties: {
@@ -28,11 +28,27 @@ export const appendBlockChildrenTool: Tool = {
           "Array of block objects to append. Each block must follow the Notion block schema.",
         items: blockObjectSchema,
       },
-      after: {
-        type: "string",
+      position: {
+        type: "object",
         description:
-          "The ID of the existing block that the new block should be appended after." +
-          commonIdDescription,
+          "Where to insert the children. Omit this to append at the end. Use { type: 'after_block', after_block: { id } } to replace the old Notion API 'after' parameter.",
+        properties: {
+          type: {
+            type: "string",
+            enum: ["after_block", "start", "end"],
+          },
+          after_block: {
+            type: "object",
+            properties: {
+              id: {
+                type: "string",
+                description: "The existing block ID to insert after." + commonIdDescription,
+              },
+            },
+            required: ["id"],
+          },
+        },
+        required: ["type"],
       },
       format: formatParameter,
     },
@@ -213,27 +229,28 @@ export const retrieveBotUserTool: Tool = {
   },
 };
 
-// Databases tools
-export const createDatabaseTool: Tool = {
-  name: "notion_create_database",
-  description: "Create a database in Notion",
+// Data source tools
+export const createDataSourceTool: Tool = {
+  name: "notion_create_data_source",
+  description:
+    "Create a Notion data source. In the 2025-09-03+ Notion API, data sources are the schema-bearing objects that replace most direct database operations.",
   inputSchema: {
     type: "object",
     properties: {
       parent: {
         type: "object",
-        description: "Parent object of the database",
+        description: "Parent page object for the data source.",
       },
       title: {
         type: "array",
         description:
-          "Title of database as it appears in Notion. An array of rich text objects.",
+          "Title of the data source as it appears in Notion. An array of rich text objects.",
         items: richTextObjectSchema,
       },
       properties: {
         type: "object",
         description:
-          "Property schema of database. The keys are the names of properties as they appear in Notion and the values are property schema objects.",
+          "Property schema of the data source. The keys are property names and the values are property schema objects.",
       },
       format: formatParameter,
     },
@@ -241,15 +258,16 @@ export const createDatabaseTool: Tool = {
   },
 };
 
-export const queryDatabaseTool: Tool = {
-  name: "notion_query_database",
-  description: "Query a database in Notion",
+export const queryDataSourceTool: Tool = {
+  name: "notion_query_data_source",
+  description:
+    "Query a Notion data source with filters, sorts, and pagination. Use notion_retrieve_database first when you only have a database ID and need to discover its data_source_id.",
   inputSchema: {
     type: "object",
     properties: {
-      database_id: {
+      data_source_id: {
         type: "string",
-        description: "The ID of the database to query." + commonIdDescription,
+        description: "The ID of the data source to query." + commonIdDescription,
       },
       filter: {
         type: "object",
@@ -281,13 +299,14 @@ export const queryDatabaseTool: Tool = {
       },
       format: formatParameter,
     },
-    required: ["database_id"],
+    required: ["data_source_id"],
   },
 };
 
 export const retrieveDatabaseTool: Tool = {
   name: "notion_retrieve_database",
-  description: "Retrieve a database in Notion",
+  description:
+    "Retrieve a Notion database container and its child data_sources. Use this to discover which data_source_id should be used for query, schema, and item creation operations.",
   inputSchema: {
     type: "object",
     properties: {
@@ -302,15 +321,34 @@ export const retrieveDatabaseTool: Tool = {
   },
 };
 
-export const updateDatabaseTool: Tool = {
-  name: "notion_update_database",
-  description: "Update a database in Notion",
+export const retrieveDataSourceTool: Tool = {
+  name: "notion_retrieve_data_source",
+  description:
+    "Retrieve metadata and property schema for a Notion data source.",
   inputSchema: {
     type: "object",
     properties: {
-      database_id: {
+      data_source_id: {
         type: "string",
-        description: "The ID of the database to update." + commonIdDescription,
+        description:
+          "The ID of the data source to retrieve." + commonIdDescription,
+      },
+      format: formatParameter,
+    },
+    required: ["data_source_id"],
+  },
+};
+
+export const updateDataSourceTool: Tool = {
+  name: "notion_update_data_source",
+  description: "Update a Notion data source title, description, or properties.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      data_source_id: {
+        type: "string",
+        description:
+          "The ID of the data source to update." + commonIdDescription,
       },
       title: {
         type: "array",
@@ -331,20 +369,21 @@ export const updateDatabaseTool: Tool = {
       },
       format: formatParameter,
     },
-    required: ["database_id"],
+    required: ["data_source_id"],
   },
 };
 
-export const createDatabaseItemTool: Tool = {
-  name: "notion_create_database_item",
-  description: "Create a new item (page) in a Notion database",
+export const createDataSourceItemTool: Tool = {
+  name: "notion_create_data_source_item",
+  description:
+    "Create a new page item in a Notion data source. Use the data_source_id, not the database_id, as the parent.",
   inputSchema: {
     type: "object",
     properties: {
-      database_id: {
+      data_source_id: {
         type: "string",
         description:
-          "The ID of the database to add the item to." + commonIdDescription,
+          "The ID of the data source to add the item to." + commonIdDescription,
       },
       properties: {
         type: "object",
@@ -353,7 +392,7 @@ export const createDatabaseItemTool: Tool = {
       },
       format: formatParameter,
     },
-    required: ["database_id", "properties"],
+    required: ["data_source_id", "properties"],
   },
 };
 
@@ -426,17 +465,17 @@ export const retrieveCommentsTool: Tool = {
 // Search tool
 export const searchTool: Tool = {
   name: "notion_search",
-  description: "Search pages or databases by title in Notion",
+  description: "Search pages or data sources by title in Notion",
   inputSchema: {
     type: "object",
     properties: {
       query: {
         type: "string",
-        description: "Text to search for in page or database titles",
+        description: "Text to search for in page or data source titles",
       },
       filter: {
         type: "object",
-        description: "Filter results by object type (page or database)",
+        description: "Filter results by object type (page or data_source)",
         properties: {
           property: {
             type: "string",
@@ -444,7 +483,8 @@ export const searchTool: Tool = {
           },
           value: {
             type: "string",
-            description: "Either 'page' or 'database'",
+            description: "Either 'page' or 'data_source'",
+            enum: ["page", "data_source"],
           },
         },
       },

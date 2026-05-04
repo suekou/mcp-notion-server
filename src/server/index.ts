@@ -58,7 +58,8 @@ export async function startServer(
             }
             response = await notionClient.appendBlockChildren(
               args.block_id,
-              args.children
+              args.children,
+              args.position
             );
             break;
           }
@@ -160,14 +161,14 @@ export async function startServer(
             break;
           }
 
-          case "notion_query_database": {
+          case "notion_query_data_source": {
             const args = request.params
-              .arguments as unknown as args.QueryDatabaseArgs;
-            if (!args.database_id) {
-              throw new Error("Missing required argument: database_id");
+              .arguments as unknown as args.QueryDataSourceArgs;
+            if (!args.data_source_id) {
+              throw new Error("Missing required argument: data_source_id");
             }
-            response = await notionClient.queryDatabase(
-              args.database_id,
+            response = await notionClient.queryDataSource(
+              args.data_source_id,
               args.filter,
               args.sorts,
               args.start_cursor,
@@ -176,10 +177,10 @@ export async function startServer(
             break;
           }
 
-          case "notion_create_database": {
+          case "notion_create_data_source": {
             const args = request.params
-              .arguments as unknown as args.CreateDatabaseArgs;
-            response = await notionClient.createDatabase(
+              .arguments as unknown as args.CreateDataSourceArgs;
+            response = await notionClient.createDataSource(
               args.parent,
               args.properties,
               args.title
@@ -194,11 +195,20 @@ export async function startServer(
             break;
           }
 
-          case "notion_update_database": {
+          case "notion_retrieve_data_source": {
             const args = request.params
-              .arguments as unknown as args.UpdateDatabaseArgs;
-            response = await notionClient.updateDatabase(
-              args.database_id,
+              .arguments as unknown as args.RetrieveDataSourceArgs;
+            response = await notionClient.retrieveDataSource(
+              args.data_source_id
+            );
+            break;
+          }
+
+          case "notion_update_data_source": {
+            const args = request.params
+              .arguments as unknown as args.UpdateDataSourceArgs;
+            response = await notionClient.updateDataSource(
+              args.data_source_id,
               args.title,
               args.description,
               args.properties
@@ -206,11 +216,11 @@ export async function startServer(
             break;
           }
 
-          case "notion_create_database_item": {
+          case "notion_create_data_source_item": {
             const args = request.params
-              .arguments as unknown as args.CreateDatabaseItemArgs;
-            response = await notionClient.createDatabaseItem(
-              args.database_id,
+              .arguments as unknown as args.CreateDataSourceItemArgs;
+            response = await notionClient.createDataSourceItem(
+              args.data_source_id,
               args.properties
             );
             break;
@@ -311,11 +321,12 @@ export async function startServer(
       schemas.listAllUsersTool,
       schemas.retrieveUserTool,
       schemas.retrieveBotUserTool,
-      schemas.createDatabaseTool,
-      schemas.queryDatabaseTool,
       schemas.retrieveDatabaseTool,
-      schemas.updateDatabaseTool,
-      schemas.createDatabaseItemTool,
+      schemas.createDataSourceTool,
+      schemas.queryDataSourceTool,
+      schemas.retrieveDataSourceTool,
+      schemas.updateDataSourceTool,
+      schemas.createDataSourceItemTool,
       schemas.createCommentTool,
       schemas.retrieveCommentsTool,
       schemas.searchTool,

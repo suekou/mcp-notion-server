@@ -5,6 +5,7 @@ import {
   NotionResponse,
   PageResponse,
   DatabaseResponse,
+  DataSourceResponse,
   BlockResponse,
   ListResponse,
   RichTextItemResponse,
@@ -26,6 +27,8 @@ export function convertToMarkdown(response: NotionResponse): string {
       return convertPageToMarkdown(response as PageResponse);
     case "database":
       return convertDatabaseToMarkdown(response as DatabaseResponse);
+    case "data_source":
+      return convertDataSourceToMarkdown(response as DataSourceResponse);
     case "block":
       return convertBlockToMarkdown(response as BlockResponse);
     case "list":
@@ -67,13 +70,16 @@ function convertPageToMarkdown(page: PageResponse): string {
 /**
  * Converts a Notion database to Markdown
  */
-function convertDatabaseToMarkdown(database: DatabaseResponse): string {
+function convertDatabaseToMarkdown(
+  database: DatabaseResponse | DataSourceResponse
+): string {
   let markdown = "";
 
   // Extract database title
   const title = extractRichText(database.title || []);
   if (title) {
-    markdown += `# ${title} (Database)\n\n`;
+    const label = database.object === "data_source" ? "Data Source" : "Database";
+    markdown += `# ${title} (${label})\n\n`;
   }
 
   // Add description if available
@@ -101,7 +107,9 @@ function convertDatabaseToMarkdown(database: DatabaseResponse): string {
           details = `Options: ${options.map((o: any) => o.name).join(", ")}`;
           break;
         case "relation":
-          details = `Related DB: ${prop.relation?.database_id || ""}`;
+          details = `Related data source: ${
+            prop.relation?.data_source_id || prop.relation?.database_id || ""
+          }`;
           break;
         case "formula":
           details = `Formula: ${prop.formula?.expression || ""}`;
@@ -172,6 +180,13 @@ function convertDatabaseToMarkdown(database: DatabaseResponse): string {
 }
 
 /**
+ * Converts a Notion data source to Markdown
+ */
+function convertDataSourceToMarkdown(dataSource: DataSourceResponse): string {
+  return convertDatabaseToMarkdown(dataSource);
+}
+
+/**
  * Converts Notion API block response to Markdown
  */
 function convertBlockToMarkdown(block: BlockResponse): string {
@@ -202,6 +217,9 @@ function convertListToMarkdown(list: ListResponse): string {
       break;
     case "database":
       markdown += "# Search Results (Databases)\n\n";
+      break;
+    case "data_source":
+      markdown += "# Search Results (Data Sources)\n\n";
       break;
     case "block":
       markdown += "# Block Contents\n\n";
@@ -551,6 +569,9 @@ function renderBlock(block: BlockResponse): string {
       if (blockContent.page_id) {
         linkId = blockContent.page_id;
         linkText = "Link to page";
+      } else if (blockContent.data_source_id) {
+        linkId = blockContent.data_source_id;
+        linkText = "Link to data source";
       } else if (blockContent.database_id) {
         linkId = blockContent.database_id;
         linkText = "Link to database";

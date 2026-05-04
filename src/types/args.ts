@@ -4,11 +4,25 @@
 
 import { RichTextItemResponse, BlockResponse } from "./responses.js";
 
+export type AppendBlockChildrenPosition =
+  | {
+      type: "after_block";
+      after_block: {
+        id: string;
+      };
+    }
+  | {
+      type: "start";
+    }
+  | {
+      type: "end";
+    };
+
 // Blocks
 export interface AppendBlockChildrenArgs {
   block_id: string;
   children: Partial<BlockResponse>[];
-  after?: string;
+  position?: AppendBlockChildrenPosition;
   format?: "json" | "markdown";
 }
 
@@ -64,12 +78,11 @@ export interface RetrieveBotUserArgs {
   format?: "json" | "markdown";
 }
 
-// Databases
-export interface CreateDatabaseArgs {
+// Data sources
+export interface CreateDataSourceArgs {
   parent: {
     type: string;
     page_id?: string;
-    database_id?: string;
     workspace?: boolean;
   };
   title?: RichTextItemResponse[];
@@ -77,8 +90,8 @@ export interface CreateDatabaseArgs {
   format?: "json" | "markdown";
 }
 
-export interface QueryDatabaseArgs {
-  database_id: string;
+export interface QueryDataSourceArgs {
+  data_source_id: string;
   filter?: Record<string, any>;
   sorts?: Array<{
     property?: string;
@@ -95,16 +108,21 @@ export interface RetrieveDatabaseArgs {
   format?: "json" | "markdown";
 }
 
-export interface UpdateDatabaseArgs {
-  database_id: string;
+export interface RetrieveDataSourceArgs {
+  data_source_id: string;
+  format?: "json" | "markdown";
+}
+
+export interface UpdateDataSourceArgs {
+  data_source_id: string;
   title?: RichTextItemResponse[];
   description?: RichTextItemResponse[];
   properties?: Record<string, any>;
   format?: "json" | "markdown";
 }
 
-export interface CreateDatabaseItemArgs {
-  database_id: string;
+export interface CreateDataSourceItemArgs {
+  data_source_id: string;
   properties: Record<string, any>;
   format?: "json" | "markdown";
 }

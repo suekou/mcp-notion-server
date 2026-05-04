@@ -66,12 +66,12 @@ or
 
 ## Command Line Arguments
 
-- `--enabledTools`: Comma-separated list of tools to enable (e.g. "notion_retrieve_page,notion_query_database"). When specified, only the listed tools will be available. If not specified, all tools are enabled.
+- `--enabledTools`: Comma-separated list of tools to enable (e.g. "notion_retrieve_page,notion_query_data_source"). When specified, only the listed tools will be available. If not specified, all tools are enabled.
 
 Read-only tools example (copy-paste friendly):
 
 ```bash
-node build/index.js --enabledTools=notion_retrieve_block,notion_retrieve_block_children,notion_retrieve_page,notion_query_database,notion_retrieve_database,notion_search,notion_list_all_users,notion_retrieve_user,notion_retrieve_bot_user,notion_retrieve_comments
+node build/index.js --enabledTools=notion_retrieve_block,notion_retrieve_block_children,notion_retrieve_page,notion_query_data_source,notion_retrieve_database,notion_retrieve_data_source,notion_search,notion_list_all_users,notion_retrieve_user,notion_retrieve_bot_user,notion_retrieve_comments
 ```
 
 ## Advanced Configuration
@@ -222,21 +222,21 @@ All tools support the following optional parameter:
      - `properties` (object): Properties to update.
    - Returns: Information about the updated page.
 
-7. `notion_create_database`
+7. `notion_create_data_source`
 
-   - Create a new database.
+   - Create a new Notion data source.
    - Required inputs:
-     - `parent` (object): Parent object of the database.
-     - `properties` (object): Property schema of the database.
+     - `parent` (object): Parent page object of the data source.
+     - `properties` (object): Property schema of the data source.
    - Optional inputs:
-     - `title` (array): Title of the database as a rich text array.
-   - Returns: Information about the created database.
+     - `title` (array): Title of the data source as a rich text array.
+   - Returns: Information about the created data source.
 
-8. `notion_query_database`
+8. `notion_query_data_source`
 
-   - Query a database.
+   - Query a data source.
    - Required inputs:
-     - `database_id` (string): The ID of the database to query.
+     - `data_source_id` (string): The ID of the data source to query.
    - Optional inputs:
      - `filter` (object): Filter conditions.
      - `sorts` (array): Sorting conditions.
@@ -246,42 +246,49 @@ All tools support the following optional parameter:
 
 9. `notion_retrieve_database`
 
-   - Retrieve information about a specific database.
+   - Retrieve information about a specific database container, including child data source IDs.
    - Required inputs:
      - `database_id` (string): The ID of the database to retrieve.
    - Returns: Detailed information about the database.
 
-10. `notion_update_database`
+10. `notion_retrieve_data_source`
 
-    - Update information about a database.
+    - Retrieve metadata and property schema for a specific data source.
     - Required inputs:
-      - `database_id` (string): The ID of the database to update.
+      - `data_source_id` (string): The ID of the data source to retrieve.
+    - Returns: Detailed information about the data source.
+
+11. `notion_update_data_source`
+
+    - Update information about a data source.
+    - Required inputs:
+      - `data_source_id` (string): The ID of the data source to update.
     - Optional inputs:
-      - `title` (array): New title for the database.
-      - `description` (array): New description for the database.
+      - `title` (array): New title for the data source.
+      - `description` (array): New description for the data source.
       - `properties` (object): Updated property schema.
-    - Returns: Information about the updated database.
+    - Returns: Information about the updated data source.
 
-11. `notion_create_database_item`
+12. `notion_create_data_source_item`
 
-    - Create a new item in a Notion database.
+    - Create a new page item in a Notion data source.
     - Required inputs:
-      - `database_id` (string): The ID of the database to add the item to.
-      - `properties` (object): The properties of the new item. These should match the database schema.
+      - `data_source_id` (string): The ID of the data source to add the item to.
+      - `properties` (object): The properties of the new item. These should match the data source schema.
     - Returns: Information about the newly created item.
 
-12. `notion_search`
+13. `notion_search`
 
-    - Search pages or databases by title.
+    - Search pages or data sources by title.
     - Optional inputs:
-      - `query` (string): Text to search for in page or database titles.
-      - `filter` (object): Criteria to limit results to either only pages or only databases.
+      - `query` (string): Text to search for in page or data source titles.
+      - `filter` (object): Criteria to limit results to either only pages or only data sources.
       - `sort` (object): Criteria to sort the results
       - `start_cursor` (string): Pagination start cursor.
       - `page_size` (number, default: 100, max: 100): Number of results to retrieve.
-    - Returns: List of matching pages or databases.
+    - Returns: List of matching pages or data sources.
 
-13. `notion_list_all_users`
+14. `notion_list_all_users`
 
     - List all users in the Notion workspace.
     - Note: This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.
@@ -290,7 +297,7 @@ All tools support the following optional parameter:
       - page_size (number, max: 100): Number of users to retrieve.
     - Returns: A paginated list of all users in the workspace.
 
-14. `notion_retrieve_user`
+15. `notion_retrieve_user`
 
     - Retrieve a specific user by user_id in Notion.
     - Note: This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.
@@ -298,12 +305,12 @@ All tools support the following optional parameter:
       - user_id (string): The ID of the user to retrieve.
     - Returns: Detailed information about the specified user.
 
-15. `notion_retrieve_bot_user`
+16. `notion_retrieve_bot_user`
 
     - Retrieve the bot user associated with the current token in Notion.
     - Returns: Information about the bot user, including details of the person who authorized the integration.
 
-16. `notion_create_comment`
+17. `notion_create_comment`
 
     - Create a comment in Notion.
     - Requires the integration to have 'insert comment' capabilities.
@@ -315,7 +322,7 @@ All tools support the following optional parameter:
       - `discussion_id` (string): An existing discussion thread ID.
     - Returns: Information about the created comment.
 
-17. `notion_retrieve_comments`
+18. `notion_retrieve_comments`
     - Retrieve a list of unresolved comments from a Notion page or block.
     - Requires the integration to have 'read comment' capabilities.
     - Required inputs:

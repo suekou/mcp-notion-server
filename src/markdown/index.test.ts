@@ -4,6 +4,7 @@ import {
   PageResponse,
   BlockResponse,
   DatabaseResponse,
+  DataSourceResponse,
   ListResponse,
 } from "../types/index.js";
 
@@ -36,10 +37,9 @@ describe("convertToMarkdown", () => {
         emoji: "🐞",
       },
       parent: {
-        type: "database_id",
-        database_id: "a1d8501e-1ac1-43e9-a6bd-ea9fe6c8822b",
+        type: "data_source_id",
+        data_source_id: "a1d8501e-1ac1-43e9-a6bd-ea9fe6c8822b",
       },
-      archived: true,
       in_trash: true,
       properties: {
         "Due date": {
@@ -127,7 +127,6 @@ describe("convertToMarkdown", () => {
         id: "ee5f0f84-409a-440f-983a-a5315961c6e4",
       },
       has_children: false,
-      archived: false,
       in_trash: false,
       type: "heading_2",
       heading_2: {
@@ -237,6 +236,7 @@ describe("convertToMarkdown", () => {
           type: "relation",
           relation: {
             database_id: "668d797c-76fa-4934-9b05-ad288df2d136",
+            data_source_id: "668d797c-76fa-4934-9b05-ad288df2d136",
             synced_property_name: "Related to Grocery List (Meals)",
           },
         },
@@ -322,7 +322,7 @@ describe("convertToMarkdown", () => {
         type: "page_id",
         page_id: "98ad959b-2b6a-4774-80ee-00246fb0ea9b",
       },
-      archived: false,
+      in_trash: false,
       is_inline: false,
     };
 
@@ -346,13 +346,54 @@ describe("convertToMarkdown", () => {
       /\| Food group \| select \| Options: 🥦Vegetable, 🍎Fruit, 💪Protein \|/
     ); // Options with emoji
     expect(markdown).toMatch(
-      /\| Meals \| relation \| Related DB: 668d797c-76fa-4934-9b05-ad288df2d136 \|/
+      /\| Meals \| relation \| Related data source: 668d797c-76fa-4934-9b05-ad288df2d136 \|/
     ); // Relation
 
     // Check if link to Notion is correctly displayed
     expect(markdown).toMatch(
       /\[View in Notion\]\(https:\/\/www\.notion\.so\/bc1211cae3f14939ae34260b16f627c\)/
     );
+  });
+
+  test("should convert a data source response to markdown", () => {
+    const dataSourceResponse: DataSourceResponse = {
+      object: "data_source",
+      id: "bc1211ca-e3f1-4939-ae34-5260b16f627c",
+      title: [
+        {
+          type: "text",
+          text: { content: "Tasks" },
+          plain_text: "Tasks",
+        },
+      ],
+      parent: {
+        type: "database_id",
+        database_id: "6ee911d9-189c-4844-93e8-260c1438b6e4",
+      },
+      properties: {
+        Name: {
+          id: "title",
+          name: "Name",
+          type: "title",
+          title: {},
+        },
+        Status: {
+          id: "status",
+          name: "Status",
+          type: "status",
+          status: {
+            options: [{ id: "todo", name: "Todo", color: "default" }],
+          },
+        },
+      },
+      in_trash: false,
+    };
+
+    const markdown = convertToMarkdown(dataSourceResponse);
+
+    expect(markdown).toMatch(/^# Tasks \(Data Source\)\n\n/);
+    expect(markdown).toMatch(/\| Name \| title \| Database title \|/);
+    expect(markdown).toMatch(/\| Status \| status \| Options: Todo \|/);
   });
 
   test("should convert a list response to markdown", () => {
@@ -384,10 +425,10 @@ describe("convertToMarkdown", () => {
             emoji: "🥬",
           },
           parent: {
-            type: "database_id",
-            database_id: "d9824bdc-8445-4327-be8b-5b47500af6ce",
+            type: "data_source_id",
+            data_source_id: "d9824bdc-8445-4327-be8b-5b47500af6ce",
           },
-          archived: false,
+          in_trash: false,
           properties: {
             "Store availability": {
               id: "%3AUPp",
@@ -523,10 +564,10 @@ describe("convertToMarkdown", () => {
             emoji: "🥬",
           },
           parent: {
-            type: "database_id",
-            database_id: "d9824bdc-8445-4327-be8b-5b47500af6ce",
+            type: "data_source_id",
+            data_source_id: "d9824bdc-8445-4327-be8b-5b47500af6ce",
           },
-          archived: false,
+          in_trash: false,
           properties: {
             "Store availability": {
               id: "%3AUPp",
