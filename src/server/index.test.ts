@@ -23,6 +23,9 @@ describe("MCP server helpers", () => {
     const updateContent = tools.find(
       (tool) => tool.name === "notion_update_content"
     );
+    const updateContentBatch = tools.find(
+      (tool) => tool.name === "notion_update_content_batch"
+    );
     const createFromValues = tools.find(
       (tool) => tool.name === "notion_create_data_source_item_from_values"
     );
@@ -59,6 +62,12 @@ describe("MCP server helpers", () => {
     });
     expect(updateContent?.annotations).toMatchObject({
       title: "Update Simple Content",
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+    });
+    expect(updateContentBatch?.annotations).toMatchObject({
+      title: "Update Simple Content Batch",
       readOnlyHint: false,
       destructiveHint: false,
       idempotentHint: true,

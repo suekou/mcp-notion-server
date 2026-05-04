@@ -2,7 +2,9 @@ import { describe, expect, test } from "vitest";
 import {
   buildBlocksFromSimpleContent,
   buildBlockUpdateFromSimpleContent,
+  validateSimpleContentUpdatesAgainstBlocks,
 } from "./index.js";
+import type { BlockResponse } from "../types/index.js";
 
 describe("content block builder", () => {
   test("should build common Notion blocks from simple content", () => {
@@ -102,4 +104,40 @@ describe("content block builder", () => {
       buildBlockUpdateFromSimpleContent({ type: "divider" })
     ).toThrow("Divider blocks do not have editable content");
   });
+
+  test("should validate batch updates before applying them", () => {
+    expect(() =>
+      validateSimpleContentUpdatesAgainstBlocks(
+        [
+          { block_id: "block-a", item: { type: "paragraph", text: "A" } },
+          { block_id: "block-b", item: { type: "to_do", text: "B" } },
+        ],
+        [
+          block("block-a", "paragraph"),
+          block("block-b", "to_do"),
+        ]
+      )
+    ).not.toThrow();
+  });
+
+  test("should reject batch updates with a mismatched block type", () => {
+    expect(() =>
+      validateSimpleContentUpdatesAgainstBlocks(
+        [{ block_id: "block-a", item: { type: "paragraph", text: "A" } }],
+        [block("block-a", "heading_2")]
+      )
+    ).toThrow(
+      "Block type mismatch: block block-a is heading_2, but item.type was paragraph"
+    );
+  });
 });
+
+function block(id: string, type: string): BlockResponse {
+  return {
+    object: "block",
+    id,
+    type,
+    created_time: "2026-01-01T00:00:00.000Z",
+    last_edited_time: "2026-01-01T00:00:00.000Z",
+  };
+}

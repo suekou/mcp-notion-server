@@ -268,6 +268,42 @@ export const updateContentTool: Tool = {
   },
 };
 
+export const updateContentBatchTool: Tool = {
+  name: "notion_update_content_batch",
+  description:
+    "Update multiple existing Notion blocks without writing raw Notion block JSON. Use this after notion_read_page when the user wants several simple text edits at once. The server retrieves every target block and validates all item.type values before applying updates, so block type mistakes fail before any write is attempted.",
+  annotations: {
+    title: "Update Simple Content Batch",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: true,
+  },
+  inputSchema: {
+    type: "object",
+    properties: {
+      updates: {
+        type: "array",
+        description:
+          "Batch of existing blocks to update. Keep batches reviewable and use block IDs from notion_read_page.",
+        items: {
+          type: "object",
+          properties: {
+            block_id: {
+              type: "string",
+              description:
+                "The existing block ID to update." + commonIdDescription,
+            },
+            item: simpleEditableContentItemSchema,
+          },
+          required: ["block_id", "item"],
+        },
+      },
+      format: formatParameter,
+    },
+    required: ["updates"],
+  },
+};
+
 export const retrieveBlockTool: Tool = {
   name: "notion_retrieve_block",
   description: "Retrieve a block from Notion",
