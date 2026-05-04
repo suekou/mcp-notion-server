@@ -40,8 +40,8 @@ describe("MCP server helpers", () => {
     const createDatabase = tools.find(
       (tool) => tool.name === "notion_create_database",
     );
-    const openFinderApp = tools.find(
-      (tool) => tool.name === "notion_open_finder_app",
+    const openDataSourceApp = tools.find(
+      (tool) => tool.name === "notion_open_data_source_app",
     );
 
     expect(retrievePage?.annotations).toMatchObject({
@@ -101,14 +101,14 @@ describe("MCP server helpers", () => {
       readOnlyHint: false,
       destructiveHint: false,
     });
-    expect(openFinderApp?.annotations).toMatchObject({
-      title: "Open Notion Finder",
-      readOnlyHint: true,
+    expect(openDataSourceApp?.annotations).toMatchObject({
+      title: "Open Data Source Explorer",
+      readOnlyHint: false,
       destructiveHint: false,
     });
-    expect(openFinderApp?._meta).toMatchObject({
+    expect(openDataSourceApp?._meta).toMatchObject({
       ui: {
-        resourceUri: "ui://notion/finder",
+        resourceUri: "ui://notion/data-source-explorer",
         visibility: ["model", "app"],
       },
     });
@@ -157,7 +157,6 @@ describe("MCP server helpers", () => {
     expect(getAllResources().map((resource) => resource.uri)).toEqual([
       "notion://server/guide",
       "notion://server/tools",
-      "ui://notion/finder",
       "ui://notion/data-source-explorer",
       "ui://notion/page-workbench",
     ]);

@@ -32,7 +32,7 @@ describe("Notion resources", () => {
     expect(result.contents[0]).toMatchObject({
       uri: "ui://notion/data-source-explorer",
       mimeType: "text/html;profile=mcp-app",
-      text: expect.stringContaining("notion_query_data_source_by_values"),
+      text: expect.stringContaining("<!doctype html>"),
     });
   });
 });

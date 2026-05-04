@@ -20,7 +20,6 @@ import { getNotionPrompt, notionPrompts } from "../prompts/index.js";
 import { notionResources, readNotionResource } from "../resources/index.js";
 import {
   openDataSourceAppTool,
-  openFinderAppTool,
   openPageWorkbenchAppTool,
 } from "../tools/apps/definitions.js";
 import { appToolHandlers } from "../tools/apps/handlers.js";
@@ -103,7 +102,6 @@ export function getServerInstructions(): string {
 
 export function getAllTools(): Tool[] {
   return [
-    openFinderAppTool,
     openDataSourceAppTool,
     openPageWorkbenchAppTool,
     appendBlockChildrenTool,
