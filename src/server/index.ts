@@ -8,12 +8,17 @@ import {
   CallToolRequest,
   CallToolResult,
   CallToolRequestSchema,
+  GetPromptRequest,
+  GetPromptRequestSchema,
   ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  Prompt,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { buildBlocksFromSimpleContent } from "../content/index.js";
 import { NotionClientWrapper } from "../client/index.js";
 import { buildPagePropertiesFromSimpleValues } from "../properties/index.js";
+import { getNotionPrompt, notionPrompts } from "../prompts/index.js";
 import {
   summarizeDataSourceSchema,
   summarizeFindResults,
@@ -50,6 +55,10 @@ export function getAllTools(): Tool[] {
   ];
 }
 
+export function getAllPrompts(): Prompt[] {
+  return notionPrompts;
+}
+
 export function formatJsonToolResult(response: unknown): CallToolResult {
   return {
     content: [{ type: "text", text: JSON.stringify(response, null, 2) }],
@@ -84,6 +93,7 @@ export async function startServer(
     {
       capabilities: {
         tools: {},
+        prompts: {},
       },
     }
   );
@@ -426,6 +436,22 @@ export async function startServer(
       tools: filterTools(getAllTools(), enabledToolsSet),
     };
   });
+
+  server.setRequestHandler(ListPromptsRequestSchema, async () => {
+    return {
+      prompts: getAllPrompts(),
+    };
+  });
+
+  server.setRequestHandler(
+    GetPromptRequestSchema,
+    async (request: GetPromptRequest) => {
+      return getNotionPrompt(
+        request.params.name,
+        request.params.arguments as Record<string, string> | undefined
+      );
+    }
+  );
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
