@@ -474,6 +474,93 @@ export const readPageTool: Tool = {
   },
 };
 
+export const planPageEditTool: Tool = {
+  name: "notion_plan_page_edit",
+  description:
+    "Plan Notion page edits without writing anything. Use this after notion_read_page or when the user asks for review before applying changes. The server fetches the page outline, validates update targets and block types, validates append insertion points, and returns the exact existing tools and arguments to execute later: notion_update_content_batch and notion_append_content.",
+  annotations: {
+    title: "Plan Page Edit",
+    readOnlyHint: true,
+    destructiveHint: false,
+  },
+  inputSchema: {
+    type: "object",
+    properties: {
+      page_id: {
+        type: "string",
+        description: "The ID of the page to plan edits for." + commonIdDescription,
+      },
+      updates: {
+        type: "array",
+        description:
+          "Existing blocks to update. Each block_id must exist in the fetched page outline and item.type must match the current block type.",
+        items: {
+          type: "object",
+          properties: {
+            block_id: {
+              type: "string",
+              description:
+                "The existing block ID to update." + commonIdDescription,
+            },
+            item: simpleEditableContentItemSchema,
+          },
+          required: ["block_id", "item"],
+        },
+      },
+      appends: {
+        type: "array",
+        description:
+          "Content append operations. Omit block_id to append to the page. Use after_block_id to insert after an existing block from the outline.",
+        items: {
+          type: "object",
+          properties: {
+            block_id: {
+              type: "string",
+              description:
+                "Optional parent block ID. Defaults to the page ID." +
+                commonIdDescription,
+            },
+            after_block_id: {
+              type: "string",
+              description:
+                "Optional existing block ID to insert after." +
+                commonIdDescription,
+            },
+            items: {
+              type: "array",
+              description: "Simplified content items to append.",
+              items: simpleContentItemSchema,
+            },
+          },
+          required: ["items"],
+        },
+      },
+      max_depth: {
+        type: "number",
+        description:
+          "Maximum child-block depth to fetch for validation. Defaults to 2.",
+      },
+      max_blocks: {
+        type: "number",
+        description:
+          "Maximum number of blocks to fetch for validation. Defaults to 100.",
+      },
+      page_size: {
+        type: "number",
+        description:
+          "Number of block children to request per Notion API page. Defaults to 100 and cannot exceed 100.",
+      },
+      include_outline: {
+        type: "boolean",
+        description:
+          "Whether to include the fetched outline in the returned plan. Defaults to false.",
+      },
+      format: formatParameter,
+    },
+    required: ["page_id"],
+  },
+};
+
 export const updatePagePropertiesTool: Tool = {
   name: "notion_update_page_properties",
   description: "Update properties of a page or an item in a Notion database",
