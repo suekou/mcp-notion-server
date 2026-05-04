@@ -3,6 +3,7 @@
  */
 
 import type { SimpleContentItem } from "../content/index.js";
+import type { PageContentFormat } from "../page/index.js";
 import type { SimplePropertyValues } from "../properties/index.js";
 import { RichTextItemResponse, BlockResponse } from "./responses.js";
 
@@ -61,6 +62,16 @@ export interface UpdateBlockArgs {
 // Pages
 export interface RetrievePageArgs {
   page_id: string;
+  format?: "json" | "markdown";
+}
+
+export interface ReadPageArgs {
+  page_id: string;
+  content_format?: PageContentFormat;
+  max_depth?: number;
+  max_blocks?: number;
+  page_size?: number;
+  include_properties?: boolean;
   format?: "json" | "markdown";
 }
 
