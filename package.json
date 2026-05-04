@@ -19,7 +19,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "build": "tsc",
     "prepare": "pnpm run build",
     "watch": "tsc --watch",
     "inspector": "pnpm dlx @modelcontextprotocol/inspector build/index.js",

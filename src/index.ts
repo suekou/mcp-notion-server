@@ -16,7 +16,7 @@
  */
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { startServer } from "./server/index.js";
+import { startServer } from "./mcp/server.js";
 
 // Parse command line arguments
 const argv = yargs(hideBin(process.argv))

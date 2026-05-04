@@ -10,7 +10,7 @@ import type {
   PageResponse,
   RichTextItemResponse,
   UserResponse,
-} from "../types/index.js";
+} from "../notion/types.js";
 
 type NamedOption = { name: string };
 type RelationReference = { id: string };
