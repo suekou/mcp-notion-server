@@ -22,6 +22,7 @@ import {
 import {
   buildBlocksFromSimpleContent,
   buildBlockUpdateFromSimpleContent,
+  validateSimpleContentUpdatesAgainstBlocks,
 } from "../content/index.js";
 import { NotionClientWrapper } from "../client/index.js";
 import {
@@ -47,6 +48,7 @@ export function getAllTools(): Tool[] {
     schemas.appendBlockChildrenTool,
     schemas.appendContentTool,
     schemas.updateContentTool,
+    schemas.updateContentBatchTool,
     schemas.retrieveBlockTool,
     schemas.retrieveBlockChildrenTool,
     schemas.deleteBlockTool,
@@ -187,6 +189,41 @@ export async function startServer(
               args.block_id,
               buildBlockUpdateFromSimpleContent(args.item)
             );
+            break;
+          }
+
+          case "notion_update_content_batch": {
+            const args = request.params
+              .arguments as unknown as args.UpdateContentBatchArgs;
+            if (!args.updates || args.updates.length === 0) {
+              throw new Error("Missing required argument: updates");
+            }
+
+            const existingBlocks = await Promise.all(
+              args.updates.map((update) =>
+                notionClient.retrieveBlock(update.block_id)
+              )
+            );
+            validateSimpleContentUpdatesAgainstBlocks(
+              args.updates,
+              existingBlocks
+            );
+
+            const results = [];
+            for (const update of args.updates) {
+              results.push(
+                await notionClient.updateBlock(
+                  update.block_id,
+                  buildBlockUpdateFromSimpleContent(update.item)
+                )
+              );
+            }
+
+            response = {
+              object: "notion_content_batch_update",
+              updated_count: results.length,
+              results,
+            };
             break;
           }
 

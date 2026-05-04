@@ -7,7 +7,7 @@ MCP server for the Notion API, designed for AI agents that need to find, read, a
 - Notion API `2026-03-11` support, including `data_source_id`, `position`, and `in_trash` semantics.
 - AI-friendly discovery via `notion_find`, compact page reading via `notion_read_page`, and schema inspection via `notion_inspect_data_source`.
 - Schema-aware querying via `notion_query_data_source_by_values` for common filters and sorts.
-- Simplified write tools: `notion_append_content`, `notion_update_content`, and `notion_create_data_source_item_from_values`.
+- Simplified write tools: `notion_append_content`, `notion_update_content`, `notion_update_content_batch`, and `notion_create_data_source_item_from_values`.
 - MCP `annotations`, `structuredContent`, `isError`, prompts, and resources.
 - Optional Markdown conversion for token-efficient reading.
 - Node.js 24 LTS and pnpm-based development.
@@ -34,7 +34,7 @@ This release line is intended as a breaking modernization.
 3. Use `notion_inspect_data_source` before creating data source items.
 4. Use `notion_query_data_source_by_values` for common data source filtering and sorting.
 5. Use `notion_create_data_source_item_from_values` for common property values.
-6. Use `notion_append_content` and `notion_update_content` for common page edits.
+6. Use `notion_append_content`, `notion_update_content`, and `notion_update_content_batch` for common page edits.
 7. Fall back to raw JSON tools only for advanced Notion API shapes that the simplified tools do not cover.
 
 ## Setup
@@ -270,14 +270,22 @@ All tools support the following optional parameter:
      - `item` (object): Simplified content item. Supported types: `paragraph`, `heading_1`, `heading_2`, `heading_3`, `bulleted_list_item`, `numbered_list_item`, `to_do`, `quote`, `callout`, `code`.
    - Returns: Information about the updated block.
 
-4. `notion_retrieve_block`
+4. `notion_update_content_batch`
+
+   - Update multiple existing editable blocks without writing raw Notion block JSON.
+   - Required inputs:
+     - `updates` (array): Items with `block_id` and simplified `item` values.
+   - Returns: Count and results for updated blocks.
+   - Note: The server validates all block types before applying updates.
+
+5. `notion_retrieve_block`
 
    - Retrieve information about a specific block.
    - Required inputs:
      - `block_id` (string): The ID of the block to retrieve.
    - Returns: Detailed information about the block.
 
-5. `notion_retrieve_block_children`
+6. `notion_retrieve_block_children`
 
    - Retrieve the children of a specific block.
    - Required inputs:
@@ -287,21 +295,21 @@ All tools support the following optional parameter:
      - `page_size` (number, default: 100, max: 100): Number of blocks to retrieve.
    - Returns: List of child blocks.
 
-6. `notion_delete_block`
+7. `notion_delete_block`
 
    - Delete a specific block.
    - Required inputs:
      - `block_id` (string): The ID of the block to delete.
    - Returns: Confirmation of the deletion.
 
-7. `notion_retrieve_page`
+8. `notion_retrieve_page`
 
    - Retrieve information about a specific page.
    - Required inputs:
      - `page_id` (string): The ID of the page to retrieve.
    - Returns: Detailed information about the page.
 
-8. `notion_read_page`
+9. `notion_read_page`
 
    - Read page metadata plus child blocks as a compact outline or Markdown.
    - Required inputs:
@@ -313,7 +321,7 @@ All tools support the following optional parameter:
      - `include_properties` (boolean): Include compact page property values.
    - Returns: Page metadata, block IDs, text outline, optional Markdown, and append hints.
 
-9. `notion_update_page_properties`
+10. `notion_update_page_properties`
 
    - Update properties of a page.
    - Required inputs:
@@ -321,7 +329,7 @@ All tools support the following optional parameter:
      - `properties` (object): Properties to update.
    - Returns: Information about the updated page.
 
-10. `notion_create_data_source`
+11. `notion_create_data_source`
 
    - Create a new Notion data source.
    - Required inputs:
@@ -331,7 +339,7 @@ All tools support the following optional parameter:
      - `title` (array): Title of the data source as a rich text array.
    - Returns: Information about the created data source.
 
-11. `notion_query_data_source`
+12. `notion_query_data_source`
 
    - Query a data source.
    - Required inputs:
@@ -343,7 +351,7 @@ All tools support the following optional parameter:
      - `page_size` (number, default: 100, max: 100): Number of results to retrieve.
    - Returns: List of results from the query.
 
-12. `notion_query_data_source_by_values`
+13. `notion_query_data_source_by_values`
 
    - Query a data source with simple schema-aware filters and sorts instead of raw Notion filter JSON.
    - Required inputs:
@@ -356,21 +364,21 @@ All tools support the following optional parameter:
      - `page_size` (number, default: 100, max: 100): Number of results to retrieve.
    - Returns: List of matching data source items.
 
-13. `notion_retrieve_database`
+14. `notion_retrieve_database`
 
    - Retrieve information about a specific database container, including child data source IDs.
    - Required inputs:
      - `database_id` (string): The ID of the database to retrieve.
    - Returns: Detailed information about the database.
 
-14. `notion_retrieve_data_source`
+15. `notion_retrieve_data_source`
 
     - Retrieve metadata and property schema for a specific data source.
     - Required inputs:
       - `data_source_id` (string): The ID of the data source to retrieve.
     - Returns: Detailed information about the data source.
 
-15. `notion_update_data_source`
+16. `notion_update_data_source`
 
     - Update information about a data source.
     - Required inputs:
@@ -381,7 +389,7 @@ All tools support the following optional parameter:
       - `properties` (object): Updated property schema.
     - Returns: Information about the updated data source.
 
-16. `notion_create_data_source_item`
+17. `notion_create_data_source_item`
 
     - Create a new page item in a Notion data source.
     - Required inputs:
@@ -389,7 +397,7 @@ All tools support the following optional parameter:
       - `properties` (object): The properties of the new item. These should match the data source schema.
     - Returns: Information about the newly created item.
 
-17. `notion_create_data_source_item_from_values`
+18. `notion_create_data_source_item_from_values`
 
     - Create a new page item using simple values instead of raw Notion property JSON.
     - Validates `select`, `status`, and `multi_select` option names against the data source schema before calling Notion.
@@ -398,7 +406,7 @@ All tools support the following optional parameter:
       - `values` (object): Simple values keyed by exact property name, such as `{ "Name": "Task", "Status": "Done", "Tags": ["AI", "MCP"], "Due": "2026-05-04" }`.
     - Returns: Information about the newly created item.
 
-18. `notion_find`
+19. `notion_find`
 
     - Find pages or data sources and return compact AI-friendly candidates with stable IDs.
     - Optional inputs:
@@ -408,14 +416,14 @@ All tools support the following optional parameter:
       - `page_size` (number, default: 100, max: 100): Number of candidates to retrieve.
     - Returns: Matching candidates with suggested next tools.
 
-19. `notion_inspect_data_source`
+20. `notion_inspect_data_source`
 
     - Inspect a data source schema and return compact property names, types, options, and relation targets.
     - Required inputs:
       - `data_source_id` (string): The ID of the data source to inspect.
     - Returns: A schema summary suitable for creating or updating items.
 
-20. `notion_search`
+21. `notion_search`
 
     - Search pages or data sources by title.
     - Optional inputs:
@@ -426,7 +434,7 @@ All tools support the following optional parameter:
       - `page_size` (number, default: 100, max: 100): Number of results to retrieve.
     - Returns: List of matching pages or data sources.
 
-21. `notion_list_all_users`
+22. `notion_list_all_users`
 
     - List all users in the Notion workspace.
     - Note: This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.
@@ -435,7 +443,7 @@ All tools support the following optional parameter:
       - page_size (number, max: 100): Number of users to retrieve.
     - Returns: A paginated list of all users in the workspace.
 
-22. `notion_retrieve_user`
+23. `notion_retrieve_user`
 
     - Retrieve a specific user by user_id in Notion.
     - Note: This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.
@@ -443,12 +451,12 @@ All tools support the following optional parameter:
       - user_id (string): The ID of the user to retrieve.
     - Returns: Detailed information about the specified user.
 
-23. `notion_retrieve_bot_user`
+24. `notion_retrieve_bot_user`
 
     - Retrieve the bot user associated with the current token in Notion.
     - Returns: Information about the bot user, including details of the person who authorized the integration.
 
-24. `notion_create_comment`
+25. `notion_create_comment`
 
     - Create a comment in Notion.
     - Requires the integration to have 'insert comment' capabilities.
@@ -460,7 +468,7 @@ All tools support the following optional parameter:
       - `discussion_id` (string): An existing discussion thread ID.
     - Returns: Information about the created comment.
 
-25. `notion_retrieve_comments`
+26. `notion_retrieve_comments`
     - Retrieve a list of unresolved comments from a Notion page or block.
     - Requires the integration to have 'read comment' capabilities.
     - Required inputs:
@@ -477,7 +485,7 @@ The server also exposes reusable MCP prompts for common Notion workflows:
 - `notion_find_target`: Find the right page or data source before reading, editing, or creating content.
 - `notion_create_database_item`: Inspect a data source schema and create an item using simple property values.
 - `notion_query_database_items`: Inspect a data source schema and query items using simple filters.
-- `notion_append_page_content`: Find a page and append or update common content using `notion_append_content` and `notion_update_content`.
+- `notion_append_page_content`: Find a page and append or update common content using `notion_append_content`, `notion_update_content`, and `notion_update_content_batch`.
 
 ## Resources
 

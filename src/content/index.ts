@@ -33,6 +33,11 @@ export type SimpleEditableContentItem = Exclude<
   { type: "divider" }
 >;
 
+export type SimpleContentUpdate = {
+  block_id: string;
+  item: SimpleEditableContentItem;
+};
+
 export function buildBlocksFromSimpleContent(
   items: SimpleContentItem[]
 ): Partial<BlockResponse>[] {
@@ -55,6 +60,32 @@ export function buildBlockUpdateFromSimpleContent(
   return {
     [type]: block[type],
   };
+}
+
+export function validateSimpleContentUpdatesAgainstBlocks(
+  updates: SimpleContentUpdate[],
+  blocks: BlockResponse[]
+): void {
+  if (updates.length !== blocks.length) {
+    throw new Error(
+      `Expected ${updates.length} blocks for validation, received ${blocks.length}.`
+    );
+  }
+
+  updates.forEach((update, index) => {
+    const block = blocks[index];
+    if (block.id !== update.block_id) {
+      throw new Error(
+        `Block validation order mismatch: expected ${update.block_id}, received ${block.id}.`
+      );
+    }
+
+    if (block.type !== update.item.type) {
+      throw new Error(
+        `Block type mismatch: block ${update.block_id} is ${block.type}, but item.type was ${update.item.type}`
+      );
+    }
+  });
 }
 
 function buildBlockFromSimpleContent(

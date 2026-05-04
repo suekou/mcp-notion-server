@@ -4,6 +4,7 @@
 
 import type {
   SimpleContentItem,
+  SimpleContentUpdate,
   SimpleEditableContentItem,
 } from "../content/index.js";
 import type { PageContentFormat } from "../page/index.js";
@@ -46,6 +47,11 @@ export interface AppendContentArgs {
 export interface UpdateContentArgs {
   block_id: string;
   item: SimpleEditableContentItem;
+  format?: "json" | "markdown";
+}
+
+export interface UpdateContentBatchArgs {
+  updates: SimpleContentUpdate[];
   format?: "json" | "markdown";
 }
 
