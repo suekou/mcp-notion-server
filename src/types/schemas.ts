@@ -53,6 +53,32 @@ const simpleContentItemSchema = {
   required: ["type"],
 };
 
+const simpleEditableContentItemSchema = {
+  ...simpleContentItemSchema,
+  description:
+    "A simplified Notion content item for updating an existing editable block. The type must match the current block type.",
+  properties: {
+    ...simpleContentItemSchema.properties,
+    type: {
+      ...simpleContentItemSchema.properties.type,
+      enum: [
+        "paragraph",
+        "heading_1",
+        "heading_2",
+        "heading_3",
+        "bulleted_list_item",
+        "numbered_list_item",
+        "to_do",
+        "quote",
+        "callout",
+        "code",
+      ],
+      description:
+        "The existing block type to update. Must match the block's current type.",
+    },
+  },
+};
+
 // Blocks tools
 export const appendBlockChildrenTool: Tool = {
   name: "notion_append_block_children",
@@ -157,6 +183,32 @@ export const appendContentTool: Tool = {
       format: formatParameter,
     },
     required: ["block_id", "items"],
+  },
+};
+
+export const updateContentTool: Tool = {
+  name: "notion_update_content",
+  description:
+    "Update an existing Notion block without writing raw Notion block JSON. Use this after notion_read_page gives you a block ID and you need to replace the text or simple fields of an existing paragraph, heading, list item, todo, quote, callout, or code block. The item.type must match the block's current type; this tool will reject mismatches so the model can correct itself.",
+  annotations: {
+    title: "Update Simple Content",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: true,
+  },
+  inputSchema: {
+    type: "object",
+    properties: {
+      block_id: {
+        type: "string",
+        description:
+          "The existing block ID to update. Use notion_read_page to find block IDs." +
+          commonIdDescription,
+      },
+      item: simpleEditableContentItemSchema,
+      format: formatParameter,
+    },
+    required: ["block_id", "item"],
   },
 };
 

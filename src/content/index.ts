@@ -28,10 +28,33 @@ export type SimpleContentItem =
       type: "divider";
     };
 
+export type SimpleEditableContentItem = Exclude<
+  SimpleContentItem,
+  { type: "divider" }
+>;
+
 export function buildBlocksFromSimpleContent(
   items: SimpleContentItem[]
 ): Partial<BlockResponse>[] {
   return items.map((item) => buildBlockFromSimpleContent(item));
+}
+
+export function buildBlockUpdateFromSimpleContent(
+  item: SimpleContentItem
+): Partial<BlockResponse> {
+  if (item.type === "divider") {
+    throw new Error("Divider blocks do not have editable content");
+  }
+
+  const block = buildBlockFromSimpleContent(item);
+  const type = block.type;
+  if (!type) {
+    throw new Error("Simple content item did not produce a block type");
+  }
+
+  return {
+    [type]: block[type],
+  };
 }
 
 function buildBlockFromSimpleContent(

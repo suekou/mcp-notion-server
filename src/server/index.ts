@@ -19,7 +19,10 @@ import {
   Resource,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import { buildBlocksFromSimpleContent } from "../content/index.js";
+import {
+  buildBlocksFromSimpleContent,
+  buildBlockUpdateFromSimpleContent,
+} from "../content/index.js";
 import { NotionClientWrapper } from "../client/index.js";
 import {
   buildPageReadSummary,
@@ -42,6 +45,7 @@ export function getAllTools(): Tool[] {
   return [
     schemas.appendBlockChildrenTool,
     schemas.appendContentTool,
+    schemas.updateContentTool,
     schemas.retrieveBlockTool,
     schemas.retrieveBlockChildrenTool,
     schemas.deleteBlockTool,
@@ -157,6 +161,29 @@ export async function startServer(
               args.block_id,
               buildBlocksFromSimpleContent(args.items),
               args.position
+            );
+            break;
+          }
+
+          case "notion_update_content": {
+            const args = request.params
+              .arguments as unknown as args.UpdateContentArgs;
+            if (!args.block_id || !args.item) {
+              throw new Error(
+                "Missing required arguments: block_id and item"
+              );
+            }
+            const existingBlock = await notionClient.retrieveBlock(
+              args.block_id
+            );
+            if (existingBlock.type !== args.item.type) {
+              throw new Error(
+                `Block type mismatch: block ${args.block_id} is ${existingBlock.type}, but item.type was ${args.item.type}`
+              );
+            }
+            response = await notionClient.updateBlock(
+              args.block_id,
+              buildBlockUpdateFromSimpleContent(args.item)
             );
             break;
           }

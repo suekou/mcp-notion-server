@@ -2,7 +2,10 @@
  * Type definitions for tool arguments
  */
 
-import type { SimpleContentItem } from "../content/index.js";
+import type {
+  SimpleContentItem,
+  SimpleEditableContentItem,
+} from "../content/index.js";
 import type { PageContentFormat } from "../page/index.js";
 import type { SimplePropertyValues } from "../properties/index.js";
 import { RichTextItemResponse, BlockResponse } from "./responses.js";
@@ -33,6 +36,12 @@ export interface AppendContentArgs {
   block_id: string;
   items: SimpleContentItem[];
   position?: AppendBlockChildrenPosition;
+  format?: "json" | "markdown";
+}
+
+export interface UpdateContentArgs {
+  block_id: string;
+  item: SimpleEditableContentItem;
   format?: "json" | "markdown";
 }
 
