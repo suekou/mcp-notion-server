@@ -30,6 +30,7 @@ import {
 } from "../page/index.js";
 import { buildPagePropertiesFromSimpleValues } from "../properties/index.js";
 import { getNotionPrompt, notionPrompts } from "../prompts/index.js";
+import { buildDataSourceQueryFromSimpleFilters } from "../query/index.js";
 import { notionResources, readNotionResource } from "../resources/index.js";
 import {
   summarizeDataSourceSchema,
@@ -59,6 +60,7 @@ export function getAllTools(): Tool[] {
     schemas.retrieveDatabaseTool,
     schemas.createDataSourceTool,
     schemas.queryDataSourceTool,
+    schemas.queryDataSourceByValuesTool,
     schemas.retrieveDataSourceTool,
     schemas.updateDataSourceTool,
     schemas.createDataSourceItemTool,
@@ -310,6 +312,30 @@ export async function startServer(
               args.data_source_id,
               args.filter,
               args.sorts,
+              args.start_cursor,
+              args.page_size
+            );
+            break;
+          }
+
+          case "notion_query_data_source_by_values": {
+            const args = request.params
+              .arguments as unknown as args.QueryDataSourceByValuesArgs;
+            if (!args.data_source_id) {
+              throw new Error("Missing required argument: data_source_id");
+            }
+            const dataSource = await notionClient.retrieveDataSource(
+              args.data_source_id
+            );
+            const query = buildDataSourceQueryFromSimpleFilters(dataSource, {
+              filters: args.filters,
+              match: args.match,
+              sorts: args.sorts,
+            });
+            response = await notionClient.queryDataSource(
+              args.data_source_id,
+              query.filter,
+              query.sorts,
               args.start_cursor,
               args.page_size
             );

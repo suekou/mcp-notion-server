@@ -79,6 +79,62 @@ const simpleEditableContentItemSchema = {
   },
 };
 
+const simpleDataSourceFilterSchema = {
+  type: "object",
+  description:
+    "A schema-aware filter for common Notion data source property types. The server converts it into raw Notion filter JSON.",
+  properties: {
+    property: {
+      type: "string",
+      description:
+        "Exact property name from notion_inspect_data_source, for example Status, Tags, Due, or Estimate.",
+    },
+    operator: {
+      type: "string",
+      enum: [
+        "equals",
+        "does_not_equal",
+        "contains",
+        "does_not_contain",
+        "greater_than",
+        "less_than",
+        "greater_than_or_equal_to",
+        "less_than_or_equal_to",
+        "before",
+        "after",
+        "on_or_before",
+        "on_or_after",
+        "is_empty",
+        "is_not_empty",
+      ],
+      description:
+        "Optional operator. Defaults are type-aware: text/multi_select/relation/people use contains, most other types use equals.",
+    },
+    value: {
+      description:
+        "Filter value. Use strings for text/options/dates/relation IDs, numbers for number properties, booleans for checkbox properties. Omit for is_empty/is_not_empty.",
+    },
+  },
+  required: ["property"],
+};
+
+const simpleDataSourceSortSchema = {
+  type: "object",
+  description: "A simple property sort for a data source query.",
+  properties: {
+    property: {
+      type: "string",
+      description: "Exact property name to sort by.",
+    },
+    direction: {
+      type: "string",
+      enum: ["ascending", "descending"],
+      description: "Sort direction. Defaults to ascending.",
+    },
+  },
+  required: ["property"],
+};
+
 // Blocks tools
 export const appendBlockChildrenTool: Tool = {
   name: "notion_append_block_children",
@@ -551,6 +607,53 @@ export const queryDataSourceTool: Tool = {
           },
           required: ["direction"],
         },
+      },
+      start_cursor: {
+        type: "string",
+        description: "Pagination cursor for next page of results",
+      },
+      page_size: {
+        type: "number",
+        description: "Number of results per page (max 100)",
+      },
+      format: formatParameter,
+    },
+    required: ["data_source_id"],
+  },
+};
+
+export const queryDataSourceByValuesTool: Tool = {
+  name: "notion_query_data_source_by_values",
+  description:
+    "Query a Notion data source using simple schema-aware filters and sorts instead of raw Notion filter JSON. Use this after notion_inspect_data_source when the user asks for common queries like Status equals Done, Tags contains AI, Due on or before a date, Estimate greater than 3, or Done equals false. The server validates property names, option names, value types, and supported operators before calling Notion.",
+  annotations: {
+    title: "Query Data Source By Values",
+    readOnlyHint: true,
+    destructiveHint: false,
+  },
+  inputSchema: {
+    type: "object",
+    properties: {
+      data_source_id: {
+        type: "string",
+        description: "The ID of the data source to query." + commonIdDescription,
+      },
+      filters: {
+        type: "array",
+        description:
+          "Simple schema-aware filters. Multiple filters are combined with match=all by default.",
+        items: simpleDataSourceFilterSchema,
+      },
+      match: {
+        type: "string",
+        enum: ["all", "any"],
+        description:
+          "How to combine multiple filters. all maps to Notion and; any maps to Notion or.",
+      },
+      sorts: {
+        type: "array",
+        description: "Simple property sorts.",
+        items: simpleDataSourceSortSchema,
       },
       start_cursor: {
         type: "string",

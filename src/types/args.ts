@@ -8,6 +8,10 @@ import type {
 } from "../content/index.js";
 import type { PageContentFormat } from "../page/index.js";
 import type { SimplePropertyValues } from "../properties/index.js";
+import type {
+  SimpleDataSourceFilter,
+  SimpleDataSourceSort,
+} from "../query/index.js";
 import { RichTextItemResponse, BlockResponse } from "./responses.js";
 
 export type AppendBlockChildrenPosition =
@@ -127,6 +131,16 @@ export interface QueryDataSourceArgs {
     timestamp?: string;
     direction: "ascending" | "descending";
   }>;
+  start_cursor?: string;
+  page_size?: number;
+  format?: "json" | "markdown";
+}
+
+export interface QueryDataSourceByValuesArgs {
+  data_source_id: string;
+  filters?: SimpleDataSourceFilter[];
+  match?: "all" | "any";
+  sorts?: SimpleDataSourceSort[];
   start_cursor?: string;
   page_size?: number;
   format?: "json" | "markdown";
