@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { buildBlocksFromSimpleContent } from "./index.js";
+import {
+  buildBlocksFromSimpleContent,
+  buildBlockUpdateFromSimpleContent,
+} from "./index.js";
 
 describe("content block builder", () => {
   test("should build common Notion blocks from simple content", () => {
@@ -73,5 +76,30 @@ describe("content block builder", () => {
         divider: {},
       },
     ]);
+  });
+
+  test("should build update payloads without raw block wrappers", () => {
+    expect(
+      buildBlockUpdateFromSimpleContent({
+        type: "paragraph",
+        text: "Updated text",
+      })
+    ).toEqual({
+      paragraph: {
+        rich_text: [
+          {
+            type: "text",
+            text: { content: "Updated text" },
+            plain_text: "Updated text",
+          },
+        ],
+      },
+    });
+  });
+
+  test("should reject divider updates because they have no editable content", () => {
+    expect(() =>
+      buildBlockUpdateFromSimpleContent({ type: "divider" })
+    ).toThrow("Divider blocks do not have editable content");
   });
 });
