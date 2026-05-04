@@ -5,7 +5,7 @@ import type {
   DataSourceResponse,
   ListResponse,
   PageResponse,
-} from "../types/index.js";
+} from "../notion/types.js";
 import { convertToMarkdown, renderBlockToMarkdown } from "./index.js";
 
 describe("convertToMarkdown", () => {

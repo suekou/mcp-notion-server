@@ -186,28 +186,24 @@ The project is organized in a modular way to improve maintainability and readabi
 ./
 ├── src/
 │   ├── index.ts              # Entry point and command-line handling
-│   ├── client/
-│   │   └── index.ts          # NotionClientWrapper class for API interactions
-│   ├── content/
-│   │   └── index.ts          # Simple content to Notion block conversion
-│   ├── page/
-│   │   └── index.ts          # Compact page reading and block outline helpers
-│   ├── properties/
-│   │   └── index.ts          # Simple property values to Notion property JSON conversion
+│   ├── mcp/
+│   │   ├── server.ts         # MCP server setup, registration, and dispatch
+│   │   ├── result.ts         # MCP tool result formatting
+│   │   └── schema.ts         # JSON schema helpers and Zod conversion
+│   ├── notion/
+│   │   ├── client.ts         # Notion API wrapper and request handling
+│   │   ├── errors.ts         # Notion API error type
+│   │   └── types.ts          # Notion API response types
+│   ├── tools/
+│   │   ├── blocks/           # Raw block tools
+│   │   ├── pages/            # Page reading and page property tools
+│   │   ├── data-sources/     # Data source query/create/schema helpers
+│   │   ├── discovery/        # Find/search/schema summary tools
+│   │   └── content/          # Simple content and Markdown append tools
 │   ├── prompts/
 │   │   └── index.ts          # Reusable MCP prompts for Notion workflows
 │   ├── resources/
 │   │   └── index.ts          # MCP guidance resources
-│   ├── server/
-│   │   └── index.ts          # MCP server setup and request handling
-│   ├── summary/
-│   │   └── index.ts          # Compact AI-friendly result summaries
-│   ├── types/
-│   │   ├── index.ts          # Type exports
-│   │   ├── args.ts           # Tool argument interfaces
-│   │   ├── common.ts         # Common schema definitions
-│   │   ├── responses.ts      # API response type definitions
-│   │   └── schemas.ts        # Tool schema definitions
 │   ├── utils/
 │   │   └── index.ts          # Utility functions
 │   └── markdown/
@@ -217,22 +213,11 @@ The project is organized in a modular way to improve maintainability and readabi
 ### Directory Descriptions
 
 - **index.ts**: Application entry point. Parses command-line arguments and starts the server.
-- **client/**: Module responsible for communication with the Notion API.
-  - **index.ts**: NotionClientWrapper class implements all API calls.
-- **content/**: Converts simplified content items into Notion block objects.
-- **page/**: Reads page block trees into compact outlines or Markdown.
-- **properties/**: Converts simple property values into Notion page property JSON.
+- **mcp/**: MCP registration, result formatting, server instructions, and schema conversion.
+- **notion/**: Notion API client, API errors, and response types.
+- **tools/**: Tool definitions, handlers, and domain-specific helpers colocated by workflow area.
 - **prompts/**: Defines reusable MCP prompts for Notion workflows.
 - **resources/**: Defines static MCP resources with usage guidance.
-- **server/**: MCP server implementation.
-  - **index.ts**: Processes requests received from Claude and calls appropriate client methods.
-- **summary/**: Produces compact summaries for search results and data source schemas.
-- **types/**: Type definition module.
-  - **index.ts**: Exports for all types.
-  - **args.ts**: Interface definitions for tool arguments.
-  - **common.ts**: Definitions for common schemas (ID formats, rich text, etc.).
-  - **responses.ts**: Type definitions for Notion API responses.
-  - **schemas.ts**: Definitions for MCP tool schemas.
 - **utils/**: Utility functions.
   - **index.ts**: Functions like filtering enabled tools.
 - **markdown/**: Markdown conversion functionality.
