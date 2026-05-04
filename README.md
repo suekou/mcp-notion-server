@@ -375,6 +375,13 @@ The server also exposes reusable MCP prompts for common Notion workflows:
 - `notion_create_database_item`: Inspect a data source schema and create an item using simple property values.
 - `notion_append_page_content`: Find a page and append common content using `notion_append_content`.
 
+## Resources
+
+The server exposes static MCP resources that clients can attach as guidance:
+
+- `notion://server/guide`: Recommended discovery, reading, and writing workflows.
+- `notion://server/tools`: Compact map of high-level and low-level tools.
+
 ## License
 
 This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.
