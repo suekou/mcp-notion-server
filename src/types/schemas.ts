@@ -150,7 +150,7 @@ export const appendBlockChildrenTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description: "The ID of the parent block." + commonIdDescription,
+        description: `The ID of the parent block. ${commonIdDescription}`,
       },
       children: {
         type: "array",
@@ -345,8 +345,7 @@ export const updateContentBatchTool: Tool = {
           properties: {
             block_id: {
               type: "string",
-              description:
-                "The existing block ID to update." + commonIdDescription,
+              description: `The existing block ID to update. ${commonIdDescription}`,
             },
             item: simpleEditableContentItemSchema,
           },
@@ -372,7 +371,7 @@ export const retrieveBlockTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description: "The ID of the block to retrieve." + commonIdDescription,
+        description: `The ID of the block to retrieve. ${commonIdDescription}`,
       },
       format: formatParameter,
     },
@@ -393,7 +392,7 @@ export const retrieveBlockChildrenTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description: "The ID of the block." + commonIdDescription,
+        description: `The ID of the block. ${commonIdDescription}`,
       },
       start_cursor: {
         type: "string",
@@ -423,7 +422,7 @@ export const deleteBlockTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description: "The ID of the block to delete." + commonIdDescription,
+        description: `The ID of the block to delete. ${commonIdDescription}`,
       },
       format: formatParameter,
     },
@@ -446,7 +445,7 @@ export const updateBlockTool: Tool = {
     properties: {
       block_id: {
         type: "string",
-        description: "The ID of the block to update." + commonIdDescription,
+        description: `The ID of the block to update. ${commonIdDescription}`,
       },
       block: {
         type: "object",
@@ -473,7 +472,7 @@ export const retrievePageTool: Tool = {
     properties: {
       page_id: {
         type: "string",
-        description: "The ID of the page to retrieve." + commonIdDescription,
+        description: `The ID of the page to retrieve. ${commonIdDescription}`,
       },
       format: formatParameter,
     },
@@ -495,7 +494,7 @@ export const readPageTool: Tool = {
     properties: {
       page_id: {
         type: "string",
-        description: "The ID of the page to read." + commonIdDescription,
+        description: `The ID of the page to read. ${commonIdDescription}`,
       },
       content_format: {
         type: "string",
@@ -598,7 +597,7 @@ export const retrieveUserTool: Tool = {
     properties: {
       user_id: {
         type: "string",
-        description: "The ID of the user to retrieve." + commonIdDescription,
+        description: `The ID of the user to retrieve. ${commonIdDescription}`,
       },
       format: formatParameter,
     },
@@ -672,8 +671,7 @@ export const queryDataSourceTool: Tool = {
     properties: {
       data_source_id: {
         type: "string",
-        description:
-          "The ID of the data source to query." + commonIdDescription,
+        description: `The ID of the data source to query. ${commonIdDescription}`,
       },
       filter: {
         type: "object",
@@ -723,8 +721,7 @@ export const queryDataSourceByValuesTool: Tool = {
     properties: {
       data_source_id: {
         type: "string",
-        description:
-          "The ID of the data source to query." + commonIdDescription,
+        description: `The ID of the data source to query. ${commonIdDescription}`,
       },
       filters: {
         type: "array",
@@ -771,8 +768,7 @@ export const retrieveDatabaseTool: Tool = {
     properties: {
       database_id: {
         type: "string",
-        description:
-          "The ID of the database to retrieve." + commonIdDescription,
+        description: `The ID of the database to retrieve. ${commonIdDescription}`,
       },
       format: formatParameter,
     },
@@ -794,8 +790,7 @@ export const retrieveDataSourceTool: Tool = {
     properties: {
       data_source_id: {
         type: "string",
-        description:
-          "The ID of the data source to retrieve." + commonIdDescription,
+        description: `The ID of the data source to retrieve. ${commonIdDescription}`,
       },
       format: formatParameter,
     },
@@ -817,8 +812,7 @@ export const updateDataSourceTool: Tool = {
     properties: {
       data_source_id: {
         type: "string",
-        description:
-          "The ID of the data source to update." + commonIdDescription,
+        description: `The ID of the data source to update. ${commonIdDescription}`,
       },
       title: {
         type: "array",
@@ -858,8 +852,7 @@ export const createDataSourceItemTool: Tool = {
     properties: {
       data_source_id: {
         type: "string",
-        description:
-          "The ID of the data source to add the item to." + commonIdDescription,
+        description: `The ID of the data source to add the item to. ${commonIdDescription}`,
       },
       properties: {
         type: "object",
@@ -887,8 +880,7 @@ export const createDataSourceItemFromValuesTool: Tool = {
     properties: {
       data_source_id: {
         type: "string",
-        description:
-          "The ID of the data source to add the item to." + commonIdDescription,
+        description: `The ID of the data source to add the item to. ${commonIdDescription}`,
       },
       values: {
         type: "object",
@@ -922,8 +914,7 @@ export const createCommentTool: Tool = {
         properties: {
           page_id: {
             type: "string",
-            description:
-              "The ID of the page to comment on." + commonIdDescription,
+            description: `The ID of the page to comment on. ${commonIdDescription}`,
           },
         },
       },

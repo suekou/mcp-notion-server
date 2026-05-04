@@ -72,8 +72,7 @@ export const richTextObjectSchema = {
           properties: {
             id: {
               type: "string",
-              description:
-                "The ID of the mentioned database." + commonIdDescription,
+              description: `The ID of the mentioned database. ${commonIdDescription}`,
             },
           },
           required: ["id"],
@@ -119,8 +118,7 @@ export const richTextObjectSchema = {
           properties: {
             id: {
               type: "string",
-              description:
-                "The ID of the mentioned page." + commonIdDescription,
+              description: `The ID of the mentioned page. ${commonIdDescription}`,
             },
           },
           required: ["id"],
@@ -158,7 +156,7 @@ export const richTextObjectSchema = {
             },
             id: {
               type: "string",
-              description: "The ID of the user." + commonIdDescription,
+              description: `The ID of the user. ${commonIdDescription}`,
             },
           },
           required: ["object", "id"],
