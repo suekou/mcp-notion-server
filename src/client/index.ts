@@ -16,20 +16,119 @@ import {
   CreateDataSourceArgs,
   DataSourceResponse,
 } from "../types/index.js";
-import fetch from "node-fetch";
+
+export type NotionClientOptions = {
+  timeoutMs?: number;
+  maxRetries?: number;
+  retryDelayMs?: number;
+};
+
+export class NotionApiError extends Error {
+  status: number;
+  code?: string;
+  responseBody: unknown;
+  retryAfterMs?: number;
+
+  constructor(
+    status: number,
+    statusText: string,
+    responseBody: unknown,
+    retryAfterMs?: number
+  ) {
+    const body =
+      responseBody && typeof responseBody === "object"
+        ? (responseBody as Record<string, unknown>)
+        : undefined;
+    const code = typeof body?.code === "string" ? body.code : undefined;
+    const message =
+      typeof body?.message === "string" ? body.message : statusText;
+
+    super(`Notion API request failed (${status}${code ? ` ${code}` : ""}): ${message}`);
+    this.name = "NotionApiError";
+    this.status = status;
+    this.code = code;
+    this.responseBody = responseBody;
+    this.retryAfterMs = retryAfterMs;
+  }
+}
 
 export class NotionClientWrapper {
   private notionToken: string;
   private baseUrl: string = "https://api.notion.com/v1";
   private headers: { [key: string]: string };
+  private timeoutMs: number;
+  private maxRetries: number;
+  private retryDelayMs: number;
 
-  constructor(token: string) {
+  constructor(token: string, options: NotionClientOptions = {}) {
     this.notionToken = token;
     this.headers = {
       Authorization: `Bearer ${this.notionToken}`,
       "Content-Type": "application/json",
       "Notion-Version": "2026-03-11",
     };
+    this.timeoutMs = options.timeoutMs ?? 30_000;
+    this.maxRetries = options.maxRetries ?? 2;
+    this.retryDelayMs = options.retryDelayMs ?? 500;
+  }
+
+  private async request<T>(
+    path: string,
+    init: Omit<RequestInit, "headers" | "signal"> = {}
+  ): Promise<T> {
+    const url = `${this.baseUrl}${path}`;
+
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+
+      try {
+        const response = await fetch(url, {
+          ...init,
+          headers: this.headers,
+          signal: controller.signal,
+        });
+        const responseBody = await parseResponseBody(response);
+
+        if (!response.ok) {
+          const retryAfterMs = parseRetryAfter(
+            response.headers.get("retry-after")
+          );
+          const error = new NotionApiError(
+            response.status,
+            response.statusText,
+            responseBody,
+            retryAfterMs
+          );
+
+          if (attempt < this.maxRetries && isRetryableStatus(response.status)) {
+            await sleep(retryAfterMs ?? this.retryDelayMs);
+            continue;
+          }
+
+          throw error;
+        }
+
+        return responseBody as T;
+      } catch (error) {
+        if (isAbortError(error)) {
+          throw new Error(
+            `Notion API request timed out after ${this.timeoutMs}ms`
+          );
+        }
+
+        if (!(error instanceof NotionApiError) && attempt < this.maxRetries) {
+          await sleep(this.retryDelayMs);
+          continue;
+        }
+
+        throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
+    throw new Error("Notion API request failed after retries");
   }
 
   async appendBlockChildren(
@@ -40,25 +139,16 @@ export class NotionClientWrapper {
     const body: Record<string, any> = { children };
     if (position) body.position = position;
 
-    const response = await fetch(
-      `${this.baseUrl}/blocks/${block_id}/children`,
-      {
-        method: "PATCH",
-        headers: this.headers,
-        body: JSON.stringify(body),
-      }
-    );
-
-    return response.json();
+    return this.request<BlockResponse>(`/blocks/${block_id}/children`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
   }
 
   async retrieveBlock(block_id: string): Promise<BlockResponse> {
-    const response = await fetch(`${this.baseUrl}/blocks/${block_id}`, {
+    return this.request<BlockResponse>(`/blocks/${block_id}`, {
       method: "GET",
-      headers: this.headers,
     });
-
-    return response.json();
   }
 
   async retrieveBlockChildren(
@@ -70,46 +160,34 @@ export class NotionClientWrapper {
     if (start_cursor) params.append("start_cursor", start_cursor);
     if (page_size) params.append("page_size", page_size.toString());
 
-    const response = await fetch(
-      `${this.baseUrl}/blocks/${block_id}/children?${params}`,
+    return this.request<ListResponse>(
+      `/blocks/${block_id}/children?${params.toString()}`,
       {
         method: "GET",
-        headers: this.headers,
       }
     );
-
-    return response.json();
   }
 
   async deleteBlock(block_id: string): Promise<BlockResponse> {
-    const response = await fetch(`${this.baseUrl}/blocks/${block_id}`, {
+    return this.request<BlockResponse>(`/blocks/${block_id}`, {
       method: "DELETE",
-      headers: this.headers,
     });
-
-    return response.json();
   }
 
   async updateBlock(
     block_id: string,
     block: Partial<BlockResponse>
   ): Promise<BlockResponse> {
-    const response = await fetch(`${this.baseUrl}/blocks/${block_id}`, {
+    return this.request<BlockResponse>(`/blocks/${block_id}`, {
       method: "PATCH",
-      headers: this.headers,
       body: JSON.stringify(block),
     });
-
-    return response.json();
   }
 
   async retrievePage(page_id: string): Promise<PageResponse> {
-    const response = await fetch(`${this.baseUrl}/pages/${page_id}`, {
+    return this.request<PageResponse>(`/pages/${page_id}`, {
       method: "GET",
-      headers: this.headers,
     });
-
-    return response.json();
   }
 
   async updatePageProperties(
@@ -118,13 +196,10 @@ export class NotionClientWrapper {
   ): Promise<PageResponse> {
     const body = { properties };
 
-    const response = await fetch(`${this.baseUrl}/pages/${page_id}`, {
+    return this.request<PageResponse>(`/pages/${page_id}`, {
       method: "PATCH",
-      headers: this.headers,
       body: JSON.stringify(body),
     });
-
-    return response.json();
   }
 
   async listAllUsers(
@@ -135,27 +210,21 @@ export class NotionClientWrapper {
     if (start_cursor) params.append("start_cursor", start_cursor);
     if (page_size) params.append("page_size", page_size.toString());
 
-    const response = await fetch(`${this.baseUrl}/users?${params.toString()}`, {
+    return this.request<ListResponse>(`/users?${params.toString()}`, {
       method: "GET",
-      headers: this.headers,
     });
-    return response.json();
   }
 
   async retrieveUser(user_id: string): Promise<UserResponse> {
-    const response = await fetch(`${this.baseUrl}/users/${user_id}`, {
+    return this.request<UserResponse>(`/users/${user_id}`, {
       method: "GET",
-      headers: this.headers,
     });
-    return response.json();
   }
 
   async retrieveBotUser(): Promise<UserResponse> {
-    const response = await fetch(`${this.baseUrl}/users/me`, {
+    return this.request<UserResponse>("/users/me", {
       method: "GET",
-      headers: this.headers,
     });
-    return response.json();
   }
 
   async createDataSource(
@@ -165,13 +234,10 @@ export class NotionClientWrapper {
   ): Promise<DataSourceResponse> {
     const body = { parent, title, properties };
 
-    const response = await fetch(`${this.baseUrl}/data_sources`, {
+    return this.request<DataSourceResponse>("/data_sources", {
       method: "POST",
-      headers: this.headers,
       body: JSON.stringify(body),
     });
-
-    return response.json();
   }
 
   async queryDataSource(
@@ -191,37 +257,22 @@ export class NotionClientWrapper {
     if (start_cursor) body.start_cursor = start_cursor;
     if (page_size) body.page_size = page_size;
 
-    const response = await fetch(
-      `${this.baseUrl}/data_sources/${data_source_id}/query`,
-      {
-        method: "POST",
-        headers: this.headers,
-        body: JSON.stringify(body),
-      }
-    );
-
-    return response.json();
+    return this.request<ListResponse>(`/data_sources/${data_source_id}/query`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
   }
 
   async retrieveDatabase(database_id: string): Promise<DatabaseResponse> {
-    const response = await fetch(`${this.baseUrl}/databases/${database_id}`, {
+    return this.request<DatabaseResponse>(`/databases/${database_id}`, {
       method: "GET",
-      headers: this.headers,
     });
-
-    return response.json();
   }
 
   async retrieveDataSource(data_source_id: string): Promise<DataSourceResponse> {
-    const response = await fetch(
-      `${this.baseUrl}/data_sources/${data_source_id}`,
-      {
-        method: "GET",
-        headers: this.headers,
-      }
-    );
-
-    return response.json();
+    return this.request<DataSourceResponse>(`/data_sources/${data_source_id}`, {
+      method: "GET",
+    });
   }
 
   async updateDataSource(
@@ -235,16 +286,10 @@ export class NotionClientWrapper {
     if (description) body.description = description;
     if (properties) body.properties = properties;
 
-    const response = await fetch(
-      `${this.baseUrl}/data_sources/${data_source_id}`,
-      {
-        method: "PATCH",
-        headers: this.headers,
-        body: JSON.stringify(body),
-      }
-    );
-
-    return response.json();
+    return this.request<DataSourceResponse>(`/data_sources/${data_source_id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
   }
 
   async createDataSourceItem(
@@ -256,13 +301,10 @@ export class NotionClientWrapper {
       properties,
     };
 
-    const response = await fetch(`${this.baseUrl}/pages`, {
+    return this.request<PageResponse>("/pages", {
       method: "POST",
-      headers: this.headers,
       body: JSON.stringify(body),
     });
-
-    return response.json();
   }
 
   async createComment(
@@ -278,13 +320,10 @@ export class NotionClientWrapper {
       body.discussion_id = discussion_id;
     }
 
-    const response = await fetch(`${this.baseUrl}/comments`, {
+    return this.request<CommentResponse>("/comments", {
       method: "POST",
-      headers: this.headers,
       body: JSON.stringify(body),
     });
-
-    return response.json();
   }
 
   async retrieveComments(
@@ -297,15 +336,9 @@ export class NotionClientWrapper {
     if (start_cursor) params.append("start_cursor", start_cursor);
     if (page_size) params.append("page_size", page_size.toString());
 
-    const response = await fetch(
-      `${this.baseUrl}/comments?${params.toString()}`,
-      {
-        method: "GET",
-        headers: this.headers,
-      }
-    );
-
-    return response.json();
+    return this.request<ListResponse>(`/comments?${params.toString()}`, {
+      method: "GET",
+    });
   }
 
   async search(
@@ -325,16 +358,51 @@ export class NotionClientWrapper {
     if (start_cursor) body.start_cursor = start_cursor;
     if (page_size) body.page_size = page_size;
 
-    const response = await fetch(`${this.baseUrl}/search`, {
+    return this.request<ListResponse>("/search", {
       method: "POST",
-      headers: this.headers,
       body: JSON.stringify(body),
     });
-
-    return response.json();
   }
 
   async toMarkdown(response: NotionResponse): Promise<string> {
     return convertToMarkdown(response);
   }
+}
+
+async function parseResponseBody(response: Response): Promise<unknown> {
+  const text = await response.text();
+  if (!text) return undefined;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
+function isRetryableStatus(status: number): boolean {
+  return status === 429 || status >= 500;
+}
+
+function parseRetryAfter(value: string | null): number | undefined {
+  if (!value) return undefined;
+
+  const seconds = Number(value);
+  if (Number.isFinite(seconds)) {
+    return Math.max(0, seconds * 1000);
+  }
+
+  const retryDate = Date.parse(value);
+  if (Number.isNaN(retryDate)) return undefined;
+
+  return Math.max(0, retryDate - Date.now());
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError";
+}
+
+function sleep(ms: number): Promise<void> {
+  if (ms <= 0) return Promise.resolve();
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
