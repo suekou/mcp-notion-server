@@ -1,18 +1,31 @@
 import { expect, test, describe, vi, beforeEach } from "vitest";
-import { NotionClientWrapper } from "./client/index.js";
+import { NotionApiError, NotionClientWrapper } from "./client/index.js";
 import { PageResponse } from "./types/index.js";
 import { filterTools } from "./utils/index.js";
-import fetch from "node-fetch";
 
 vi.mock("./markdown/index.js", () => ({
   convertToMarkdown: vi.fn().mockReturnValue("# Test"),
 }));
 
-vi.mock("node-fetch", () => {
+const fetchMock = vi.fn();
+
+function mockResponse(
+  body: unknown = { success: true },
+  init: {
+    status?: number;
+    statusText?: string;
+    headers?: Record<string, string>;
+  } = {}
+): Response {
+  const status = init.status ?? 200;
   return {
-    default: vi.fn(),
-  };
-});
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: init.statusText ?? "OK",
+    headers: new Headers(init.headers),
+    text: () => Promise.resolve(JSON.stringify(body)),
+  } as Response;
+}
 
 // Mock tool list
 const mockInputSchema = { type: "object" as const };
@@ -41,12 +54,8 @@ describe("NotionClientWrapper", () => {
     // Create client wrapper with test token
     wrapper = new NotionClientWrapper("test-token");
 
-    // Mock fetch to return JSON
-    (fetch as any).mockImplementation(() =>
-      Promise.resolve({
-        json: () => Promise.resolve({ success: true }),
-      })
-    );
+    fetchMock.mockResolvedValue(mockResponse());
+    vi.stubGlobal("fetch", fetchMock);
   });
 
   test("should initialize with correct headers", () => {
@@ -67,13 +76,13 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.appendBlockChildren(blockId, children, position);
 
-    expect(fetch).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledWith(
       `https://api.notion.com/v1/blocks/${blockId}/children`,
-      {
+      expect.objectContaining({
         method: "PATCH",
         headers: (wrapper as any).headers,
         body: JSON.stringify({ children, position }),
-      }
+      })
     );
   });
 
@@ -82,12 +91,12 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.retrieveBlock(blockId);
 
-    expect(fetch).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledWith(
       `https://api.notion.com/v1/blocks/${blockId}`,
-      {
+      expect.objectContaining({
         method: "GET",
         headers: (wrapper as any).headers,
-      }
+      })
     );
   });
 
@@ -98,12 +107,12 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.retrieveBlockChildren(blockId, startCursor, pageSize);
 
-    expect(fetch).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledWith(
       `https://api.notion.com/v1/blocks/${blockId}/children?start_cursor=${startCursor}&page_size=${pageSize}`,
-      {
+      expect.objectContaining({
         method: "GET",
         headers: (wrapper as any).headers,
-      }
+      })
     );
   });
 
@@ -112,12 +121,12 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.retrievePage(pageId);
 
-    expect(fetch).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledWith(
       `https://api.notion.com/v1/pages/${pageId}`,
-      {
+      expect.objectContaining({
         method: "GET",
         headers: (wrapper as any).headers,
-      }
+      })
     );
   });
 
@@ -129,13 +138,13 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.updatePageProperties(pageId, properties);
 
-    expect(fetch).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledWith(
       `https://api.notion.com/v1/pages/${pageId}`,
-      {
+      expect.objectContaining({
         method: "PATCH",
         headers: (wrapper as any).headers,
         body: JSON.stringify({ properties }),
-      }
+      })
     );
   });
 
@@ -146,13 +155,13 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.queryDataSource(dataSourceId, filter, sorts);
 
-    expect(fetch).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledWith(
       `https://api.notion.com/v1/data_sources/${dataSourceId}/query`,
-      {
+      expect.objectContaining({
         method: "POST",
         headers: (wrapper as any).headers,
         body: JSON.stringify({ filter, sorts }),
-      }
+      })
     );
   });
 
@@ -163,11 +172,14 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.createDataSource(parent, properties, title);
 
-    expect(fetch).toHaveBeenCalledWith("https://api.notion.com/v1/data_sources", {
-      method: "POST",
-      headers: (wrapper as any).headers,
-      body: JSON.stringify({ parent, title, properties }),
-    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.notion.com/v1/data_sources",
+      expect.objectContaining({
+        method: "POST",
+        headers: (wrapper as any).headers,
+        body: JSON.stringify({ parent, title, properties }),
+      })
+    );
   });
 
   test("should call retrieveDataSource with correct parameters", async () => {
@@ -175,12 +187,12 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.retrieveDataSource(dataSourceId);
 
-    expect(fetch).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledWith(
       `https://api.notion.com/v1/data_sources/${dataSourceId}`,
-      {
+      expect.objectContaining({
         method: "GET",
         headers: (wrapper as any).headers,
-      }
+      })
     );
   });
 
@@ -190,13 +202,13 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.updateDataSource(dataSourceId, undefined, undefined, properties);
 
-    expect(fetch).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledWith(
       `https://api.notion.com/v1/data_sources/${dataSourceId}`,
-      {
+      expect.objectContaining({
         method: "PATCH",
         headers: (wrapper as any).headers,
         body: JSON.stringify({ properties }),
-      }
+      })
     );
   });
 
@@ -206,14 +218,17 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.createDataSourceItem(dataSourceId, properties);
 
-    expect(fetch).toHaveBeenCalledWith("https://api.notion.com/v1/pages", {
-      method: "POST",
-      headers: (wrapper as any).headers,
-      body: JSON.stringify({
-        parent: { type: "data_source_id", data_source_id: dataSourceId },
-        properties,
-      }),
-    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.notion.com/v1/pages",
+      expect.objectContaining({
+        method: "POST",
+        headers: (wrapper as any).headers,
+        body: JSON.stringify({
+          parent: { type: "data_source_id", data_source_id: dataSourceId },
+          properties,
+        }),
+      })
+    );
   });
 
   test("should call search with correct parameters", async () => {
@@ -222,13 +237,79 @@ describe("NotionClientWrapper", () => {
 
     await wrapper.search(query, filter);
 
-    expect(fetch).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledWith(
       "https://api.notion.com/v1/search",
-      {
+      expect.objectContaining({
         method: "POST",
         headers: (wrapper as any).headers,
         body: JSON.stringify({ query, filter }),
-      }
+      })
+    );
+  });
+
+  test("should throw NotionApiError with Notion error details", async () => {
+    fetchMock.mockResolvedValueOnce(
+      mockResponse(
+        {
+          object: "error",
+          status: 400,
+          code: "validation_error",
+          message: "Invalid filter",
+        },
+        { status: 400, statusText: "Bad Request" }
+      )
+    );
+
+    await expect(wrapper.retrievePage("page123")).rejects.toMatchObject({
+      name: "NotionApiError",
+      status: 400,
+      code: "validation_error",
+    } satisfies Partial<NotionApiError>);
+  });
+
+  test("should retry rate-limited requests", async () => {
+    wrapper = new NotionClientWrapper("test-token", { retryDelayMs: 0 });
+    fetchMock
+      .mockResolvedValueOnce(
+        mockResponse(
+          {
+            object: "error",
+            status: 429,
+            code: "rate_limited",
+            message: "Rate limited",
+          },
+          {
+            status: 429,
+            statusText: "Too Many Requests",
+            headers: { "retry-after": "0" },
+          }
+        )
+      )
+      .mockResolvedValueOnce(mockResponse({ object: "page", id: "page123" }));
+
+    const response = await wrapper.retrievePage("page123");
+
+    expect(response).toMatchObject({ object: "page", id: "page123" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  test("should time out stalled requests", async () => {
+    wrapper = new NotionClientWrapper("test-token", {
+      timeoutMs: 1,
+      maxRetries: 0,
+    });
+    fetchMock.mockImplementation((_url, init: RequestInit) => {
+      return new Promise((_resolve, reject) => {
+        init.signal?.addEventListener("abort", () => {
+          const error = new Error("Aborted");
+          error.name = "AbortError";
+          reject(error);
+        });
+      });
+    });
+
+    await expect(wrapper.retrievePage("page123")).rejects.toThrow(
+      "Notion API request timed out after 1ms"
     );
   });
 
