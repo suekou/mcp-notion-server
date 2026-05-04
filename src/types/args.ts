@@ -3,6 +3,7 @@
  */
 
 import type { SimpleContentItem } from "../content/index.js";
+import type { SimplePropertyValues } from "../properties/index.js";
 import { RichTextItemResponse, BlockResponse } from "./responses.js";
 
 export type AppendBlockChildrenPosition =
@@ -132,6 +133,12 @@ export interface UpdateDataSourceArgs {
 export interface CreateDataSourceItemArgs {
   data_source_id: string;
   properties: Record<string, any>;
+  format?: "json" | "markdown";
+}
+
+export interface CreateDataSourceItemFromValuesArgs {
+  data_source_id: string;
+  values: SimplePropertyValues;
   format?: "json" | "markdown";
 }
 
