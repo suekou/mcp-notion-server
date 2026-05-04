@@ -101,8 +101,8 @@ describe("MCP server helpers", () => {
   test("should expose reusable Notion workflow prompts", () => {
     expect(getAllPrompts().map((prompt) => prompt.name)).toEqual([
       "notion_find_target",
-      "notion_create_database_item",
-      "notion_query_database_items",
+      "notion_create_data_source_item_workflow",
+      "notion_query_data_source_items_workflow",
       "notion_append_page_content",
     ]);
   });

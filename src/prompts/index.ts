@@ -17,8 +17,8 @@ export const notionPrompts: Prompt[] = [
     ],
   },
   {
-    name: "notion_create_database_item",
-    title: "Create Notion Database Item",
+    name: "notion_create_data_source_item_workflow",
+    title: "Create Notion Data Source Item",
     description:
       "Create a data source item using schema inspection and simple property values.",
     arguments: [
@@ -35,8 +35,8 @@ export const notionPrompts: Prompt[] = [
     ],
   },
   {
-    name: "notion_query_database_items",
-    title: "Query Notion Database Items",
+    name: "notion_query_data_source_items_workflow",
+    title: "Query Notion Data Source Items",
     description:
       "Query data source items using schema inspection and simple filters.",
     arguments: [
@@ -87,7 +87,7 @@ export function getNotionPrompt(
           "If multiple candidates look plausible, ask the user to choose rather than guessing.",
         ].join("\n")
       );
-    case "notion_create_database_item":
+    case "notion_create_data_source_item_workflow":
       return promptResult(
         "Create a Notion data source item",
         [
@@ -100,7 +100,7 @@ export function getNotionPrompt(
           "4. If a property type is unsupported by simple values, fall back to `notion_create_data_source_item` with raw Notion property JSON.",
         ].join("\n")
       );
-    case "notion_query_database_items":
+    case "notion_query_data_source_items_workflow":
       return promptResult(
         "Query Notion data source items",
         [

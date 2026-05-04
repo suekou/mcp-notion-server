@@ -5,14 +5,14 @@ describe("Notion prompts", () => {
   test("should list reusable workflow prompts", () => {
     expect(notionPrompts.map((prompt) => prompt.name)).toEqual([
       "notion_find_target",
-      "notion_create_database_item",
-      "notion_query_database_items",
+      "notion_create_data_source_item_workflow",
+      "notion_query_data_source_items_workflow",
       "notion_append_page_content",
     ]);
   });
 
   test("should build the create item workflow prompt", () => {
-    const prompt = getNotionPrompt("notion_create_database_item", {
+    const prompt = getNotionPrompt("notion_create_data_source_item_workflow", {
       data_source: "Tasks",
       item: "Create a Done task named Ship it",
     });
@@ -27,7 +27,7 @@ describe("Notion prompts", () => {
   });
 
   test("should build the query items workflow prompt", () => {
-    const prompt = getNotionPrompt("notion_query_database_items", {
+    const prompt = getNotionPrompt("notion_query_data_source_items_workflow", {
       data_source: "Tasks",
       query: "Find done tasks tagged AI",
     });

@@ -494,8 +494,8 @@ All tools support the following optional parameter:
 The server also exposes reusable MCP prompts for common Notion workflows:
 
 - `notion_find_target`: Find the right page or data source before reading, editing, or creating content.
-- `notion_create_database_item`: Inspect a data source schema and create an item using simple property values.
-- `notion_query_database_items`: Inspect a data source schema and query items using simple filters.
+- `notion_create_data_source_item_workflow`: Inspect a data source schema and create an item using simple property values.
+- `notion_query_data_source_items_workflow`: Inspect a data source schema and query items using simple filters.
 - `notion_append_page_content`: Find a page, then append or update common content using `notion_append_markdown`, `notion_append_content`, `notion_update_content`, and `notion_update_content_batch`.
 
 ## Resources
