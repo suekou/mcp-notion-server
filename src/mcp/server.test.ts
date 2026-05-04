@@ -37,6 +37,9 @@ describe("MCP server helpers", () => {
     const createFromValues = tools.find(
       (tool) => tool.name === "notion_create_data_source_item_from_values",
     );
+    const openFinderApp = tools.find(
+      (tool) => tool.name === "notion_open_finder_app",
+    );
 
     expect(retrievePage?.annotations).toMatchObject({
       title: "Retrieve Page",
@@ -90,6 +93,17 @@ describe("MCP server helpers", () => {
       readOnlyHint: false,
       destructiveHint: false,
     });
+    expect(openFinderApp?.annotations).toMatchObject({
+      title: "Open Notion Finder",
+      readOnlyHint: true,
+      destructiveHint: false,
+    });
+    expect(openFinderApp?._meta).toMatchObject({
+      ui: {
+        resourceUri: "ui://notion/finder",
+        visibility: ["model", "app"],
+      },
+    });
   });
 
   test("should include structured content for JSON tool results", () => {
@@ -134,6 +148,9 @@ describe("MCP server helpers", () => {
     expect(getAllResources().map((resource) => resource.uri)).toEqual([
       "notion://server/guide",
       "notion://server/tools",
+      "ui://notion/finder",
+      "ui://notion/data-source-explorer",
+      "ui://notion/page-workbench",
     ]);
   });
 
