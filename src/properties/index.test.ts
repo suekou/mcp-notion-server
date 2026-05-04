@@ -9,14 +9,39 @@ const dataSource: DataSourceResponse = {
   properties: {
     Name: { id: "title", name: "Name", type: "title", title: {} },
     Notes: { id: "notes", name: "Notes", type: "rich_text", rich_text: {} },
-    Status: { id: "status", name: "Status", type: "status", status: {} },
+    Status: {
+      id: "status",
+      name: "Status",
+      type: "status",
+      status: {
+        options: [
+          { id: "todo", name: "Todo", color: "default" },
+          { id: "done", name: "Done", color: "green" },
+        ],
+      },
+    },
     Tags: {
       id: "tags",
       name: "Tags",
       type: "multi_select",
-      multi_select: {},
+      multi_select: {
+        options: [
+          { id: "ai", name: "AI", color: "blue" },
+          { id: "notion", name: "Notion", color: "default" },
+        ],
+      },
     },
-    Priority: { id: "priority", name: "Priority", type: "select", select: {} },
+    Priority: {
+      id: "priority",
+      name: "Priority",
+      type: "select",
+      select: {
+        options: [
+          { id: "high", name: "High", color: "red" },
+          { id: "low", name: "Low", color: "gray" },
+        ],
+      },
+    },
     Due: { id: "due", name: "Due", type: "date", date: {} },
     Done: { id: "done", name: "Done", type: "checkbox", checkbox: {} },
     Estimate: { id: "estimate", name: "Estimate", type: "number", number: {} },
@@ -71,5 +96,29 @@ describe("property value builder", () => {
     expect(() =>
       buildPagePropertiesFromSimpleValues(dataSource, { Missing: "value" })
     ).toThrow("Unknown property 'Missing'");
+  });
+
+  test("should reject unknown select options with valid choices", () => {
+    expect(() =>
+      buildPagePropertiesFromSimpleValues(dataSource, { Priority: "Urgent" })
+    ).toThrow(
+      "Property 'Priority' does not have option 'Urgent'. Valid options: High, Low."
+    );
+  });
+
+  test("should suggest case-insensitive option matches", () => {
+    expect(() =>
+      buildPagePropertiesFromSimpleValues(dataSource, { Status: "done" })
+    ).toThrow("Did you mean 'Done'?");
+  });
+
+  test("should reject unknown multi-select options", () => {
+    expect(() =>
+      buildPagePropertiesFromSimpleValues(dataSource, {
+        Tags: ["AI", "Docs"],
+      })
+    ).toThrow(
+      "Property 'Tags' does not have option 'Docs'. Valid options: AI, Notion."
+    );
   });
 });

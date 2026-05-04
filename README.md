@@ -377,6 +377,7 @@ All tools support the following optional parameter:
 16. `notion_create_data_source_item_from_values`
 
     - Create a new page item using simple values instead of raw Notion property JSON.
+    - Validates `select`, `status`, and `multi_select` option names against the data source schema before calling Notion.
     - Required inputs:
       - `data_source_id` (string): The ID of the data source to add the item to.
       - `values` (object): Simple values keyed by exact property name, such as `{ "Name": "Task", "Status": "Done", "Tags": ["AI", "MCP"], "Due": "2026-05-04" }`.
