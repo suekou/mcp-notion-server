@@ -32,6 +32,8 @@ import { filterTools } from "../utils/index.js";
 import * as schemas from "../types/schemas.js";
 import * as args from "../types/args.js";
 
+const SERVER_VERSION = "2.0.0";
+
 export function getAllTools(): Tool[] {
   return [
     schemas.appendBlockChildrenTool,
@@ -97,7 +99,7 @@ export async function startServer(
   const server = new Server(
     {
       name: "Notion MCP Server",
-      version: "1.0.0",
+      version: SERVER_VERSION,
     },
     {
       capabilities: {
