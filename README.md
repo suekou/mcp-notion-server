@@ -1,6 +1,38 @@
 # Notion MCP Server
 
-MCP Server for the Notion API, enabling LLM to interact with Notion workspaces. Additionally, it employs Markdown conversion to reduce context size when communicating with LLMs, optimizing token usage and making interactions more efficient.
+MCP server for the Notion API, designed for AI agents that need to find, read, and update Notion workspaces with low context overhead. It supports the Notion API `2026-03-11`, data sources, structured MCP results, prompts, resources, and AI-friendly tools that hide much of Notion's raw JSON complexity.
+
+## Highlights
+
+- Notion API `2026-03-11` support, including `data_source_id`, `position`, and `in_trash` semantics.
+- AI-friendly discovery via `notion_find` and compact schema inspection via `notion_inspect_data_source`.
+- Simplified write tools: `notion_append_content` and `notion_create_data_source_item_from_values`.
+- MCP `annotations`, `structuredContent`, `isError`, prompts, and resources.
+- Optional Markdown conversion for token-efficient reading.
+- Node.js 24 LTS and pnpm-based development.
+
+## 2.0 Migration Notes
+
+This release line is intended as a breaking modernization.
+
+- Database query, schema, and item creation workflows now use data sources.
+- Use `notion_retrieve_database` to discover child `data_source_id` values when you only have a database ID.
+- Replace old database-centric workflows with:
+  - `notion_query_data_source`
+  - `notion_retrieve_data_source`
+  - `notion_update_data_source`
+  - `notion_create_data_source_item`
+  - `notion_create_data_source_item_from_values`
+- `notion_append_block_children` now uses `position` instead of the old `after` parameter.
+- Prefer `in_trash` over `archived` when reading or writing trash state.
+
+## Recommended AI Workflow
+
+1. Use `notion_find` to locate a page or data source.
+2. Use `notion_inspect_data_source` before creating data source items.
+3. Use `notion_create_data_source_item_from_values` for common property values.
+4. Use `notion_append_content` for common page edits.
+5. Fall back to raw JSON tools only for advanced Notion API shapes that the simplified tools do not cover.
 
 ## Setup
 
@@ -153,8 +185,18 @@ The project is organized in a modular way to improve maintainability and readabi
 │   ├── index.ts              # Entry point and command-line handling
 │   ├── client/
 │   │   └── index.ts          # NotionClientWrapper class for API interactions
+│   ├── content/
+│   │   └── index.ts          # Simple content to Notion block conversion
+│   ├── properties/
+│   │   └── index.ts          # Simple property values to Notion property JSON conversion
+│   ├── prompts/
+│   │   └── index.ts          # Reusable MCP prompts for Notion workflows
+│   ├── resources/
+│   │   └── index.ts          # MCP guidance resources
 │   ├── server/
 │   │   └── index.ts          # MCP server setup and request handling
+│   ├── summary/
+│   │   └── index.ts          # Compact AI-friendly result summaries
 │   ├── types/
 │   │   ├── index.ts          # Type exports
 │   │   ├── args.ts           # Tool argument interfaces
@@ -172,8 +214,13 @@ The project is organized in a modular way to improve maintainability and readabi
 - **index.ts**: Application entry point. Parses command-line arguments and starts the server.
 - **client/**: Module responsible for communication with the Notion API.
   - **index.ts**: NotionClientWrapper class implements all API calls.
+- **content/**: Converts simplified content items into Notion block objects.
+- **properties/**: Converts simple property values into Notion page property JSON.
+- **prompts/**: Defines reusable MCP prompts for Notion workflows.
+- **resources/**: Defines static MCP resources with usage guidance.
 - **server/**: MCP server implementation.
   - **index.ts**: Processes requests received from Claude and calls appropriate client methods.
+- **summary/**: Produces compact summaries for search results and data source schemas.
 - **types/**: Type definition module.
   - **index.ts**: Exports for all types.
   - **args.ts**: Interface definitions for tool arguments.
