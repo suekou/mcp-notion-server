@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   formatJsonToolResult,
   formatToolError,
+  getAllPrompts,
   getAllTools,
 } from "./index.js";
 
@@ -54,6 +55,14 @@ describe("MCP server helpers", () => {
       type: "text",
       text: JSON.stringify(response, null, 2),
     });
+  });
+
+  test("should expose reusable Notion workflow prompts", () => {
+    expect(getAllPrompts().map((prompt) => prompt.name)).toEqual([
+      "notion_find_target",
+      "notion_create_database_item",
+      "notion_append_page_content",
+    ]);
   });
 
   test("should mark tool errors with isError and structured content", () => {

@@ -367,6 +367,14 @@ All tools support the following optional parameter:
       - `page_size` (number, max: 100): Number of comments to retrieve.
     - Returns: A paginated list of comments associated with the specified block or page.
 
+## Prompts
+
+The server also exposes reusable MCP prompts for common Notion workflows:
+
+- `notion_find_target`: Find the right page or data source before reading, editing, or creating content.
+- `notion_create_database_item`: Inspect a data source schema and create an item using simple property values.
+- `notion_append_page_content`: Find a page and append common content using `notion_append_content`.
+
 ## License
 
 This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.
