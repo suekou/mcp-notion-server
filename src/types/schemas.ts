@@ -10,6 +10,49 @@ import {
   blockObjectSchema,
 } from "./common.js";
 
+const simpleContentItemSchema = {
+  type: "object",
+  description:
+    "A simplified Notion content item. The server converts this into a valid Notion block object.",
+  properties: {
+    type: {
+      type: "string",
+      enum: [
+        "paragraph",
+        "heading_1",
+        "heading_2",
+        "heading_3",
+        "bulleted_list_item",
+        "numbered_list_item",
+        "to_do",
+        "quote",
+        "callout",
+        "code",
+        "divider",
+      ],
+      description: "The simple content type to append.",
+    },
+    text: {
+      type: "string",
+      description:
+        "Plain text content. Required for all types except divider.",
+    },
+    checked: {
+      type: "boolean",
+      description: "Only used for to_do items.",
+    },
+    language: {
+      type: "string",
+      description: "Only used for code blocks. Defaults to plain text.",
+    },
+    is_toggleable: {
+      type: "boolean",
+      description: "Only used for heading blocks.",
+    },
+  },
+  required: ["type"],
+};
+
 // Blocks tools
 export const appendBlockChildrenTool: Tool = {
   name: "notion_append_block_children",
@@ -59,6 +102,61 @@ export const appendBlockChildrenTool: Tool = {
       format: formatParameter,
     },
     required: ["block_id", "children"],
+  },
+};
+
+export const appendContentTool: Tool = {
+  name: "notion_append_content",
+  description:
+    "Append common Notion content without writing raw Notion block JSON. Use this for everyday page editing when the user wants to add paragraphs, headings, lists, todos, quotes, callouts, code blocks, or dividers. For unsupported block types or advanced rich text annotations, use notion_append_block_children with raw Notion block objects.",
+  annotations: {
+    title: "Append Simple Content",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+  },
+  inputSchema: {
+    type: "object",
+    properties: {
+      block_id: {
+        type: "string",
+        description:
+          "The parent block or page ID to append content to." +
+          commonIdDescription,
+      },
+      items: {
+        type: "array",
+        description:
+          "Simplified content items to append in order. Keep batches reasonably small for easier review.",
+        items: simpleContentItemSchema,
+      },
+      position: {
+        type: "object",
+        description:
+          "Where to insert the content. Omit this to append at the end.",
+        properties: {
+          type: {
+            type: "string",
+            enum: ["after_block", "start", "end"],
+          },
+          after_block: {
+            type: "object",
+            properties: {
+              id: {
+                type: "string",
+                description:
+                  "The existing block ID to insert after." +
+                  commonIdDescription,
+              },
+            },
+            required: ["id"],
+          },
+        },
+        required: ["type"],
+      },
+      format: formatParameter,
+    },
+    required: ["block_id", "items"],
   },
 };
 

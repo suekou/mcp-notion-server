@@ -11,6 +11,7 @@ import {
   ListToolsRequestSchema,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
+import { buildBlocksFromSimpleContent } from "../content/index.js";
 import { NotionClientWrapper } from "../client/index.js";
 import {
   summarizeDataSourceSchema,
@@ -23,6 +24,7 @@ import * as args from "../types/args.js";
 export function getAllTools(): Tool[] {
   return [
     schemas.appendBlockChildrenTool,
+    schemas.appendContentTool,
     schemas.retrieveBlockTool,
     schemas.retrieveBlockChildrenTool,
     schemas.deleteBlockTool,
@@ -109,6 +111,22 @@ export async function startServer(
             response = await notionClient.appendBlockChildren(
               args.block_id,
               args.children,
+              args.position
+            );
+            break;
+          }
+
+          case "notion_append_content": {
+            const args = request.params
+              .arguments as unknown as args.AppendContentArgs;
+            if (!args.block_id || !args.items) {
+              throw new Error(
+                "Missing required arguments: block_id and items"
+              );
+            }
+            response = await notionClient.appendBlockChildren(
+              args.block_id,
+              buildBlocksFromSimpleContent(args.items),
               args.position
             );
             break;

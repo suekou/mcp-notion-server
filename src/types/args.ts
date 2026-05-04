@@ -2,6 +2,7 @@
  * Type definitions for tool arguments
  */
 
+import type { SimpleContentItem } from "../content/index.js";
 import { RichTextItemResponse, BlockResponse } from "./responses.js";
 
 export type AppendBlockChildrenPosition =
@@ -22,6 +23,13 @@ export type AppendBlockChildrenPosition =
 export interface AppendBlockChildrenArgs {
   block_id: string;
   children: Partial<BlockResponse>[];
+  position?: AppendBlockChildrenPosition;
+  format?: "json" | "markdown";
+}
+
+export interface AppendContentArgs {
+  block_id: string;
+  items: SimpleContentItem[];
   position?: AppendBlockChildrenPosition;
   format?: "json" | "markdown";
 }
