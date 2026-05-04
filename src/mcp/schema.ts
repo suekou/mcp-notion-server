@@ -11,6 +11,14 @@ export const formatParameter = {
   default: "markdown",
 };
 
+export const responseModeParameter = {
+  type: "string",
+  enum: ["auto", "compact", "full"],
+  description:
+    "Controls response size for list-heavy tools. Use auto by default so the server returns compact summaries when the Notion response would be noisy. Use compact when IDs and summaries are enough. Use full only when raw Notion API objects are required for an advanced operation.",
+  default: "auto",
+};
+
 // Rich text object schema
 export const richTextObjectSchema = {
   type: "object",

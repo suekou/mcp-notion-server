@@ -1,6 +1,7 @@
 import type { BlockResponse } from "../../notion/types.js";
 
 export type NotionJsonObject = Record<string, unknown>;
+export type ResponseMode = "auto" | "compact" | "full";
 
 export type AppendBlockChildrenPosition =
   | {
@@ -30,6 +31,7 @@ export interface RetrieveBlockChildrenArgs {
   block_id: string;
   start_cursor?: string;
   page_size?: number;
+  response_mode?: ResponseMode;
   format?: "json" | "markdown";
 }
 

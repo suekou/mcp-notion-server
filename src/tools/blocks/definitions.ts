@@ -3,6 +3,7 @@ import {
   blockObjectSchema,
   commonIdDescription,
   formatParameter,
+  responseModeParameter,
 } from "../../mcp/schema.js";
 
 export const appendBlockChildrenTool: Tool = {
@@ -101,6 +102,7 @@ export const retrieveBlockChildrenTool: Tool = {
         type: "number",
         description: "Number of results per page (max 100)",
       },
+      response_mode: responseModeParameter,
       format: formatParameter,
     },
     required: ["block_id"],
