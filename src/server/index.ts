@@ -6,13 +6,57 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequest,
+  CallToolResult,
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { NotionClientWrapper } from "../client/index.js";
 import { filterTools } from "../utils/index.js";
 import * as schemas from "../types/schemas.js";
 import * as args from "../types/args.js";
+
+export function getAllTools(): Tool[] {
+  return [
+    schemas.appendBlockChildrenTool,
+    schemas.retrieveBlockTool,
+    schemas.retrieveBlockChildrenTool,
+    schemas.deleteBlockTool,
+    schemas.updateBlockTool,
+    schemas.retrievePageTool,
+    schemas.updatePagePropertiesTool,
+    schemas.listAllUsersTool,
+    schemas.retrieveUserTool,
+    schemas.retrieveBotUserTool,
+    schemas.retrieveDatabaseTool,
+    schemas.createDataSourceTool,
+    schemas.queryDataSourceTool,
+    schemas.retrieveDataSourceTool,
+    schemas.updateDataSourceTool,
+    schemas.createDataSourceItemTool,
+    schemas.createCommentTool,
+    schemas.retrieveCommentsTool,
+    schemas.searchTool,
+  ];
+}
+
+export function formatJsonToolResult(response: unknown): CallToolResult {
+  return {
+    content: [{ type: "text", text: JSON.stringify(response, null, 2) }],
+    structuredContent: toStructuredContent(response),
+  };
+}
+
+export function formatToolError(error: unknown): CallToolResult {
+  const message = error instanceof Error ? error.message : String(error);
+  const output = { error: { message } };
+
+  return {
+    content: [{ type: "text", text: JSON.stringify(output, null, 2) }],
+    structuredContent: output,
+    isError: true,
+  };
+}
 
 /**
  * Start the MCP server
@@ -287,55 +331,29 @@ export async function startServer(
             content: [{ type: "text", text: markdown }],
           };
         } else {
-          return {
-            content: [
-              { type: "text", text: JSON.stringify(response, null, 2) },
-            ],
-          };
+          return formatJsonToolResult(response);
         }
       } catch (error) {
         console.error("Error executing tool:", error);
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify({
-                error: error instanceof Error ? error.message : String(error),
-              }),
-            },
-          ],
-        };
+        return formatToolError(error);
       }
     }
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    const allTools = [
-      schemas.appendBlockChildrenTool,
-      schemas.retrieveBlockTool,
-      schemas.retrieveBlockChildrenTool,
-      schemas.deleteBlockTool,
-      schemas.updateBlockTool,
-      schemas.retrievePageTool,
-      schemas.updatePagePropertiesTool,
-      schemas.listAllUsersTool,
-      schemas.retrieveUserTool,
-      schemas.retrieveBotUserTool,
-      schemas.retrieveDatabaseTool,
-      schemas.createDataSourceTool,
-      schemas.queryDataSourceTool,
-      schemas.retrieveDataSourceTool,
-      schemas.updateDataSourceTool,
-      schemas.createDataSourceItemTool,
-      schemas.createCommentTool,
-      schemas.retrieveCommentsTool,
-      schemas.searchTool,
-    ];
     return {
-      tools: filterTools(allTools, enabledToolsSet),
+      tools: filterTools(getAllTools(), enabledToolsSet),
     };
   });
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
+}
+
+function toStructuredContent(response: unknown): Record<string, unknown> {
+  if (response && typeof response === "object" && !Array.isArray(response)) {
+    return response as Record<string, unknown>;
+  }
+
+  return { value: response };
 }
