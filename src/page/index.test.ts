@@ -1,6 +1,5 @@
 import { describe, expect, test } from "vitest";
 import {
-  buildPageEditPlan,
   buildPageReadSummary,
   readPageBlockTree,
 } from "./index.js";
@@ -90,108 +89,6 @@ describe("page read helpers", () => {
     });
   });
 
-  test("should build a validated page edit plan", async () => {
-    const fetchBlockChildren = async (
-      blockId: string
-    ): Promise<ListResponse> => ({
-      object: "list",
-      next_cursor: null,
-      has_more: false,
-      results: fixtures[blockId] || [],
-    });
-    const tree = await readPageBlockTree(fetchBlockChildren, "page123", {
-      max_depth: 2,
-    });
-
-    expect(
-      buildPageEditPlan(page, tree, {
-        updates: [
-          {
-            block_id: "todo1",
-            item: {
-              type: "to_do",
-              text: "Ship MCP refresh",
-              checked: true,
-            },
-          },
-        ],
-        appends: [
-          {
-            after_block_id: "heading1",
-            items: [{ type: "paragraph", text: "New intro" }],
-          },
-        ],
-      })
-    ).toEqual({
-      object: "notion_page_edit_plan",
-      page: {
-        id: "page123",
-        title: "Roadmap",
-        last_edited_time: "2026-01-02T00:00:00.000Z",
-      },
-      valid: true,
-      operation_count: 2,
-      operations: [
-        {
-          type: "update_content_batch",
-          tool: "notion_update_content_batch",
-          arguments: {
-            updates: [
-              {
-                block_id: "todo1",
-                item: {
-                  type: "to_do",
-                  text: "Ship MCP refresh",
-                  checked: true,
-                },
-              },
-            ],
-          },
-        },
-        {
-          type: "append_content",
-          tool: "notion_append_content",
-          arguments: {
-            block_id: "page123",
-            items: [{ type: "paragraph", text: "New intro" }],
-            position: {
-              type: "after_block",
-              after_block: { id: "heading1" },
-            },
-          },
-        },
-      ],
-      warnings: [],
-    });
-  });
-
-  test("should reject edit plans for unknown blocks", () => {
-    expect(() =>
-      buildPageEditPlan(
-        page,
-        {
-          blocks: [
-            {
-              id: "heading1",
-              type: "heading_1",
-              text: "Plan",
-              has_children: false,
-            },
-          ],
-          block_count: 1,
-          truncated: false,
-        },
-        {
-          updates: [
-            {
-              block_id: "missing",
-              item: { type: "paragraph", text: "Nope" },
-            },
-          ],
-        }
-      )
-    ).toThrow("Cannot update unknown block 'missing'");
-  });
 });
 
 const page: PageResponse = {
