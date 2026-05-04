@@ -24,7 +24,13 @@
     "watch": "tsc --watch",
     "inspector": "pnpm dlx @modelcontextprotocol/inspector build/index.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "biome lint",
+    "lint:fix": "biome lint --write",
+    "format": "biome format --write",
+    "format:check": "biome format",
+    "check": "biome check",
+    "check:fix": "biome check --write"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.2",
@@ -32,6 +38,7 @@
     "zod": "^4.4.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.13",
     "@types/node": "^24.0.0",
     "@types/yargs": "^17.0.33",
     "typescript": "^5.3.3",
