@@ -61,10 +61,72 @@ const simpleDataSourceSortSchema = {
   },
   required: ["property"],
 };
+
+export const createDatabaseTool: Tool = {
+  name: "notion_create_database",
+  description:
+    "Create a Notion database and its initial data source. Use this when the user wants a new database. For Notion API 2025-09-03+, put the initial schema under initial_data_source.properties.",
+  annotations: {
+    title: "Create Database",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+  },
+  inputSchema: {
+    type: "object",
+    properties: {
+      parent: {
+        type: "object",
+        description:
+          "Parent page or workspace object for the new database, for example { type: 'page_id', page_id: '...' }.",
+      },
+      title: {
+        type: "array",
+        description: "Title of the database as an array of rich text objects.",
+        items: richTextObjectSchema,
+      },
+      description: {
+        type: "array",
+        description:
+          "Description of the database as an array of rich text objects.",
+        items: richTextObjectSchema,
+      },
+      is_inline: {
+        type: "boolean",
+        description:
+          "Whether the database should be displayed inline in the parent page. Defaults to false.",
+      },
+      initial_data_source: {
+        type: "object",
+        description:
+          "Initial data source configuration. Provide properties here, not as a top-level database property.",
+        properties: {
+          properties: {
+            type: "object",
+            description:
+              "Property schema for the database's first data source. The keys are property names and the values are property schema objects.",
+          },
+        },
+        required: ["properties"],
+      },
+      icon: {
+        type: "object",
+        description: "Optional Notion icon object for the database.",
+      },
+      cover: {
+        type: "object",
+        description: "Optional Notion cover object for the database.",
+      },
+      format: formatParameter,
+    },
+    required: ["parent", "initial_data_source"],
+  },
+};
+
 export const createDataSourceTool: Tool = {
   name: "notion_create_data_source",
   description:
-    "Create a Notion data source. In the 2025-09-03+ Notion API, data sources are the schema-bearing objects that replace most direct database operations.",
+    "Add an additional Notion data source to an existing database. Do not use this to create a new database; use notion_create_database for that.",
   annotations: {
     title: "Create Data Source",
     readOnlyHint: false,
@@ -76,7 +138,8 @@ export const createDataSourceTool: Tool = {
     properties: {
       parent: {
         type: "object",
-        description: "Parent page object for the data source.",
+        description:
+          "Existing database parent object, for example { type: 'database_id', database_id: '...' }.",
       },
       title: {
         type: "array",

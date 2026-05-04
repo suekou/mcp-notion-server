@@ -40,6 +40,7 @@ import {
 } from "../tools/content/definitions.js";
 import { contentToolHandlers } from "../tools/content/handlers.js";
 import {
+  createDatabaseTool,
   createDataSourceItemFromValuesTool,
   createDataSourceItemTool,
   createDataSourceTool,
@@ -83,6 +84,7 @@ const SERVER_VERSION = "2.0.0";
 const SERVER_INSTRUCTIONS = [
   "Use high-level Notion tools first: notion_find, notion_read_page, notion_inspect_data_source, schema-aware query/create tools, and simple content tools.",
   "Use raw Notion JSON tools only when simplified tools do not support the requested block, property, or API shape.",
+  "Use notion_create_database for new databases; notion_create_data_source only adds another data source to an existing database.",
   "Prefer data_source_id for schema, query, and item creation workflows. Use notion_retrieve_database only to discover child data sources from a database container.",
 ].join(" ");
 
@@ -120,6 +122,7 @@ export function getAllTools(): Tool[] {
     retrieveUserTool,
     retrieveBotUserTool,
     retrieveDatabaseTool,
+    createDatabaseTool,
     createDataSourceTool,
     queryDataSourceTool,
     queryDataSourceByValuesTool,

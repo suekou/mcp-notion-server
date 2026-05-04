@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import type { CreateDatabaseArgs } from "../tools/data-sources/types.js";
 import { filterTools } from "../utils/index.js";
 import { NotionClientWrapper } from "./client.js";
 import type { NotionApiError } from "./errors.js";
@@ -193,6 +194,33 @@ describe("NotionClientWrapper", () => {
         method: "POST",
         headers: expectedHeaders,
         body: JSON.stringify({ parent, title, properties }),
+      }),
+    );
+  });
+
+  test("should call createDatabase with initial data source", async () => {
+    const args: CreateDatabaseArgs = {
+      parent: { type: "page_id", page_id: "page123" },
+      title: [{ type: "text", text: { content: "Tasks" } }],
+      initial_data_source: {
+        properties: { Name: { title: {} } },
+      },
+      is_inline: true,
+    };
+
+    await wrapper.createDatabase(args);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.notion.com/v1/databases",
+      expect.objectContaining({
+        method: "POST",
+        headers: expectedHeaders,
+        body: JSON.stringify({
+          parent: args.parent,
+          initial_data_source: args.initial_data_source,
+          title: args.title,
+          is_inline: args.is_inline,
+        }),
       }),
     );
   });
