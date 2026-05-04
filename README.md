@@ -71,7 +71,7 @@ or
 Read-only tools example (copy-paste friendly):
 
 ```bash
-node build/index.js --enabledTools=notion_retrieve_block,notion_retrieve_block_children,notion_retrieve_page,notion_query_data_source,notion_retrieve_database,notion_retrieve_data_source,notion_search,notion_list_all_users,notion_retrieve_user,notion_retrieve_bot_user,notion_retrieve_comments
+node build/index.js --enabledTools=notion_retrieve_block,notion_retrieve_block_children,notion_retrieve_page,notion_query_data_source,notion_retrieve_database,notion_retrieve_data_source,notion_find,notion_inspect_data_source,notion_search,notion_list_all_users,notion_retrieve_user,notion_retrieve_bot_user,notion_retrieve_comments
 ```
 
 ## Advanced Configuration
@@ -277,7 +277,24 @@ All tools support the following optional parameter:
       - `properties` (object): The properties of the new item. These should match the data source schema.
     - Returns: Information about the newly created item.
 
-13. `notion_search`
+13. `notion_find`
+
+    - Find pages or data sources and return compact AI-friendly candidates with stable IDs.
+    - Optional inputs:
+      - `query` (string): Text to search for in page or data source titles.
+      - `object_type` (string): Either `page` or `data_source`.
+      - `start_cursor` (string): Pagination start cursor.
+      - `page_size` (number, default: 100, max: 100): Number of candidates to retrieve.
+    - Returns: Matching candidates with suggested next tools.
+
+14. `notion_inspect_data_source`
+
+    - Inspect a data source schema and return compact property names, types, options, and relation targets.
+    - Required inputs:
+      - `data_source_id` (string): The ID of the data source to inspect.
+    - Returns: A schema summary suitable for creating or updating items.
+
+15. `notion_search`
 
     - Search pages or data sources by title.
     - Optional inputs:
@@ -288,7 +305,7 @@ All tools support the following optional parameter:
       - `page_size` (number, default: 100, max: 100): Number of results to retrieve.
     - Returns: List of matching pages or data sources.
 
-14. `notion_list_all_users`
+16. `notion_list_all_users`
 
     - List all users in the Notion workspace.
     - Note: This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.
@@ -297,7 +314,7 @@ All tools support the following optional parameter:
       - page_size (number, max: 100): Number of users to retrieve.
     - Returns: A paginated list of all users in the workspace.
 
-15. `notion_retrieve_user`
+17. `notion_retrieve_user`
 
     - Retrieve a specific user by user_id in Notion.
     - Note: This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.
@@ -305,12 +322,12 @@ All tools support the following optional parameter:
       - user_id (string): The ID of the user to retrieve.
     - Returns: Detailed information about the specified user.
 
-16. `notion_retrieve_bot_user`
+18. `notion_retrieve_bot_user`
 
     - Retrieve the bot user associated with the current token in Notion.
     - Returns: Information about the bot user, including details of the person who authorized the integration.
 
-17. `notion_create_comment`
+19. `notion_create_comment`
 
     - Create a comment in Notion.
     - Requires the integration to have 'insert comment' capabilities.
@@ -322,7 +339,7 @@ All tools support the following optional parameter:
       - `discussion_id` (string): An existing discussion thread ID.
     - Returns: Information about the created comment.
 
-18. `notion_retrieve_comments`
+20. `notion_retrieve_comments`
     - Retrieve a list of unresolved comments from a Notion page or block.
     - Requires the integration to have 'read comment' capabilities.
     - Required inputs:

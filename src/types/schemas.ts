@@ -561,6 +561,67 @@ export const retrieveCommentsTool: Tool = {
 };
 
 // Search tool
+export const findTool: Tool = {
+  name: "notion_find",
+  description:
+    "Find Notion pages or data sources and return compact, AI-friendly candidates with stable IDs and suggested next tools. Use this before low-level retrieve/query tools when the user gives a title, partial name, or vague target. Prefer this over raw notion_search for discovery because it trims noisy API fields and highlights the IDs needed for the next action.",
+  annotations: {
+    title: "Find Notion Targets",
+    readOnlyHint: true,
+    destructiveHint: false,
+  },
+  inputSchema: {
+    type: "object",
+    properties: {
+      query: {
+        type: "string",
+        description:
+          "Text to search for in Notion page or data source titles. Omit to list recent accessible targets.",
+      },
+      object_type: {
+        type: "string",
+        enum: ["page", "data_source"],
+        description:
+          "Optional target type filter. Use 'page' when looking for content pages, and 'data_source' when looking for database-like schemas to query or create items in.",
+      },
+      start_cursor: {
+        type: "string",
+        description: "Pagination start cursor from a previous notion_find call.",
+      },
+      page_size: {
+        type: "number",
+        description:
+          "Number of candidates to return. Keep this small for AI context efficiency; max 100.",
+      },
+      format: formatParameter,
+    },
+  },
+};
+
+export const inspectDataSourceTool: Tool = {
+  name: "notion_inspect_data_source",
+  description:
+    "Inspect a Notion data source schema and return a compact property summary for AI agents. Use this before creating or updating items so the model can choose valid property names, option values, and relation targets without reading the full Notion API object.",
+  annotations: {
+    title: "Inspect Data Source",
+    readOnlyHint: true,
+    destructiveHint: false,
+  },
+  inputSchema: {
+    type: "object",
+    properties: {
+      data_source_id: {
+        type: "string",
+        description:
+          "The data source ID to inspect. Use notion_find or notion_retrieve_database first if you only have a title or database ID." +
+          commonIdDescription,
+      },
+      format: formatParameter,
+    },
+    required: ["data_source_id"],
+  },
+};
+
 export const searchTool: Tool = {
   name: "notion_search",
   description: "Search pages or data sources by title in Notion",
