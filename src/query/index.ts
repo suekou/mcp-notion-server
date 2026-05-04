@@ -1,6 +1,6 @@
 import type {
-  DataSourceResponse,
   DatabasePropertyConfig,
+  DataSourceResponse,
 } from "../types/index.js";
 
 export type SimpleFilterOperator =
@@ -43,7 +43,7 @@ export type BuiltDataSourceQuery = {
 
 export function buildDataSourceQueryFromSimpleFilters(
   dataSource: DataSourceResponse,
-  query: SimpleDataSourceQuery
+  query: SimpleDataSourceQuery,
 ): BuiltDataSourceQuery {
   validateSimpleDataSourceQueryInput(query);
   const filters = query.filters || [];
@@ -55,7 +55,7 @@ export function buildDataSourceQueryFromSimpleFilters(
   } else if (filters.length > 1) {
     output.filter = {
       [query.match === "any" ? "or" : "and"]: filters.map((filter) =>
-        buildFilter(dataSource, filter)
+        buildFilter(dataSource, filter),
       ),
     };
   }
@@ -74,12 +74,16 @@ export function buildDataSourceQueryFromSimpleFilters(
 }
 
 export function validateSimpleDataSourceQueryInput(
-  query: SimpleDataSourceQuery
+  query: SimpleDataSourceQuery,
 ): void {
   const filters = query.filters || [];
   const sorts = query.sorts || [];
 
-  if (query.match !== undefined && query.match !== "all" && query.match !== "any") {
+  if (
+    query.match !== undefined &&
+    query.match !== "all" &&
+    query.match !== "any"
+  ) {
     throw new Error("match must be either 'all' or 'any' when provided.");
   }
 
@@ -92,14 +96,16 @@ export function validateSimpleDataSourceQueryInput(
       throw new Error(`${path} must be an object with a property field.`);
     }
     if (typeof filter.property !== "string" || filter.property.length === 0) {
-      throw new Error(`${path}.property must be a non-empty property name string.`);
+      throw new Error(
+        `${path}.property must be a non-empty property name string.`,
+      );
     }
     if (
       filter.operator !== undefined &&
       !SIMPLE_FILTER_OPERATORS.includes(filter.operator)
     ) {
       throw new Error(
-        `${path}.operator must be one of: ${SIMPLE_FILTER_OPERATORS.join(", ")}.`
+        `${path}.operator must be one of: ${SIMPLE_FILTER_OPERATORS.join(", ")}.`,
       );
     }
   });
@@ -113,7 +119,9 @@ export function validateSimpleDataSourceQueryInput(
       throw new Error(`${path} must be an object with a property field.`);
     }
     if (typeof sort.property !== "string" || sort.property.length === 0) {
-      throw new Error(`${path}.property must be a non-empty property name string.`);
+      throw new Error(
+        `${path}.property must be a non-empty property name string.`,
+      );
     }
     if (
       sort.direction !== undefined &&
@@ -121,7 +129,7 @@ export function validateSimpleDataSourceQueryInput(
       sort.direction !== "descending"
     ) {
       throw new Error(
-        `${path}.direction must be either 'ascending' or 'descending'.`
+        `${path}.direction must be either 'ascending' or 'descending'.`,
       );
     }
   });
@@ -129,14 +137,19 @@ export function validateSimpleDataSourceQueryInput(
 
 function buildFilter(
   dataSource: DataSourceResponse,
-  filter: SimpleDataSourceFilter
+  filter: SimpleDataSourceFilter,
 ): Record<string, unknown> {
   const schema = requirePropertySchema(dataSource, filter.property);
   const operator = filter.operator || defaultOperatorForType(schema.type);
 
   return {
     property: filter.property,
-    [schema.type]: buildTypedCondition(filter.property, schema, operator, filter.value),
+    [schema.type]: buildTypedCondition(
+      filter.property,
+      schema,
+      operator,
+      filter.value,
+    ),
   };
 }
 
@@ -144,7 +157,7 @@ function buildTypedCondition(
   propertyName: string,
   schema: DatabasePropertyConfig,
   operator: SimpleFilterOperator,
-  value: unknown
+  value: unknown,
 ): Record<string, unknown> {
   switch (schema.type) {
     case "title":
@@ -160,14 +173,14 @@ function buildTypedCondition(
         propertyName,
         schema,
         operator,
-        expectString(propertyName, value)
+        expectString(propertyName, value),
       );
     case "multi_select":
       return optionCondition(
         propertyName,
         schema,
         operator,
-        expectString(propertyName, value)
+        expectString(propertyName, value),
       );
     case "date":
       return dateCondition(propertyName, operator, value);
@@ -176,7 +189,7 @@ function buildTypedCondition(
       return containsCondition(operator, expectString(propertyName, value));
     default:
       throw new Error(
-        `Property '${propertyName}' has unsupported type '${schema.type}' for simple querying. Use notion_query_data_source with raw Notion filter JSON.`
+        `Property '${propertyName}' has unsupported type '${schema.type}' for simple querying. Use notion_query_data_source with raw Notion filter JSON.`,
       );
   }
 }
@@ -184,10 +197,14 @@ function buildTypedCondition(
 function textCondition(
   propertyName: string,
   operator: SimpleFilterOperator,
-  value: unknown
+  value: unknown,
 ): Record<string, unknown> {
   if (isEmptyOperator(operator)) return { [operator]: true };
-  if (!["equals", "does_not_equal", "contains", "does_not_contain"].includes(operator)) {
+  if (
+    !["equals", "does_not_equal", "contains", "does_not_contain"].includes(
+      operator,
+    )
+  ) {
     throwUnsupportedOperator(propertyName, operator, [
       "equals",
       "does_not_equal",
@@ -203,7 +220,7 @@ function textCondition(
 function numberCondition(
   propertyName: string,
   operator: SimpleFilterOperator,
-  value: unknown
+  value: unknown,
 ): Record<string, unknown> {
   if (isEmptyOperator(operator)) return { [operator]: true };
   if (
@@ -232,11 +249,11 @@ function numberCondition(
 
 function equalsCondition(
   operator: SimpleFilterOperator,
-  value: boolean
+  value: boolean,
 ): Record<string, unknown> {
   if (!["equals", "does_not_equal"].includes(operator)) {
     throw new Error(
-      `Checkbox filters only support equals or does_not_equal, got '${operator}'.`
+      `Checkbox filters only support equals or does_not_equal, got '${operator}'.`,
     );
   }
   return { [operator]: value };
@@ -246,7 +263,7 @@ function optionCondition(
   propertyName: string,
   schema: DatabasePropertyConfig,
   operator: SimpleFilterOperator,
-  optionName: string
+  optionName: string,
 ): Record<string, unknown> {
   if (isEmptyOperator(operator)) return { [operator]: true };
 
@@ -268,12 +285,12 @@ function optionCondition(
 function dateCondition(
   propertyName: string,
   operator: SimpleFilterOperator,
-  value: unknown
+  value: unknown,
 ): Record<string, unknown> {
   if (isEmptyOperator(operator)) return { [operator]: true };
   if (
     !["equals", "before", "after", "on_or_before", "on_or_after"].includes(
-      operator
+      operator,
     )
   ) {
     throwUnsupportedOperator(propertyName, operator, [
@@ -291,12 +308,12 @@ function dateCondition(
 
 function containsCondition(
   operator: SimpleFilterOperator,
-  value: string
+  value: string,
 ): Record<string, unknown> {
   if (isEmptyOperator(operator)) return { [operator]: true };
   if (!["contains", "does_not_contain"].includes(operator)) {
     throw new Error(
-      `Relation and people filters only support contains or does_not_contain, got '${operator}'.`
+      `Relation and people filters only support contains or does_not_contain, got '${operator}'.`,
     );
   }
   return { [operator]: value };
@@ -304,12 +321,12 @@ function containsCondition(
 
 function requirePropertySchema(
   dataSource: DataSourceResponse,
-  propertyName: string
+  propertyName: string,
 ): DatabasePropertyConfig {
   const schema = dataSource.properties[propertyName];
   if (!schema) {
     throw new Error(
-      `Unknown property '${propertyName}'. Use notion_inspect_data_source to list valid properties.`
+      `Unknown property '${propertyName}'. Use notion_inspect_data_source to list valid properties.`,
     );
   }
   return schema;
@@ -357,7 +374,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function expectKnownOption(
   propertyName: string,
   schema: DatabasePropertyConfig,
-  optionName: string
+  optionName: string,
 ): string {
   const options = getOptionNames(schema);
   if (options.length === 0 || options.includes(optionName)) {
@@ -365,7 +382,7 @@ function expectKnownOption(
   }
 
   const suggestion = options.find(
-    (option) => option.toLocaleLowerCase() === optionName.toLocaleLowerCase()
+    (option) => option.toLocaleLowerCase() === optionName.toLocaleLowerCase(),
   );
   throw new Error(
     [
@@ -375,7 +392,7 @@ function expectKnownOption(
       "Use notion_inspect_data_source to confirm current options.",
     ]
       .filter(Boolean)
-      .join(" ")
+      .join(" "),
   );
 }
 
@@ -413,9 +430,9 @@ function expectBoolean(propertyName: string, value: unknown): boolean {
 function throwUnsupportedOperator(
   propertyName: string,
   operator: string,
-  allowed: string[]
+  allowed: string[],
 ): never {
   throw new Error(
-    `Property '${propertyName}' does not support operator '${operator}'. Allowed operators: ${allowed.join(", ")}.`
+    `Property '${propertyName}' does not support operator '${operator}'. Allowed operators: ${allowed.join(", ")}.`,
   );
 }

@@ -13,7 +13,7 @@ import type {
   SimpleDataSourceFilter,
   SimpleDataSourceSort,
 } from "../query/index.js";
-import { RichTextItemResponse, BlockResponse } from "./responses.js";
+import type { BlockResponse, RichTextItemResponse } from "./responses.js";
 
 export type AppendBlockChildrenPosition =
   | {

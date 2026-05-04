@@ -1,6 +1,6 @@
-import { expect, test, describe, vi, beforeEach } from "vitest";
-import { NotionApiError, NotionClientWrapper } from "./client/index.js";
-import { PageResponse } from "./types/index.js";
+import { beforeEach, describe, expect, test, vi } from "vitest";
+import { type NotionApiError, NotionClientWrapper } from "./client/index.js";
+import type { PageResponse } from "./types/index.js";
 import { filterTools } from "./utils/index.js";
 
 vi.mock("./markdown/index.js", () => ({
@@ -15,7 +15,7 @@ function mockResponse(
     status?: number;
     statusText?: string;
     headers?: Record<string, string>;
-  } = {}
+  } = {},
 ): Response {
   const status = init.status ?? 200;
   return {
@@ -82,7 +82,7 @@ describe("NotionClientWrapper", () => {
         method: "PATCH",
         headers: (wrapper as any).headers,
         body: JSON.stringify({ children, position }),
-      })
+      }),
     );
   });
 
@@ -96,7 +96,7 @@ describe("NotionClientWrapper", () => {
       expect.objectContaining({
         method: "GET",
         headers: (wrapper as any).headers,
-      })
+      }),
     );
   });
 
@@ -112,7 +112,7 @@ describe("NotionClientWrapper", () => {
       expect.objectContaining({
         method: "GET",
         headers: (wrapper as any).headers,
-      })
+      }),
     );
   });
 
@@ -126,7 +126,7 @@ describe("NotionClientWrapper", () => {
       expect.objectContaining({
         method: "GET",
         headers: (wrapper as any).headers,
-      })
+      }),
     );
   });
 
@@ -144,7 +144,7 @@ describe("NotionClientWrapper", () => {
         method: "PATCH",
         headers: (wrapper as any).headers,
         body: JSON.stringify({ properties }),
-      })
+      }),
     );
   });
 
@@ -161,7 +161,7 @@ describe("NotionClientWrapper", () => {
         method: "POST",
         headers: (wrapper as any).headers,
         body: JSON.stringify({ filter, sorts }),
-      })
+      }),
     );
   });
 
@@ -178,7 +178,7 @@ describe("NotionClientWrapper", () => {
         method: "POST",
         headers: (wrapper as any).headers,
         body: JSON.stringify({ parent, title, properties }),
-      })
+      }),
     );
   });
 
@@ -192,7 +192,7 @@ describe("NotionClientWrapper", () => {
       expect.objectContaining({
         method: "GET",
         headers: (wrapper as any).headers,
-      })
+      }),
     );
   });
 
@@ -200,7 +200,12 @@ describe("NotionClientWrapper", () => {
     const dataSourceId = "ds123";
     const properties = { Status: { status: {} } };
 
-    await wrapper.updateDataSource(dataSourceId, undefined, undefined, properties);
+    await wrapper.updateDataSource(
+      dataSourceId,
+      undefined,
+      undefined,
+      properties,
+    );
 
     expect(fetchMock).toHaveBeenCalledWith(
       `https://api.notion.com/v1/data_sources/${dataSourceId}`,
@@ -208,7 +213,7 @@ describe("NotionClientWrapper", () => {
         method: "PATCH",
         headers: (wrapper as any).headers,
         body: JSON.stringify({ properties }),
-      })
+      }),
     );
   });
 
@@ -227,7 +232,7 @@ describe("NotionClientWrapper", () => {
           parent: { type: "data_source_id", data_source_id: dataSourceId },
           properties,
         }),
-      })
+      }),
     );
   });
 
@@ -243,7 +248,7 @@ describe("NotionClientWrapper", () => {
         method: "POST",
         headers: (wrapper as any).headers,
         body: JSON.stringify({ query, filter }),
-      })
+      }),
     );
   });
 
@@ -256,8 +261,8 @@ describe("NotionClientWrapper", () => {
           code: "validation_error",
           message: "Invalid filter",
         },
-        { status: 400, statusText: "Bad Request" }
-      )
+        { status: 400, statusText: "Bad Request" },
+      ),
     );
 
     await expect(wrapper.retrievePage("page123")).rejects.toMatchObject({
@@ -282,8 +287,8 @@ describe("NotionClientWrapper", () => {
             status: 429,
             statusText: "Too Many Requests",
             headers: { "retry-after": "0" },
-          }
-        )
+          },
+        ),
       )
       .mockResolvedValueOnce(mockResponse({ object: "page", id: "page123" }));
 
@@ -309,7 +314,7 @@ describe("NotionClientWrapper", () => {
     });
 
     await expect(wrapper.retrievePage("page123")).rejects.toThrow(
-      "Notion API request timed out after 1ms"
+      "Notion API request timed out after 1ms",
     );
   });
 

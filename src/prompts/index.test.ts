@@ -21,7 +21,7 @@ describe("Notion prompts", () => {
     expect(prompt.messages[0].content).toMatchObject({
       type: "text",
       text: expect.stringContaining(
-        "Use `notion_create_data_source_item_from_values`"
+        "Use `notion_create_data_source_item_from_values`",
       ),
     });
   });
@@ -41,7 +41,7 @@ describe("Notion prompts", () => {
 
   test("should reject missing required prompt arguments", () => {
     expect(() => getNotionPrompt("notion_find_target", {})).toThrow(
-      "Missing required prompt argument: target"
+      "Missing required prompt argument: target",
     );
   });
 });

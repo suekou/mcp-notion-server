@@ -3,18 +3,18 @@
  */
 
 import { convertToMarkdown } from "../markdown/index.js";
-import {
-  NotionResponse,
-  BlockResponse,
-  PageResponse,
-  DatabaseResponse,
-  ListResponse,
-  UserResponse,
-  CommentResponse,
-  RichTextItemResponse,
+import type {
   AppendBlockChildrenPosition,
+  BlockResponse,
+  CommentResponse,
   CreateDataSourceArgs,
+  DatabaseResponse,
   DataSourceResponse,
+  ListResponse,
+  NotionResponse,
+  PageResponse,
+  RichTextItemResponse,
+  UserResponse,
 } from "../types/index.js";
 
 export type NotionClientOptions = {
@@ -33,7 +33,7 @@ export class NotionApiError extends Error {
     status: number,
     statusText: string,
     responseBody: unknown,
-    retryAfterMs?: number
+    retryAfterMs?: number,
   ) {
     const body =
       responseBody && typeof responseBody === "object"
@@ -43,7 +43,9 @@ export class NotionApiError extends Error {
     const message =
       typeof body?.message === "string" ? body.message : statusText;
 
-    super(`Notion API request failed (${status}${code ? ` ${code}` : ""}): ${message}`);
+    super(
+      `Notion API request failed (${status}${code ? ` ${code}` : ""}): ${message}`,
+    );
     this.name = "NotionApiError";
     this.status = status;
     this.code = code;
@@ -74,7 +76,7 @@ export class NotionClientWrapper {
 
   private async request<T>(
     path: string,
-    init: Omit<RequestInit, "headers" | "signal"> = {}
+    init: Omit<RequestInit, "headers" | "signal"> = {},
   ): Promise<T> {
     const url = `${this.baseUrl}${path}`;
 
@@ -92,13 +94,13 @@ export class NotionClientWrapper {
 
         if (!response.ok) {
           const retryAfterMs = parseRetryAfter(
-            response.headers.get("retry-after")
+            response.headers.get("retry-after"),
           );
           const error = new NotionApiError(
             response.status,
             response.statusText,
             responseBody,
-            retryAfterMs
+            retryAfterMs,
           );
 
           if (attempt < this.maxRetries && isRetryableStatus(response.status)) {
@@ -113,7 +115,7 @@ export class NotionClientWrapper {
       } catch (error) {
         if (isAbortError(error)) {
           throw new Error(
-            `Notion API request timed out after ${this.timeoutMs}ms`
+            `Notion API request timed out after ${this.timeoutMs}ms`,
           );
         }
 
@@ -134,7 +136,7 @@ export class NotionClientWrapper {
   async appendBlockChildren(
     block_id: string,
     children: Partial<BlockResponse>[],
-    position?: AppendBlockChildrenPosition
+    position?: AppendBlockChildrenPosition,
   ): Promise<BlockResponse> {
     const body: Record<string, any> = { children };
     if (position) body.position = position;
@@ -154,7 +156,7 @@ export class NotionClientWrapper {
   async retrieveBlockChildren(
     block_id: string,
     start_cursor?: string,
-    page_size?: number
+    page_size?: number,
   ): Promise<ListResponse> {
     const params = new URLSearchParams();
     if (start_cursor) params.append("start_cursor", start_cursor);
@@ -164,7 +166,7 @@ export class NotionClientWrapper {
       `/blocks/${block_id}/children?${params.toString()}`,
       {
         method: "GET",
-      }
+      },
     );
   }
 
@@ -176,7 +178,7 @@ export class NotionClientWrapper {
 
   async updateBlock(
     block_id: string,
-    block: Partial<BlockResponse>
+    block: Partial<BlockResponse>,
   ): Promise<BlockResponse> {
     return this.request<BlockResponse>(`/blocks/${block_id}`, {
       method: "PATCH",
@@ -192,7 +194,7 @@ export class NotionClientWrapper {
 
   async updatePageProperties(
     page_id: string,
-    properties: Record<string, any>
+    properties: Record<string, any>,
   ): Promise<PageResponse> {
     const body = { properties };
 
@@ -204,7 +206,7 @@ export class NotionClientWrapper {
 
   async listAllUsers(
     start_cursor?: string,
-    page_size?: number
+    page_size?: number,
   ): Promise<ListResponse> {
     const params = new URLSearchParams();
     if (start_cursor) params.append("start_cursor", start_cursor);
@@ -230,7 +232,7 @@ export class NotionClientWrapper {
   async createDataSource(
     parent: CreateDataSourceArgs["parent"],
     properties: Record<string, any>,
-    title?: RichTextItemResponse[]
+    title?: RichTextItemResponse[],
   ): Promise<DataSourceResponse> {
     const body = { parent, title, properties };
 
@@ -249,7 +251,7 @@ export class NotionClientWrapper {
       direction: "ascending" | "descending";
     }>,
     start_cursor?: string,
-    page_size?: number
+    page_size?: number,
   ): Promise<ListResponse> {
     const body: Record<string, any> = {};
     if (filter) body.filter = filter;
@@ -269,7 +271,9 @@ export class NotionClientWrapper {
     });
   }
 
-  async retrieveDataSource(data_source_id: string): Promise<DataSourceResponse> {
+  async retrieveDataSource(
+    data_source_id: string,
+  ): Promise<DataSourceResponse> {
     return this.request<DataSourceResponse>(`/data_sources/${data_source_id}`, {
       method: "GET",
     });
@@ -279,7 +283,7 @@ export class NotionClientWrapper {
     data_source_id: string,
     title?: RichTextItemResponse[],
     description?: RichTextItemResponse[],
-    properties?: Record<string, any>
+    properties?: Record<string, any>,
   ): Promise<DataSourceResponse> {
     const body: Record<string, any> = {};
     if (title) body.title = title;
@@ -294,7 +298,7 @@ export class NotionClientWrapper {
 
   async createDataSourceItem(
     data_source_id: string,
-    properties: Record<string, any>
+    properties: Record<string, any>,
   ): Promise<PageResponse> {
     const body = {
       parent: { type: "data_source_id", data_source_id },
@@ -310,7 +314,7 @@ export class NotionClientWrapper {
   async createComment(
     parent?: { page_id: string },
     discussion_id?: string,
-    rich_text?: RichTextItemResponse[]
+    rich_text?: RichTextItemResponse[],
   ): Promise<CommentResponse> {
     const body: Record<string, any> = { rich_text };
     if (parent) {
@@ -329,7 +333,7 @@ export class NotionClientWrapper {
   async retrieveComments(
     block_id: string,
     start_cursor?: string,
-    page_size?: number
+    page_size?: number,
   ): Promise<ListResponse> {
     const params = new URLSearchParams();
     params.append("block_id", block_id);
@@ -349,7 +353,7 @@ export class NotionClientWrapper {
       timestamp: "last_edited_time";
     },
     start_cursor?: string,
-    page_size?: number
+    page_size?: number,
   ): Promise<ListResponse> {
     const body: Record<string, any> = {};
     if (query) body.query = query;

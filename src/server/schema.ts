@@ -1,5 +1,5 @@
-import * as z from "zod/v4";
 import type { PromptArgument, Tool } from "@modelcontextprotocol/sdk/types.js";
+import * as z from "zod/v4";
 
 type JsonSchema = {
   type?: string;
@@ -17,7 +17,7 @@ export function toolInputSchema(tool: Tool): z.ZodType {
 }
 
 export function promptArgsShape(
-  args: PromptArgument[] | undefined
+  args: PromptArgument[] | undefined,
 ): Record<string, z.ZodType> {
   const shape: Record<string, z.ZodType> = {};
 
@@ -49,7 +49,7 @@ function schemaToZod(schema: JsonSchema | undefined): z.ZodType {
     case "array":
       return withDescription(
         z.array(schemaToZod(schema.items)),
-        schema.description
+        schema.description,
       );
     case "object":
       return withDescription(objectSchemaToZod(schema), schema.description);
@@ -58,14 +58,12 @@ function schemaToZod(schema: JsonSchema | undefined): z.ZodType {
   }
 }
 
-function objectSchemaToZod(
-  schema: JsonSchema | undefined
-): z.ZodType {
+function objectSchemaToZod(schema: JsonSchema | undefined): z.ZodType {
   const shape: Record<string, z.ZodType> = {};
   const required = new Set(schema?.required ?? []);
 
   for (const [name, propertySchema] of Object.entries(
-    schema?.properties ?? {}
+    schema?.properties ?? {},
   )) {
     const property = schemaToZod(propertySchema);
     shape[name] = required.has(name) ? property : property.optional();
@@ -87,7 +85,7 @@ function enumToZod(values: unknown[]): z.ZodType {
 
 function withDescription<T extends z.ZodType>(
   schema: T,
-  description: string | undefined
+  description: string | undefined,
 ): T {
   return description ? (schema.describe(description) as T) : schema;
 }

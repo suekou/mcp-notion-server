@@ -2,12 +2,12 @@
  * Schema definitions for Notion API tools
  */
 
-import { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import {
+  blockObjectSchema,
   commonIdDescription,
   formatParameter,
   richTextObjectSchema,
-  blockObjectSchema,
 } from "./common.js";
 
 const simpleContentItemSchema = {
@@ -34,8 +34,7 @@ const simpleContentItemSchema = {
     },
     text: {
       type: "string",
-      description:
-        "Plain text content. Required for all types except divider.",
+      description: "Plain text content. Required for all types except divider.",
     },
     checked: {
       type: "boolean",
@@ -173,7 +172,9 @@ export const appendBlockChildrenTool: Tool = {
             properties: {
               id: {
                 type: "string",
-                description: "The existing block ID to insert after." + commonIdDescription,
+                description:
+                  "The existing block ID to insert after." +
+                  commonIdDescription,
               },
             },
             required: ["id"],
@@ -671,7 +672,8 @@ export const queryDataSourceTool: Tool = {
     properties: {
       data_source_id: {
         type: "string",
-        description: "The ID of the data source to query." + commonIdDescription,
+        description:
+          "The ID of the data source to query." + commonIdDescription,
       },
       filter: {
         type: "object",
@@ -721,7 +723,8 @@ export const queryDataSourceByValuesTool: Tool = {
     properties: {
       data_source_id: {
         type: "string",
-        description: "The ID of the data source to query." + commonIdDescription,
+        description:
+          "The ID of the data source to query." + commonIdDescription,
       },
       filters: {
         type: "array",
@@ -1001,7 +1004,8 @@ export const findTool: Tool = {
       },
       start_cursor: {
         type: "string",
-        description: "Pagination start cursor from a previous notion_find call.",
+        description:
+          "Pagination start cursor from a previous notion_find call.",
       },
       page_size: {
         type: "number",

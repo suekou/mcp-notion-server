@@ -27,7 +27,7 @@ const argv = yargs(hideBin(process.argv))
   .parseSync();
 
 const enabledToolsSet = new Set(
-  argv.enabledTools ? argv.enabledTools.split(",") : []
+  argv.enabledTools ? argv.enabledTools.split(",") : [],
 );
 
 // if test environment, do not execute main()

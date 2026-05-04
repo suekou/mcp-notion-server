@@ -1,15 +1,15 @@
-import type {
-  BlockResponse,
-  ListResponse,
-  PageProperty,
-  PageResponse,
-} from "../types/index.js";
 import {
   renderBlockToMarkdown,
   renderMarkdownBlockTree,
   renderRichTextToMarkdown,
   renderRichTextToPlainText,
 } from "../markdown/index.js";
+import type {
+  BlockResponse,
+  ListResponse,
+  PageProperty,
+  PageResponse,
+} from "../types/index.js";
 
 export type PageContentFormat = "outline" | "markdown" | "json";
 
@@ -74,7 +74,7 @@ type PagePropertySummary = {
 type FetchBlockChildren = (
   blockId: string,
   startCursor?: string,
-  pageSize?: number
+  pageSize?: number,
 ) => Promise<ListResponse>;
 
 type ReadState = {
@@ -89,19 +89,19 @@ const DEFAULT_PAGE_SIZE = 100;
 export async function readPageBlockTree(
   fetchBlockChildren: FetchBlockChildren,
   pageId: string,
-  options: ReadPageOptions = {}
+  options: ReadPageOptions = {},
 ): Promise<PageBlockTreeResult> {
   const maxDepth = normalizePositiveInteger(
     options.max_depth,
-    DEFAULT_MAX_DEPTH
+    DEFAULT_MAX_DEPTH,
   );
   const maxBlocks = normalizePositiveInteger(
     options.max_blocks,
-    DEFAULT_MAX_BLOCKS
+    DEFAULT_MAX_BLOCKS,
   );
   const pageSize = Math.min(
     normalizePositiveInteger(options.page_size, DEFAULT_PAGE_SIZE),
-    100
+    100,
   );
   const state: ReadState = { blockCount: 0, truncated: false };
   const blocks = await readChildren(
@@ -109,7 +109,7 @@ export async function readPageBlockTree(
     pageId,
     1,
     { maxDepth, maxBlocks, pageSize },
-    state
+    state,
   );
 
   return {
@@ -122,12 +122,12 @@ export async function readPageBlockTree(
 export function buildPageReadSummary(
   page: PageResponse,
   tree: PageBlockTreeResult,
-  options: ReadPageOptions = {}
+  options: ReadPageOptions = {},
 ): PageReadSummary {
   const contentFormat = options.content_format || "outline";
   const maxDepth = normalizePositiveInteger(
     options.max_depth,
-    DEFAULT_MAX_DEPTH
+    DEFAULT_MAX_DEPTH,
   );
   const summary: PageReadSummary = {
     object: "notion_page_read",
@@ -149,8 +149,7 @@ export function buildPageReadSummary(
     editing_hint: {
       append_tool: "notion_append_content",
       parent_block_id: page.id,
-      note:
-        "Use block IDs from content.outline when inserting after a specific block.",
+      note: "Use block IDs from content.outline when inserting after a specific block.",
     },
   };
 
@@ -170,7 +169,7 @@ async function readChildren(
   blockId: string,
   depth: number,
   limits: { maxDepth: number; maxBlocks: number; pageSize: number },
-  state: ReadState
+  state: ReadState,
 ): Promise<PageBlockNode[]> {
   if (depth > limits.maxDepth || state.blockCount >= limits.maxBlocks) {
     state.truncated = true;
@@ -200,7 +199,7 @@ async function readChildren(
             block.id,
             depth + 1,
             limits,
-            state
+            state,
           );
         } else {
           node.children_omitted =
@@ -263,14 +262,16 @@ function extractBlockText(block: BlockResponse): string {
     case "file":
     case "pdf":
     case "video":
-      return renderRichTextToPlainText(content.caption || []) || content.name || "";
+      return (
+        renderRichTextToPlainText(content.caption || []) || content.name || ""
+      );
     default:
       return renderRichTextToPlainText(content.rich_text || []);
   }
 }
 
 function summarizePageProperties(
-  properties: Record<string, PageProperty>
+  properties: Record<string, PageProperty>,
 ): PagePropertySummary[] {
   return Object.entries(properties || {}).map(([name, property]) => ({
     name,
@@ -281,7 +282,7 @@ function summarizePageProperties(
 }
 
 function summarizePagePropertyValue(
-  property: PageProperty
+  property: PageProperty,
 ): string | number | boolean | string[] | null {
   switch (property.type) {
     case "title":

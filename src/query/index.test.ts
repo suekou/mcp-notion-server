@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { buildDataSourceQueryFromSimpleFilters } from "./index.js";
 import type { DataSourceResponse } from "../types/index.js";
+import { buildDataSourceQueryFromSimpleFilters } from "./index.js";
 
 const dataSource: DataSourceResponse = {
   object: "data_source",
@@ -52,7 +52,7 @@ describe("simple data source query builder", () => {
           { property: "Related", value: "page123" },
         ],
         sorts: [{ property: "Due", direction: "descending" }],
-      })
+      }),
     ).toEqual({
       filter: {
         and: [
@@ -77,7 +77,7 @@ describe("simple data source query builder", () => {
           { property: "Status", value: "Done" },
           { property: "Status", value: "Todo" },
         ],
-      })
+      }),
     ).toEqual({
       filter: {
         or: [
@@ -92,17 +92,15 @@ describe("simple data source query builder", () => {
     expect(() =>
       buildDataSourceQueryFromSimpleFilters(dataSource, {
         filters: [{ property: "Status", value: "done" }],
-      })
+      }),
     ).toThrow("Did you mean 'Done'?");
   });
 
   test("should reject unsupported operators for property types", () => {
     expect(() =>
       buildDataSourceQueryFromSimpleFilters(dataSource, {
-        filters: [
-          { property: "Status", operator: "contains", value: "Done" },
-        ],
-      })
+        filters: [{ property: "Status", operator: "contains", value: "Done" }],
+      }),
     ).toThrow("Property 'Status' does not support operator 'contains'");
   });
 
@@ -110,17 +108,17 @@ describe("simple data source query builder", () => {
     expect(() =>
       buildDataSourceQueryFromSimpleFilters(dataSource, {
         match: "some" as any,
-      })
+      }),
     ).toThrow("match must be either 'all' or 'any'");
     expect(() =>
       buildDataSourceQueryFromSimpleFilters(dataSource, {
         filters: "Status is Done" as any,
-      })
+      }),
     ).toThrow("filters must be an array when provided");
     expect(() =>
       buildDataSourceQueryFromSimpleFilters(dataSource, {
         sorts: [{ property: "Due", direction: "up" as any }],
-      })
+      }),
     ).toThrow("sorts[0].direction must be either 'ascending' or 'descending'");
   });
 });

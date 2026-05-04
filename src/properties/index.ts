@@ -1,24 +1,24 @@
-import {
-  DataSourceResponse,
+import type {
   DatabasePropertyConfig,
+  DataSourceResponse,
   RichTextItemResponse,
 } from "../types/index.js";
 
 export type SimplePropertyValues = Record<string, unknown>;
 
 export function validateSimplePropertyValues(
-  values: unknown
+  values: unknown,
 ): asserts values is SimplePropertyValues {
   if (!isRecord(values)) {
     throw new Error(
-      "values must be an object keyed by exact Notion property names. Use notion_inspect_data_source to confirm property names."
+      "values must be an object keyed by exact Notion property names. Use notion_inspect_data_source to confirm property names.",
     );
   }
 }
 
 export function buildPagePropertiesFromSimpleValues(
   dataSource: DataSourceResponse,
-  values: SimplePropertyValues
+  values: SimplePropertyValues,
 ): Record<string, unknown> {
   validateSimplePropertyValues(values);
 
@@ -28,7 +28,7 @@ export function buildPagePropertiesFromSimpleValues(
     const schema = dataSource.properties[propertyName];
     if (!schema) {
       throw new Error(
-        `Unknown property '${propertyName}'. Use notion_inspect_data_source to list valid properties.`
+        `Unknown property '${propertyName}'. Use notion_inspect_data_source to list valid properties.`,
       );
     }
 
@@ -45,7 +45,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function buildPropertyValue(
   propertyName: string,
   schema: DatabasePropertyConfig,
-  value: unknown
+  value: unknown,
 ): Record<string, unknown> {
   const propertyType = schema.type;
 
@@ -64,7 +64,7 @@ function buildPropertyValue(
           name: expectKnownOption(
             propertyName,
             schema,
-            expectString(propertyName, value)
+            expectString(propertyName, value),
           ),
         },
       };
@@ -74,7 +74,7 @@ function buildPropertyValue(
           name: expectKnownOption(
             propertyName,
             schema,
-            expectString(propertyName, value)
+            expectString(propertyName, value),
           ),
         },
       };
@@ -104,14 +104,14 @@ function buildPropertyValue(
       };
     default:
       throw new Error(
-        `Property '${propertyName}' has unsupported type '${propertyType}' for simple value creation. Use notion_create_data_source_item with raw Notion properties.`
+        `Property '${propertyName}' has unsupported type '${propertyType}' for simple value creation. Use notion_create_data_source_item with raw Notion properties.`,
       );
   }
 }
 
 function stringToRichText(
   propertyName: string,
-  value: unknown
+  value: unknown,
 ): RichTextItemResponse[] {
   const content = expectString(propertyName, value);
   return [
@@ -125,7 +125,7 @@ function stringToRichText(
 
 function buildDateValue(
   propertyName: string,
-  value: unknown
+  value: unknown,
 ): Record<string, unknown> {
   if (typeof value === "string") {
     return { start: value };
@@ -134,7 +134,9 @@ function buildDateValue(
   if (value && typeof value === "object" && !Array.isArray(value)) {
     const dateValue = value as Record<string, unknown>;
     if (typeof dateValue.start !== "string") {
-      throw new Error(`Property '${propertyName}' date value requires a string start.`);
+      throw new Error(
+        `Property '${propertyName}' date value requires a string start.`,
+      );
     }
     return {
       start: dateValue.start,
@@ -146,7 +148,7 @@ function buildDateValue(
   }
 
   throw new Error(
-    `Property '${propertyName}' must be an ISO date string or { start, end?, time_zone? }.`
+    `Property '${propertyName}' must be an ISO date string or { start, end?, time_zone? }.`,
   );
 }
 
@@ -160,7 +162,7 @@ function expectString(propertyName: string, value: unknown): string {
 function expectKnownOption(
   propertyName: string,
   schema: DatabasePropertyConfig,
-  optionName: string
+  optionName: string,
 ): string {
   const options = getOptionNames(schema);
   if (options.length === 0 || options.includes(optionName)) {
@@ -176,7 +178,7 @@ function expectKnownOption(
       "Use notion_inspect_data_source to confirm current options.",
     ]
       .filter(Boolean)
-      .join(" ")
+      .join(" "),
   );
 }
 
@@ -192,10 +194,10 @@ function getOptionNames(schema: DatabasePropertyConfig): string[] {
 
 function findCaseInsensitiveOption(
   optionName: string,
-  options: string[]
+  options: string[],
 ): string | undefined {
   return options.find(
-    (option) => option.toLocaleLowerCase() === optionName.toLocaleLowerCase()
+    (option) => option.toLocaleLowerCase() === optionName.toLocaleLowerCase(),
   );
 }
 
@@ -211,7 +213,7 @@ function expectStringArray(propertyName: string, value: unknown): string[] {
   }
 
   throw new Error(
-    `Property '${propertyName}' must be a string or an array of strings.`
+    `Property '${propertyName}' must be a string or an array of strings.`,
   );
 }
 
