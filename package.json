@@ -5,6 +5,11 @@
   "license": "MIT",
   "author": "Kosuke Suenaga (https://github.com/suekou/mcp-notion-server)",
   "type": "module",
+  "packageManager": "pnpm@10.24.0",
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": ">=10.24.0"
+  },
   "main": "build/index.js",
   "bin": {
     "mcp-notion-server": "build/index.js"
@@ -15,22 +20,22 @@
   ],
   "scripts": {
     "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
-    "prepare": "npm run build",
+    "prepare": "pnpm run build",
     "watch": "tsc --watch",
-    "inspector": "npx @modelcontextprotocol/inspector build/index.js",
+    "inspector": "pnpm dlx @modelcontextprotocol/inspector build/index.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.2",
     "node-fetch": "^2.7.0",
-    "vitest": "3.0.9",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "@types/node": "^20.11.24",
+    "@types/node": "^24.0.0",
     "@types/node-fetch": "^2.6.12",
     "@types/yargs": "^17.0.33",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "3.0.9"
   }
 }
