@@ -1,4 +1,8 @@
 import type {
+  SimpleContentItem,
+  SimpleContentUpdate,
+} from "../content/index.js";
+import type {
   BlockResponse,
   ListResponse,
   PageProperty,
@@ -14,6 +18,18 @@ export type ReadPageOptions = {
   max_blocks?: number;
   page_size?: number;
   include_properties?: boolean;
+};
+
+export type PageEditAppend = {
+  block_id?: string;
+  after_block_id?: string;
+  items: SimpleContentItem[];
+};
+
+export type PageEditPlanOptions = ReadPageOptions & {
+  updates?: SimpleContentUpdate[];
+  appends?: PageEditAppend[];
+  include_outline?: boolean;
 };
 
 export type PageBlockNode = {
@@ -57,6 +73,43 @@ export type PageReadSummary = {
     note: string;
   };
 };
+
+export type PageEditPlan = {
+  object: "notion_page_edit_plan";
+  page: {
+    id: string;
+    title: string;
+    last_edited_time: string;
+  };
+  valid: true;
+  operation_count: number;
+  operations: PageEditPlanOperation[];
+  warnings: string[];
+  outline?: PageBlockNode[];
+};
+
+export type PageEditPlanOperation =
+  | {
+      type: "update_content_batch";
+      tool: "notion_update_content_batch";
+      arguments: {
+        updates: SimpleContentUpdate[];
+      };
+    }
+  | {
+      type: "append_content";
+      tool: "notion_append_content";
+      arguments: {
+        block_id: string;
+        items: SimpleContentItem[];
+        position?: {
+          type: "after_block";
+          after_block: {
+            id: string;
+          };
+        };
+      };
+    };
 
 type PagePropertySummary = {
   name: string;
@@ -159,6 +212,88 @@ export function buildPageReadSummary(
   return summary;
 }
 
+export function buildPageEditPlan(
+  page: PageResponse,
+  tree: PageBlockTreeResult,
+  options: PageEditPlanOptions = {}
+): PageEditPlan {
+  const blockById = indexBlocksById(tree.blocks);
+  const updates = options.updates || [];
+  const appends = options.appends || [];
+  const operations: PageEditPlanOperation[] = [];
+  const warnings: string[] = [];
+
+  if (tree.truncated) {
+    warnings.push(
+      "Page outline was truncated; increase max_depth or max_blocks before planning edits to omitted blocks."
+    );
+  }
+
+  if (updates.length > 0) {
+    validatePlannedUpdates(updates, blockById);
+    operations.push({
+      type: "update_content_batch",
+      tool: "notion_update_content_batch",
+      arguments: {
+        updates,
+      },
+    });
+  }
+
+  for (const append of appends) {
+    const blockId = append.block_id || page.id;
+    if (blockId !== page.id && !blockById.has(blockId)) {
+      throw new Error(
+        `Cannot append to unknown block '${blockId}'. Use notion_read_page with enough depth to include it.`
+      );
+    }
+
+    const operation: PageEditPlanOperation = {
+      type: "append_content",
+      tool: "notion_append_content",
+      arguments: {
+        block_id: blockId,
+        items: append.items,
+      },
+    };
+
+    if (append.after_block_id) {
+      if (!blockById.has(append.after_block_id)) {
+        throw new Error(
+          `Cannot insert after unknown block '${append.after_block_id}'. Use notion_read_page with enough depth to include it.`
+        );
+      }
+      operation.arguments.position = {
+        type: "after_block",
+        after_block: {
+          id: append.after_block_id,
+        },
+      };
+    }
+
+    operations.push(operation);
+  }
+
+  const plan: PageEditPlan = {
+    object: "notion_page_edit_plan",
+    page: {
+      id: page.id,
+      title: extractPageTitle(page) || "Untitled page",
+      last_edited_time: page.last_edited_time,
+    },
+    valid: true,
+    operation_count: operations.length,
+    operations,
+    warnings,
+  };
+
+  if (options.include_outline) {
+    plan.outline = tree.blocks;
+  }
+
+  return plan;
+}
+
 async function readChildren(
   fetchBlockChildren: FetchBlockChildren,
   blockId: string,
@@ -224,6 +359,39 @@ function summarizeBlock(block: BlockResponse): PageBlockNode {
     has_children: !!block.has_children,
     in_trash: block.in_trash,
   };
+}
+
+function validatePlannedUpdates(
+  updates: SimpleContentUpdate[],
+  blockById: Map<string, PageBlockNode>
+): void {
+  for (const update of updates) {
+    const block = blockById.get(update.block_id);
+    if (!block) {
+      throw new Error(
+        `Cannot update unknown block '${update.block_id}'. Use notion_read_page with enough depth to include it.`
+      );
+    }
+
+    if (block.type !== update.item.type) {
+      throw new Error(
+        `Block type mismatch: block ${update.block_id} is ${block.type}, but item.type was ${update.item.type}`
+      );
+    }
+  }
+}
+
+function indexBlocksById(blocks: PageBlockNode[]): Map<string, PageBlockNode> {
+  const index = new Map<string, PageBlockNode>();
+  for (const block of blocks) {
+    index.set(block.id, block);
+    if (block.children) {
+      for (const [id, child] of indexBlocksById(block.children)) {
+        index.set(id, child);
+      }
+    }
+  }
+  return index;
 }
 
 function renderBlocksAsMarkdown(blocks: PageBlockNode[], depth = 0): string {

@@ -26,6 +26,7 @@ import {
 } from "../content/index.js";
 import { NotionClientWrapper } from "../client/index.js";
 import {
+  buildPageEditPlan,
   buildPageReadSummary,
   readPageBlockTree,
 } from "../page/index.js";
@@ -55,6 +56,7 @@ export function getAllTools(): Tool[] {
     schemas.updateBlockTool,
     schemas.retrievePageTool,
     schemas.readPageTool,
+    schemas.planPageEditTool,
     schemas.updatePagePropertiesTool,
     schemas.listAllUsersTool,
     schemas.retrieveUserTool,
@@ -296,6 +298,22 @@ export async function startServer(
               args
             );
             response = buildPageReadSummary(page, tree, args);
+            break;
+          }
+
+          case "notion_plan_page_edit": {
+            const args = request.params
+              .arguments as unknown as args.PlanPageEditArgs;
+            if (!args.page_id) {
+              throw new Error("Missing required argument: page_id");
+            }
+            const page = await notionClient.retrievePage(args.page_id);
+            const tree = await readPageBlockTree(
+              notionClient.retrieveBlockChildren.bind(notionClient),
+              args.page_id,
+              args
+            );
+            response = buildPageEditPlan(page, tree, args);
             break;
           }
 
