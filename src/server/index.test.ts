@@ -3,6 +3,7 @@ import {
   formatJsonToolResult,
   formatToolError,
   getAllPrompts,
+  getAllResources,
   getAllTools,
 } from "./index.js";
 
@@ -62,6 +63,13 @@ describe("MCP server helpers", () => {
       "notion_find_target",
       "notion_create_database_item",
       "notion_append_page_content",
+    ]);
+  });
+
+  test("should expose Notion guidance resources", () => {
+    expect(getAllResources().map((resource) => resource.uri)).toEqual([
+      "notion://server/guide",
+      "notion://server/tools",
     ]);
   });
 

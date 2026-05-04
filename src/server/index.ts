@@ -13,12 +13,17 @@ import {
   ListToolsRequestSchema,
   ListPromptsRequestSchema,
   Prompt,
+  ReadResourceRequest,
+  ReadResourceRequestSchema,
+  ListResourcesRequestSchema,
+  Resource,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { buildBlocksFromSimpleContent } from "../content/index.js";
 import { NotionClientWrapper } from "../client/index.js";
 import { buildPagePropertiesFromSimpleValues } from "../properties/index.js";
 import { getNotionPrompt, notionPrompts } from "../prompts/index.js";
+import { notionResources, readNotionResource } from "../resources/index.js";
 import {
   summarizeDataSourceSchema,
   summarizeFindResults,
@@ -59,6 +64,10 @@ export function getAllPrompts(): Prompt[] {
   return notionPrompts;
 }
 
+export function getAllResources(): Resource[] {
+  return notionResources;
+}
+
 export function formatJsonToolResult(response: unknown): CallToolResult {
   return {
     content: [{ type: "text", text: JSON.stringify(response, null, 2) }],
@@ -94,6 +103,7 @@ export async function startServer(
       capabilities: {
         tools: {},
         prompts: {},
+        resources: {},
       },
     }
   );
@@ -450,6 +460,19 @@ export async function startServer(
         request.params.name,
         request.params.arguments as Record<string, string> | undefined
       );
+    }
+  );
+
+  server.setRequestHandler(ListResourcesRequestSchema, async () => {
+    return {
+      resources: getAllResources(),
+    };
+  });
+
+  server.setRequestHandler(
+    ReadResourceRequestSchema,
+    async (request: ReadResourceRequest) => {
+      return readNotionResource(request.params.uri);
     }
   );
 
