@@ -120,7 +120,6 @@ export interface RetrieveUserArgs {
 }
 
 export interface RetrieveBotUserArgs {
-  random_string: string;
   format?: "json" | "markdown";
 }
 

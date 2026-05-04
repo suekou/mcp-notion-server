@@ -2,7 +2,7 @@
  * MCP server setup and request handling
  */
 
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequest,
@@ -53,6 +53,15 @@ import * as schemas from "../types/schemas.js";
 import * as args from "../types/args.js";
 
 const SERVER_VERSION = "2.0.0";
+const SERVER_INSTRUCTIONS = [
+  "Use high-level Notion tools first: notion_find, notion_read_page, notion_inspect_data_source, schema-aware query/create tools, and simple content tools.",
+  "Use raw Notion JSON tools only when simplified tools do not support the requested block, property, or API shape.",
+  "Prefer data_source_id for schema, query, and item creation workflows. Use notion_retrieve_database only to discover child data sources from a database container.",
+].join(" ");
+
+export function getServerInstructions(): string {
+  return SERVER_INSTRUCTIONS;
+}
 
 export function getAllTools(): Tool[] {
   return [
@@ -121,7 +130,7 @@ export async function startServer(
   enabledToolsSet: Set<string>,
   enableMarkdownConversion: boolean
 ) {
-  const server = new Server(
+  const mcpServer = new McpServer(
     {
       name: "Notion MCP Server",
       version: SERVER_VERSION,
@@ -132,8 +141,10 @@ export async function startServer(
         prompts: {},
         resources: {},
       },
+      instructions: SERVER_INSTRUCTIONS,
     }
   );
+  const { server } = mcpServer;
 
   const notionClient = new NotionClientWrapper(notionToken);
 
@@ -142,16 +153,13 @@ export async function startServer(
     async (request: CallToolRequest) => {
       console.error("Received CallToolRequest:", request);
       try {
-        if (!request.params.arguments) {
-          throw new Error("No arguments provided");
-        }
+        const toolArguments = request.params.arguments ?? {};
 
         let response: unknown;
 
         switch (request.params.name) {
           case "notion_append_block_children": {
-            const args = request.params
-              .arguments as unknown as args.AppendBlockChildrenArgs;
+            const args = toolArguments as unknown as args.AppendBlockChildrenArgs;
             if (!args.block_id || !args.children) {
               throw new Error(
                 "Missing required arguments: block_id and children"
@@ -167,8 +175,7 @@ export async function startServer(
           }
 
           case "notion_append_content": {
-            const args = request.params
-              .arguments as unknown as args.AppendContentArgs;
+            const args = toolArguments as unknown as args.AppendContentArgs;
             if (!args.block_id || !args.items) {
               throw new Error(
                 "Missing required arguments: block_id and items"
@@ -185,8 +192,7 @@ export async function startServer(
           }
 
           case "notion_append_markdown": {
-            const args = request.params
-              .arguments as unknown as args.AppendMarkdownArgs;
+            const args = toolArguments as unknown as args.AppendMarkdownArgs;
             if (!args.block_id || !args.markdown) {
               throw new Error(
                 "Missing required arguments: block_id and markdown"
@@ -206,8 +212,7 @@ export async function startServer(
           }
 
           case "notion_update_content": {
-            const args = request.params
-              .arguments as unknown as args.UpdateContentArgs;
+            const args = toolArguments as unknown as args.UpdateContentArgs;
             if (!args.block_id || !args.item) {
               throw new Error(
                 "Missing required arguments: block_id and item"
@@ -230,8 +235,8 @@ export async function startServer(
           }
 
           case "notion_update_content_batch": {
-            const args = request.params
-              .arguments as unknown as args.UpdateContentBatchArgs;
+            const args =
+              toolArguments as unknown as args.UpdateContentBatchArgs;
             if (!args.updates || args.updates.length === 0) {
               throw new Error("Missing required argument: updates");
             }
@@ -266,8 +271,7 @@ export async function startServer(
           }
 
           case "notion_retrieve_block": {
-            const args = request.params
-              .arguments as unknown as args.RetrieveBlockArgs;
+            const args = toolArguments as unknown as args.RetrieveBlockArgs;
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
@@ -276,8 +280,8 @@ export async function startServer(
           }
 
           case "notion_retrieve_block_children": {
-            const args = request.params
-              .arguments as unknown as args.RetrieveBlockChildrenArgs;
+            const args =
+              toolArguments as unknown as args.RetrieveBlockChildrenArgs;
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
@@ -290,8 +294,7 @@ export async function startServer(
           }
 
           case "notion_delete_block": {
-            const args = request.params
-              .arguments as unknown as args.DeleteBlockArgs;
+            const args = toolArguments as unknown as args.DeleteBlockArgs;
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
@@ -300,8 +303,7 @@ export async function startServer(
           }
 
           case "notion_update_block": {
-            const args = request.params
-              .arguments as unknown as args.UpdateBlockArgs;
+            const args = toolArguments as unknown as args.UpdateBlockArgs;
             if (!args.block_id || !args.block) {
               throw new Error("Missing required arguments: block_id and block");
             }
@@ -313,8 +315,7 @@ export async function startServer(
           }
 
           case "notion_retrieve_page": {
-            const args = request.params
-              .arguments as unknown as args.RetrievePageArgs;
+            const args = toolArguments as unknown as args.RetrievePageArgs;
             if (!args.page_id) {
               throw new Error("Missing required argument: page_id");
             }
@@ -323,7 +324,7 @@ export async function startServer(
           }
 
           case "notion_read_page": {
-            const args = request.params.arguments as unknown as args.ReadPageArgs;
+            const args = toolArguments as unknown as args.ReadPageArgs;
             if (!args.page_id) {
               throw new Error("Missing required argument: page_id");
             }
@@ -338,8 +339,8 @@ export async function startServer(
           }
 
           case "notion_update_page_properties": {
-            const args = request.params
-              .arguments as unknown as args.UpdatePagePropertiesArgs;
+            const args =
+              toolArguments as unknown as args.UpdatePagePropertiesArgs;
             if (!args.page_id || !args.properties) {
               throw new Error(
                 "Missing required arguments: page_id and properties"
@@ -353,8 +354,7 @@ export async function startServer(
           }
 
           case "notion_list_all_users": {
-            const args = request.params
-              .arguments as unknown as args.ListAllUsersArgs;
+            const args = toolArguments as unknown as args.ListAllUsersArgs;
             response = await notionClient.listAllUsers(
               args.start_cursor,
               args.page_size
@@ -363,8 +363,7 @@ export async function startServer(
           }
 
           case "notion_retrieve_user": {
-            const args = request.params
-              .arguments as unknown as args.RetrieveUserArgs;
+            const args = toolArguments as unknown as args.RetrieveUserArgs;
             if (!args.user_id) {
               throw new Error("Missing required argument: user_id");
             }
@@ -378,8 +377,7 @@ export async function startServer(
           }
 
           case "notion_query_data_source": {
-            const args = request.params
-              .arguments as unknown as args.QueryDataSourceArgs;
+            const args = toolArguments as unknown as args.QueryDataSourceArgs;
             if (!args.data_source_id) {
               throw new Error("Missing required argument: data_source_id");
             }
@@ -394,8 +392,8 @@ export async function startServer(
           }
 
           case "notion_query_data_source_by_values": {
-            const args = request.params
-              .arguments as unknown as args.QueryDataSourceByValuesArgs;
+            const args =
+              toolArguments as unknown as args.QueryDataSourceByValuesArgs;
             if (!args.data_source_id) {
               throw new Error("Missing required argument: data_source_id");
             }
@@ -423,8 +421,7 @@ export async function startServer(
           }
 
           case "notion_create_data_source": {
-            const args = request.params
-              .arguments as unknown as args.CreateDataSourceArgs;
+            const args = toolArguments as unknown as args.CreateDataSourceArgs;
             response = await notionClient.createDataSource(
               args.parent,
               args.properties,
@@ -434,15 +431,13 @@ export async function startServer(
           }
 
           case "notion_retrieve_database": {
-            const args = request.params
-              .arguments as unknown as args.RetrieveDatabaseArgs;
+            const args = toolArguments as unknown as args.RetrieveDatabaseArgs;
             response = await notionClient.retrieveDatabase(args.database_id);
             break;
           }
 
           case "notion_retrieve_data_source": {
-            const args = request.params
-              .arguments as unknown as args.RetrieveDataSourceArgs;
+            const args = toolArguments as unknown as args.RetrieveDataSourceArgs;
             response = await notionClient.retrieveDataSource(
               args.data_source_id
             );
@@ -450,8 +445,7 @@ export async function startServer(
           }
 
           case "notion_update_data_source": {
-            const args = request.params
-              .arguments as unknown as args.UpdateDataSourceArgs;
+            const args = toolArguments as unknown as args.UpdateDataSourceArgs;
             response = await notionClient.updateDataSource(
               args.data_source_id,
               args.title,
@@ -462,8 +456,8 @@ export async function startServer(
           }
 
           case "notion_create_data_source_item": {
-            const args = request.params
-              .arguments as unknown as args.CreateDataSourceItemArgs;
+            const args =
+              toolArguments as unknown as args.CreateDataSourceItemArgs;
             response = await notionClient.createDataSourceItem(
               args.data_source_id,
               args.properties
@@ -472,8 +466,8 @@ export async function startServer(
           }
 
           case "notion_create_data_source_item_from_values": {
-            const args = request.params
-              .arguments as unknown as args.CreateDataSourceItemFromValuesArgs;
+            const args =
+              toolArguments as unknown as args.CreateDataSourceItemFromValuesArgs;
             if (!args.data_source_id || !args.values) {
               throw new Error(
                 "Missing required arguments: data_source_id and values"
@@ -495,8 +489,7 @@ export async function startServer(
           }
 
           case "notion_create_comment": {
-            const args = request.params
-              .arguments as unknown as args.CreateCommentArgs;
+            const args = toolArguments as unknown as args.CreateCommentArgs;
 
             if (!args.parent && !args.discussion_id) {
               throw new Error(
@@ -513,8 +506,7 @@ export async function startServer(
           }
 
           case "notion_retrieve_comments": {
-            const args = request.params
-              .arguments as unknown as args.RetrieveCommentsArgs;
+            const args = toolArguments as unknown as args.RetrieveCommentsArgs;
             if (!args.block_id) {
               throw new Error("Missing required argument: block_id");
             }
@@ -527,7 +519,7 @@ export async function startServer(
           }
 
           case "notion_search": {
-            const args = request.params.arguments as unknown as args.SearchArgs;
+            const args = toolArguments as unknown as args.SearchArgs;
             response = await notionClient.search(
               args.query,
               args.filter,
@@ -539,7 +531,7 @@ export async function startServer(
           }
 
           case "notion_find": {
-            const args = request.params.arguments as unknown as args.FindArgs;
+            const args = toolArguments as unknown as args.FindArgs;
             const filter = args.object_type
               ? { property: "object", value: args.object_type }
               : undefined;
@@ -555,8 +547,7 @@ export async function startServer(
           }
 
           case "notion_inspect_data_source": {
-            const args = request.params
-              .arguments as unknown as args.InspectDataSourceArgs;
+            const args = toolArguments as unknown as args.InspectDataSourceArgs;
             if (!args.data_source_id) {
               throw new Error("Missing required argument: data_source_id");
             }
@@ -572,8 +563,7 @@ export async function startServer(
         }
 
         // Check format parameter and return appropriate response
-        const requestedFormat =
-          (request.params.arguments as any)?.format || "markdown";
+        const requestedFormat = (toolArguments as any)?.format || "markdown";
 
         // Only convert to markdown if both conditions are met:
         // 1. The requested format is markdown
@@ -633,7 +623,7 @@ export async function startServer(
   );
 
   const transport = new StdioServerTransport();
-  await server.connect(transport);
+  await mcpServer.connect(transport);
 }
 
 function toStructuredContent(response: unknown): Record<string, unknown> {
