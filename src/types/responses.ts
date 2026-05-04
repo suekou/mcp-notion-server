@@ -27,7 +27,7 @@ export type RichTextItemResponse = {
       | "page"
       | "template_mention"
       | "user";
-    [key: string]: any;
+    [key: string]: unknown;
   };
   annotations?: {
     bold: boolean;
@@ -87,7 +87,40 @@ export type BlockResponse = {
   last_edited_time: string;
   has_children?: boolean;
   in_trash?: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
+};
+
+export type NamedOptionResponse = {
+  id?: string;
+  name: string;
+  color?: string;
+};
+
+export type UserReferenceResponse = {
+  object?: "user";
+  id?: string;
+  name?: string;
+  [key: string]: unknown;
+};
+
+export type FileReferenceResponse = {
+  name?: string;
+  type?: string;
+  external?: { url?: string };
+  file?: { url?: string };
+  url?: string;
+};
+
+export type DatePropertyValue = {
+  start?: string;
+  end?: string | null;
+  [key: string]: unknown;
+};
+
+export type TypedPropertyValue = {
+  type?: string;
+  array?: unknown[];
+  [key: string]: unknown;
 };
 
 export type PageResponse = {
@@ -105,11 +138,11 @@ export type PageResponse = {
   };
   cover?: {
     type: string;
-    [key: string]: any;
+    [key: string]: unknown;
   } | null;
   icon?: {
     type: string;
-    [key: string]: any;
+    [key: string]: unknown;
   } | null;
   in_trash?: boolean;
   url?: string;
@@ -126,7 +159,34 @@ export type PageResponse = {
 export type PageProperty = {
   id: string;
   type: string;
-  [key: string]: any;
+  title?: RichTextItemResponse[];
+  rich_text?: RichTextItemResponse[];
+  number?: number | null;
+  select?: NamedOptionResponse | null;
+  multi_select?: NamedOptionResponse[];
+  status?: NamedOptionResponse | null;
+  date?: DatePropertyValue | null;
+  people?: UserReferenceResponse[];
+  files?: FileReferenceResponse[];
+  checkbox?: boolean;
+  url?: string | null;
+  email?: string | null;
+  phone_number?: string | null;
+  formula?: TypedPropertyValue;
+  relation?: Array<{ id: string }>;
+  rollup?: TypedPropertyValue;
+  created_by?: UserReferenceResponse;
+  created_time?: string;
+  last_edited_by?: UserReferenceResponse;
+  last_edited_time?: string;
+  unique_id?: {
+    prefix?: string | null;
+    number?: number | null;
+  };
+  verification?: {
+    state?: string;
+  };
+  [key: string]: unknown;
 };
 
 export type DatabaseResponse = {
@@ -140,11 +200,11 @@ export type DatabaseResponse = {
   icon?: {
     type: string;
     emoji?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   } | null;
   cover?: {
     type: string;
-    [key: string]: any;
+    [key: string]: unknown;
   } | null;
   properties?: Record<string, DatabasePropertyConfig>;
   data_sources?: Array<{
@@ -185,7 +245,31 @@ export type DatabasePropertyConfig = {
   id: string;
   name: string;
   type: string;
-  [key: string]: any;
+  select?: {
+    options?: NamedOptionResponse[];
+  };
+  multi_select?: {
+    options?: NamedOptionResponse[];
+  };
+  status?: {
+    options?: NamedOptionResponse[];
+  };
+  number?: {
+    format?: string;
+  };
+  relation?: {
+    database_id?: string;
+    data_source_id?: string;
+    [key: string]: unknown;
+  };
+  formula?: {
+    expression?: string;
+  };
+  rollup?: {
+    function?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
 };
 
 export type ListResponse = {
@@ -201,7 +285,7 @@ export type ListResponse = {
   next_cursor: string | null;
   has_more: boolean;
   type?: string;
-  page_or_database?: Record<string, any>;
+  page_or_database?: Record<string, unknown>;
 };
 
 export type UserResponse = {
@@ -213,7 +297,7 @@ export type UserResponse = {
   person?: {
     email: string;
   };
-  bot?: Record<string, any>;
+  bot?: Record<string, unknown>;
 };
 
 export type CommentResponse = {

@@ -9,6 +9,7 @@ import type {
 } from "../types/index.js";
 
 type FindableObject = PageResponse | DatabaseResponse | DataSourceResponse;
+type NamedOption = { name: string };
 
 export type NotionFindResult = {
   object: FindableObject["object"];
@@ -150,18 +151,29 @@ function summarizeProperty(
 
 function extractOptions(property: DatabasePropertyConfig): string[] {
   if (property.type === "select") {
-    return (property.select?.options || []).map((option: any) => option.name);
+    return readOptions(property.select).map((option) => option.name);
   }
   if (property.type === "multi_select") {
-    return (property.multi_select?.options || []).map(
-      (option: any) => option.name,
-    );
+    return readOptions(property.multi_select).map((option) => option.name);
   }
   if (property.type === "status") {
-    return (property.status?.options || []).map((option: any) => option.name);
+    return readOptions(property.status).map((option) => option.name);
   }
 
   return [];
+}
+
+function readOptions(config: unknown): NamedOption[] {
+  if (!isRecord(config) || !Array.isArray(config.options)) return [];
+  return config.options.filter(isNamedOption);
+}
+
+function isNamedOption(value: unknown): value is NamedOption {
+  return isRecord(value) && typeof value.name === "string";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
 function isFindableObject(item: unknown): item is FindableObject {

@@ -15,6 +15,8 @@ import type {
 } from "../query/index.js";
 import type { BlockResponse, RichTextItemResponse } from "./responses.js";
 
+export type NotionJsonObject = Record<string, unknown>;
+
 export type AppendBlockChildrenPosition =
   | {
       type: "after_block";
@@ -103,7 +105,7 @@ export interface ReadPageArgs {
 
 export interface UpdatePagePropertiesArgs {
   page_id: string;
-  properties: Record<string, any>;
+  properties: NotionJsonObject;
   format?: "json" | "markdown";
 }
 
@@ -131,13 +133,13 @@ export interface CreateDataSourceArgs {
     workspace?: boolean;
   };
   title?: RichTextItemResponse[];
-  properties: Record<string, any>;
+  properties: NotionJsonObject;
   format?: "json" | "markdown";
 }
 
 export interface QueryDataSourceArgs {
   data_source_id: string;
-  filter?: Record<string, any>;
+  filter?: NotionJsonObject;
   sorts?: Array<{
     property?: string;
     timestamp?: string;
@@ -172,13 +174,13 @@ export interface UpdateDataSourceArgs {
   data_source_id: string;
   title?: RichTextItemResponse[];
   description?: RichTextItemResponse[];
-  properties?: Record<string, any>;
+  properties?: NotionJsonObject;
   format?: "json" | "markdown";
 }
 
 export interface CreateDataSourceItemArgs {
   data_source_id: string;
-  properties: Record<string, any>;
+  properties: NotionJsonObject;
   format?: "json" | "markdown";
 }
 

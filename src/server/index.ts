@@ -608,7 +608,10 @@ export async function executeRegisteredTool(
     }
 
     // Check format parameter and return appropriate response
-    const requestedFormat = (toolArguments as any)?.format || "markdown";
+    const requestedFormat =
+      typeof toolArguments.format === "string"
+        ? toolArguments.format
+        : "markdown";
 
     // Only convert to markdown if both conditions are met:
     // 1. The requested format is markdown

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { type NotionApiError, NotionClientWrapper } from "./client/index.js";
-import type { PageResponse } from "./types/index.js";
+import type { PageResponse, RichTextItemResponse } from "./types/index.js";
 import { filterTools } from "./utils/index.js";
 
 vi.mock("./markdown/index.js", () => ({
@@ -8,6 +8,11 @@ vi.mock("./markdown/index.js", () => ({
 }));
 
 const fetchMock = vi.fn();
+const expectedHeaders = {
+  Authorization: "Bearer test-token",
+  "Content-Type": "application/json",
+  "Notion-Version": "2026-03-11",
+};
 
 function mockResponse(
   body: unknown = { success: true },
@@ -45,7 +50,7 @@ const mockTools = [
 ];
 
 describe("NotionClientWrapper", () => {
-  let wrapper: any;
+  let wrapper: NotionClientWrapper;
 
   beforeEach(() => {
     // Reset mocks
@@ -58,12 +63,16 @@ describe("NotionClientWrapper", () => {
     vi.stubGlobal("fetch", fetchMock);
   });
 
-  test("should initialize with correct headers", () => {
-    expect((wrapper as any).headers).toEqual({
-      Authorization: "Bearer test-token",
-      "Content-Type": "application/json",
-      "Notion-Version": "2026-03-11",
-    });
+  test("should send correct headers", async () => {
+    await wrapper.retrieveBotUser();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.notion.com/v1/users/me",
+      expect.objectContaining({
+        method: "GET",
+        headers: expectedHeaders,
+      }),
+    );
   });
 
   test("should call appendBlockChildren with correct parameters", async () => {
@@ -72,7 +81,7 @@ describe("NotionClientWrapper", () => {
     const position = {
       type: "after_block",
       after_block: { id: "previous-block" },
-    };
+    } as const;
 
     await wrapper.appendBlockChildren(blockId, children, position);
 
@@ -80,7 +89,7 @@ describe("NotionClientWrapper", () => {
       `https://api.notion.com/v1/blocks/${blockId}/children`,
       expect.objectContaining({
         method: "PATCH",
-        headers: (wrapper as any).headers,
+        headers: expectedHeaders,
         body: JSON.stringify({ children, position }),
       }),
     );
@@ -95,7 +104,7 @@ describe("NotionClientWrapper", () => {
       `https://api.notion.com/v1/blocks/${blockId}`,
       expect.objectContaining({
         method: "GET",
-        headers: (wrapper as any).headers,
+        headers: expectedHeaders,
       }),
     );
   });
@@ -111,7 +120,7 @@ describe("NotionClientWrapper", () => {
       `https://api.notion.com/v1/blocks/${blockId}/children?start_cursor=${startCursor}&page_size=${pageSize}`,
       expect.objectContaining({
         method: "GET",
-        headers: (wrapper as any).headers,
+        headers: expectedHeaders,
       }),
     );
   });
@@ -125,7 +134,7 @@ describe("NotionClientWrapper", () => {
       `https://api.notion.com/v1/pages/${pageId}`,
       expect.objectContaining({
         method: "GET",
-        headers: (wrapper as any).headers,
+        headers: expectedHeaders,
       }),
     );
   });
@@ -142,7 +151,7 @@ describe("NotionClientWrapper", () => {
       `https://api.notion.com/v1/pages/${pageId}`,
       expect.objectContaining({
         method: "PATCH",
-        headers: (wrapper as any).headers,
+        headers: expectedHeaders,
         body: JSON.stringify({ properties }),
       }),
     );
@@ -151,7 +160,10 @@ describe("NotionClientWrapper", () => {
   test("should call queryDataSource with correct parameters", async () => {
     const dataSourceId = "ds123";
     const filter = { property: "Status", equals: "Done" };
-    const sorts = [{ property: "Due Date", direction: "ascending" }];
+    const sorts: Array<{
+      property: string;
+      direction: "ascending" | "descending";
+    }> = [{ property: "Due Date", direction: "ascending" }];
 
     await wrapper.queryDataSource(dataSourceId, filter, sorts);
 
@@ -159,7 +171,7 @@ describe("NotionClientWrapper", () => {
       `https://api.notion.com/v1/data_sources/${dataSourceId}/query`,
       expect.objectContaining({
         method: "POST",
-        headers: (wrapper as any).headers,
+        headers: expectedHeaders,
         body: JSON.stringify({ filter, sorts }),
       }),
     );
@@ -168,7 +180,9 @@ describe("NotionClientWrapper", () => {
   test("should call createDataSource with correct parameters", async () => {
     const parent = { type: "page_id", page_id: "page123" };
     const properties = { Name: { title: {} } };
-    const title = [{ type: "text", text: { content: "Tasks" } }];
+    const title: RichTextItemResponse[] = [
+      { type: "text", text: { content: "Tasks" } },
+    ];
 
     await wrapper.createDataSource(parent, properties, title);
 
@@ -176,7 +190,7 @@ describe("NotionClientWrapper", () => {
       "https://api.notion.com/v1/data_sources",
       expect.objectContaining({
         method: "POST",
-        headers: (wrapper as any).headers,
+        headers: expectedHeaders,
         body: JSON.stringify({ parent, title, properties }),
       }),
     );
@@ -191,7 +205,7 @@ describe("NotionClientWrapper", () => {
       `https://api.notion.com/v1/data_sources/${dataSourceId}`,
       expect.objectContaining({
         method: "GET",
-        headers: (wrapper as any).headers,
+        headers: expectedHeaders,
       }),
     );
   });
@@ -211,7 +225,7 @@ describe("NotionClientWrapper", () => {
       `https://api.notion.com/v1/data_sources/${dataSourceId}`,
       expect.objectContaining({
         method: "PATCH",
-        headers: (wrapper as any).headers,
+        headers: expectedHeaders,
         body: JSON.stringify({ properties }),
       }),
     );
@@ -227,7 +241,7 @@ describe("NotionClientWrapper", () => {
       "https://api.notion.com/v1/pages",
       expect.objectContaining({
         method: "POST",
-        headers: (wrapper as any).headers,
+        headers: expectedHeaders,
         body: JSON.stringify({
           parent: { type: "data_source_id", data_source_id: dataSourceId },
           properties,
@@ -246,7 +260,7 @@ describe("NotionClientWrapper", () => {
       "https://api.notion.com/v1/search",
       expect.objectContaining({
         method: "POST",
-        headers: (wrapper as any).headers,
+        headers: expectedHeaders,
         body: JSON.stringify({ query, filter }),
       }),
     );

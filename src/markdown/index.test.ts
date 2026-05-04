@@ -10,9 +10,7 @@ import { convertToMarkdown, renderBlockToMarkdown } from "./index.js";
 
 describe("convertToMarkdown", () => {
   test("should handle null or undefined response", () => {
-    // @ts-expect-error - intentionally testing with null
     expect(convertToMarkdown(null)).toBe("");
-    // @ts-expect-error - intentionally testing with undefined
     expect(convertToMarkdown(undefined)).toBe("");
   });
 
