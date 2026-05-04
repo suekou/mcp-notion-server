@@ -2,15 +2,21 @@
 
 ## Context
 
-This repository is `@suekou/mcp-notion-server`, a local MCP server for the Notion API. The goal of this work is a major modernization: support current Notion API behavior, improve MCP protocol usage, and make the server much easier for AI agents than the official local OpenAPI-style server.
+This repository is `@suekou/mcp-notion-server`, a local MCP server for the Notion API. The work so far modernizes the project for Notion API `2026-03-11`, Node.js 24 LTS, pnpm, and AI-friendly tool usage.
 
-The user is committing changes manually. Do not create commits unless explicitly asked. Continue working in reasonably sized commit units, stop after each unit, and suggest an English commit message with a conventional prefix such as `feat:`, `chore:`, `docs:`, or `ci:`.
+The user commits manually. Do not create commits unless explicitly asked. Work in reasonably sized commit units, stop after each unit, and suggest an English conventional commit message (`feat:`, `fix:`, `chore:`, `docs:`, `ci:`).
 
-Development should use `pnpm`, not npm. Runtime target is Node.js 24 LTS.
+Important product direction from the user:
+
+- Do not add extra `plan_` / dry-run tools just for safety. Current AI can reason well enough, and validation/type mismatches should be returned as clear tool errors.
+- Avoid “あれもこれも” additions. Prefer practical tools that follow MCP and agent tool-design best practices.
+- Keep the product goal in focus: latest Notion API + useful AI-facing workflows that are more convenient than the official local OpenAPI-style server.
 
 ## Environment Notes
 
-- The local terminal currently reports Node `v22.21.1`, not Node 24.
+- Development uses `pnpm`, not npm.
+- Runtime target is Node.js 24 LTS.
+- Local terminal currently reports Node `v22.21.1`, not Node 24.
 - Because `.npmrc` has `engine-strict=true`, local verification has been run with:
 
 ```bash
@@ -19,327 +25,180 @@ pnpm --dir "/Users/suenaga.kosuke/Desktop/mcp/suekou-mcp-notion-server" --config
 ```
 
 - CI uses Node 24 and should run without disabling engine checks.
-- `ReadLints` repeatedly reports a TypeScript IDE diagnostic for `.js` ESM imports such as `../client/index.js` in `src/server/index.ts`, but `tsc` passes. Treat this as an IDE/module-resolution diagnostic unless it starts failing build.
+- `ReadLints` may report a TypeScript IDE diagnostic for `.js` ESM imports such as `../client/index.js` in `src/server/index.ts`. `tsc` passes; treat it as non-blocking unless build fails.
 
-## Completed Work
+## Current Verification
 
-### Tooling and Runtime
-
-- Migrated package manager metadata to pnpm:
-  - Added `packageManager: "pnpm@10.24.0"`.
-  - Added Node/pnpm `engines`.
-  - Added `.node-version`.
-  - Added `.npmrc` with strict package manager and engine checks.
-  - Removed `package-lock.json`.
-  - Added `pnpm-lock.yaml`.
-- Moved `vitest` to `devDependencies`.
-- Updated Node types to v24.
-- Kept README usage examples on `npx`, because users commonly install/run CLI packages with `npx` even though development uses pnpm.
-
-Suggested/used commit:
-
-```text
-chore: migrate tooling to pnpm and Node 24
-```
-
-### Notion API Migration
-
-- Updated Notion API version header to `2026-03-11`.
-- Migrated database-centric operations to data sources:
-  - `notion_query_data_source`
-  - `notion_create_data_source`
-  - `notion_retrieve_data_source`
-  - `notion_update_data_source`
-  - `notion_create_data_source_item`
-- Kept `notion_retrieve_database` as a discovery tool for finding child `data_source_id` values.
-- Updated append block children from old `after` behavior to new `position`.
-- Updated types/tests toward `in_trash` instead of `archived`.
-- Added `data_source` response type support in Markdown conversion.
-
-Suggested/used commit:
-
-```text
-feat: migrate Notion API tools to data sources
-```
-
-### Notion API Request Handling
-
-- Removed `node-fetch` and `@types/node-fetch`.
-- Switched to Node 24 native `fetch`.
-- Added shared Notion request helper with:
-  - timeout
-  - retry for `429` and `5xx`
-  - `Retry-After` support
-  - `response.ok` handling
-  - structured `NotionApiError`
-- Added tests for native fetch, errors, retry, and timeout.
-
-Suggested/used commit:
-
-```text
-feat: harden Notion API request handling
-```
-
-### MCP Tool Metadata and Results
-
-- Added MCP `annotations` to tools:
-  - read-only hints for read/search tools
-  - destructive hint for `notion_delete_block`
-  - idempotency hints where appropriate
-- Added `structuredContent` for JSON tool results.
-- Added `isError: true` for tool errors.
-- Extracted server helper functions for tool list and result formatting.
-- Added server helper tests.
-
-Suggested/used commit:
-
-```text
-feat: add MCP tool annotations and structured results
-```
-
-### AI-Friendly Discovery Tools
-
-- Added `src/summary/`.
-- Added `notion_find`:
-  - wraps search results into compact candidates
-  - returns stable IDs, object type, title, parent, and suggested next tool
-- Added `notion_inspect_data_source`:
-  - returns compact schema summaries
-  - includes property names, IDs, types, options, relation targets, and create-item hint
-- Added tests and README docs.
-
-Suggested/used commit:
-
-```text
-feat: add AI-friendly Notion discovery tools
-```
-
-### Simple Content Append Tool
-
-- Added `src/content/`.
-- Added `notion_append_content`, a simplified content DSL over Notion block JSON.
-- Supported item types:
-  - `paragraph`
-  - `heading_1`
-  - `heading_2`
-  - `heading_3`
-  - `bulleted_list_item`
-  - `numbered_list_item`
-  - `to_do`
-  - `quote`
-  - `callout`
-  - `code`
-  - `divider`
-- Added tests and README docs.
-
-Suggested/used commit:
-
-```text
-feat: add simple Notion content append tool
-```
-
-### Simple Data Source Item Creation
-
-- Added `src/properties/`.
-- Added `notion_create_data_source_item_from_values`.
-- This retrieves the data source schema, then converts simple values into Notion page property JSON.
-- Supported property types:
-  - `title`
-  - `rich_text`
-  - `number`
-  - `checkbox`
-  - `select`
-  - `status`
-  - `multi_select`
-  - `date`
-  - `url`
-  - `email`
-  - `phone_number`
-  - `relation`
-  - `people`
-- Unsupported/unknown properties throw clear errors so the AI can self-correct.
-- Added tests and README docs.
-
-Suggested/used commit:
-
-```text
-feat: create Notion items from simple values
-```
-
-### MCP Prompts
-
-- Added `src/prompts/`.
-- Added MCP prompt capability and handlers:
-  - `prompts/list`
-  - `prompts/get`
-- Added prompts:
-  - `notion_find_target`
-  - `notion_create_database_item`
-  - `notion_append_page_content`
-- Added tests and README docs.
-
-Suggested/used commit:
-
-```text
-feat: add Notion workflow prompts
-```
-
-### MCP Resources
-
-- Added `src/resources/`.
-- Added MCP resource capability and handlers:
-  - `resources/list`
-  - `resources/read`
-- Added static guidance resources:
-  - `notion://server/guide`
-  - `notion://server/tools`
-- Added tests and README docs.
-
-Suggested/used commit:
-
-```text
-feat: add Notion guidance resources
-```
-
-### CI
-
-- Added `.github/workflows/ci.yml`.
-- CI runs:
-  - Node 24
-  - pnpm 10.24.0
-  - `pnpm install --frozen-lockfile`
-  - `pnpm run build`
-  - `pnpm test`
-- Added README development commands.
-
-Suggested/used commit:
-
-```text
-ci: add Node 24 pnpm validation
-```
-
-### Release Docs
-
-- Bumped package version to `2.0.0`.
-- Updated package description.
-- Added README sections:
-  - Highlights
-  - 2.0 Migration Notes
-  - Recommended AI Workflow
-- Updated project structure docs for new directories.
-- Refreshed `pnpm-lock.yaml`.
-
-Suggested/used commit:
-
-```text
-docs: prepare 2.0 release notes
-```
-
-## Current Verification Status
-
-Latest verification command:
+Latest verification passed:
 
 ```bash
 pnpm --dir "/Users/suenaga.kosuke/Desktop/mcp/suekou-mcp-notion-server" --config.engine-strict=false run build
 pnpm --dir "/Users/suenaga.kosuke/Desktop/mcp/suekou-mcp-notion-server" --config.engine-strict=false test
 ```
 
-Latest result:
+Result:
 
 - Build passed.
 - Test suite passed.
-- 16 test files passed.
-- 84 tests passed.
+- 20 test files passed.
+- 114 tests passed.
 
-README/package lints had no errors in the latest docs-only step.
+## Current State
 
-## Important Files and Directories
+### Runtime, Package, CI
 
-- `package.json`: Node 24, pnpm, package version `2.0.0`.
-- `pnpm-lock.yaml`: pnpm lockfile.
+- `package.json` is version `2.0.0`.
+- Uses `pnpm@10.24.0`.
+- Requires Node `>=24 <25`.
+- `package-lock.json` was removed; `pnpm-lock.yaml` is used.
+- `.npmrc` enforces engine/package-manager strictness.
+- `.node-version` is present.
+- `.github/workflows/ci.yml` runs Node 24 + pnpm install/build/test.
+- `package.json` `files` includes `build` and `README.md`.
+
+### Notion API Modernization
+
+- Notion API header is `Notion-Version: 2026-03-11`.
+- Database-centric operations were migrated toward data sources.
+- `notion_retrieve_database` remains for discovering child `data_source_id` values from a database container.
+- Data source tools now include:
+  - `notion_create_data_source`
+  - `notion_query_data_source`
+  - `notion_query_data_source_by_values`
+  - `notion_retrieve_data_source`
+  - `notion_update_data_source`
+  - `notion_create_data_source_item`
+  - `notion_create_data_source_item_from_values`
+- Append block children uses `position`, not old `after`.
+- Types/docs/tests now prefer `in_trash` over `archived`.
+- `meeting_notes` replaced old `transcription` concept where applicable.
+- Markdown conversion supports `data_source` responses.
+
+### Notion API Request Handling
+
+- Removed `node-fetch` and `@types/node-fetch`.
+- Uses native Node 24 `fetch`.
+- `src/client/index.ts` has a shared request helper with:
+  - timeout
+  - retry for `429` and `5xx`
+  - `Retry-After` support
+  - `response.ok` handling
+  - structured `NotionApiError`
+- Tests cover native fetch behavior, API errors, retry, and timeout.
+
+### MCP Behavior
+
+- Server still uses `@modelcontextprotocol/sdk` v1.x.
+- Tools have MCP annotations where useful:
+  - read-only hints for read/search/query tools
+  - destructive hint for delete
+  - idempotency hints for safe updates
+- Tool results include `structuredContent` for JSON-like responses.
+- Tool errors return `isError: true`, so the model can self-correct.
+- Prompts and resources are exposed:
+  - `prompts/list`
+  - `prompts/get`
+  - `resources/list`
+  - `resources/read`
+
+## Current Tool Surface
+
+### AI-Friendly Tools
+
+- `notion_find`: compact search results with stable IDs and suggested next tools.
+- `notion_inspect_data_source`: compact property schema summary with option names and relation targets.
+- `notion_read_page`: page metadata + compact block outline/Markdown with stable block IDs.
+- `notion_query_data_source_by_values`: schema-aware filters/sorts for common data source queries.
+- `notion_create_data_source_item_from_values`: create data source item from simple values with schema validation.
+- `notion_append_content`: append simple Notion content item DSL.
+- `notion_append_markdown`: append safe Markdown subset as Notion blocks.
+- `notion_update_content`: update one existing simple block after validating current block type.
+- `notion_update_content_batch`: update multiple simple blocks after validating all current block types.
+
+### Low-Level Tools
+
+- Blocks:
+  - `notion_append_block_children`
+  - `notion_retrieve_block`
+  - `notion_retrieve_block_children`
+  - `notion_update_block`
+  - `notion_delete_block`
+- Pages:
+  - `notion_retrieve_page`
+  - `notion_update_page_properties`
+- Data sources/databases:
+  - `notion_retrieve_database`
+  - `notion_create_data_source`
+  - `notion_query_data_source`
+  - `notion_retrieve_data_source`
+  - `notion_update_data_source`
+  - `notion_create_data_source_item`
+- Comments/users/search:
+  - `notion_create_comment`
+  - `notion_retrieve_comments`
+  - `notion_list_all_users`
+  - `notion_retrieve_user`
+  - `notion_retrieve_bot_user`
+  - `notion_search`
+
+There are intentionally no `plan_` tools now. The previous `notion_plan_page_edit` was removed after user feedback.
+
+## Important Files
+
+- `package.json`: package metadata, pnpm/Node settings, scripts.
 - `.github/workflows/ci.yml`: Node 24 CI.
+- `src/index.ts`: CLI/env entry point.
 - `src/client/index.ts`: Notion API wrapper and request helper.
-- `src/server/index.ts`: MCP server, tools/prompts/resources handlers.
-- `src/types/args.ts`: tool argument types.
+- `src/server/index.ts`: MCP server, tool dispatch, prompts/resources handlers.
 - `src/types/schemas.ts`: MCP tool schemas and annotations.
+- `src/types/args.ts`: tool argument types.
 - `src/types/responses.ts`: Notion response types.
-- `src/content/`: simple content item to block JSON conversion.
-- `src/properties/`: simple property value to Notion property JSON conversion.
-- `src/summary/`: compact AI-friendly summaries.
-- `src/prompts/`: reusable MCP prompts.
-- `src/resources/`: static MCP guidance resources.
+- `src/content/`: simple content DSL, Markdown subset parser, content update validation.
+- `src/page/`: page outline/Markdown reading helpers.
+- `src/properties/`: simple data source item value conversion and option validation.
+- `src/query/`: schema-aware simple query builder.
+- `src/summary/`: compact find/schema summaries.
+- `src/prompts/`: workflow prompts.
+- `src/resources/`: static guidance resources.
 - `src/markdown/`: Notion response to Markdown conversion.
 
-## Remaining Work
+## Completed Commit Units
 
-### Small Release Polish
+The user has committed these units manually:
 
-- Fix `package.json` `files` entry:
-  - It currently lists `Readme.md`.
-  - It should be `README.md`.
-- Consider reorganizing the README tool list into:
-  - AI-first tools
-  - Low-level Notion API tools
-  - Prompts
-  - Resources
-- Run verification on an actual Node 24 environment without `engine-strict=false`:
+- `chore: migrate tooling to pnpm and Node 24`
+- `feat: migrate Notion API tools to data sources`
+- `feat: harden Notion API request handling`
+- `feat: add MCP tool annotations and structured results`
+- `feat: add AI-friendly Notion discovery tools`
+- `feat: add simple Notion content append tool`
+- `feat: create Notion items from simple values`
+- `feat: add Notion workflow prompts`
+- `feat: add Notion guidance resources`
+- `ci: add Node 24 pnpm validation`
+- `docs: prepare 2.0 release notes`
+- `chore: polish package metadata for release`
+- `feat: add compact Notion page reading tool`
+- `feat: add simple Notion content update tool`
+- `feat: validate simple data source option values`
+- `feat: add schema-aware data source query tool`
+- `feat: add batch simple content update tool`
+- `feat: add dry-run page edit planning tool`
+- `feat: add markdown append tool`
+- `chore: remove page edit planning tool`
 
-```bash
-pnpm install --frozen-lockfile
-pnpm run build
-pnpm test
-```
+Note: The `feat: add dry-run page edit planning tool` commit was later counteracted by `chore: remove page edit planning tool`. Current code has no plan tool.
 
-- Investigate the recurring IDE `ReadLints` warning for `.js` imports if desired. Since `tsc` passes, this is not currently blocking.
+## Current Design Guidance
 
-### Larger Product Work
+Prefer direct tools with clear validation errors over separate planning tools. Examples:
 
-- MCP SDK v2 migration:
-  - Current implementation still uses `@modelcontextprotocol/sdk` v1.x.
-  - Modern MCP concepts were added where supported, but the SDK package split has not been done.
-- Streamable HTTP / remote deployment support.
-- OAuth or other remote auth flow.
-- Elicitation:
-  - Use forms for choosing among multiple data source candidates.
-  - Use confirmations for destructive operations.
-  - Do not collect secrets via form elicitation.
-- Markdown page editing:
-  - Current writing is append-oriented.
-  - A future `notion_edit_page_markdown` or patch workflow would be a major differentiator.
-- Natural-language query/filter DSL:
-  - Current simplification focuses on item creation values.
-  - Query filters and sorts still use raw Notion-ish JSON.
-- Real Notion integration testing:
-  - Run against a sandbox workspace.
-  - Validate `2026-03-11` data source behavior end to end.
-  - Validate MCP Inspector flows.
-- Better schema-aware validation:
-  - Validate select/status option names against schema.
-  - Improve relation/people handling.
-  - Return suggestions when values do not match schema.
+- If a block type is wrong, `notion_update_content` / `notion_update_content_batch` should return a clear tool error.
+- If a data source option is invalid, `notion_create_data_source_item_from_values` and `notion_query_data_source_by_values` should return valid options and suggestions.
+- If the user wants to edit a page, the intended flow is:
+  1. `notion_find`
+  2. `notion_read_page`
+  3. `notion_append_markdown` / `notion_append_content` / `notion_update_content` / `notion_update_content_batch`
+  4. raw block tools only for unsupported advanced shapes
 
-## Suggested Next Commit
-
-For a small cleanup:
-
-```text
-chore: polish package metadata for release
-```
-
-Likely tasks:
-
-- Change `files: ["build", "Readme.md"]` to `files: ["build", "README.md"]`.
-- Maybe add `HANDOFF.md` to `.gitignore` or decide whether it should remain tracked. The user explicitly requested this file for agent handoff, so ask before ignoring/removing it.
-
-For a larger feature:
-
-```text
-feat: add markdown page editing workflow
-```
-
-Likely tasks:
-
-- Add a read-page outline/content helper.
-- Add a safe section-based append/replace flow.
-- Add tests using local block fixtures.
-
+Avoid adding wrappers that duplicate existing tool behavior unless they remove real complexity.
