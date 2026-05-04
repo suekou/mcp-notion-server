@@ -23,6 +23,10 @@ import {
   buildBlocksFromSimpleContent,
   buildBlockUpdateFromSimpleContent,
   parseMarkdownToSimpleContent,
+  validateAppendPosition,
+  validateSimpleContentItems,
+  validateSimpleContentUpdates,
+  validateSimpleEditableContentItem,
   validateSimpleContentUpdatesAgainstBlocks,
 } from "../content/index.js";
 import { NotionClientWrapper } from "../client/index.js";
@@ -30,9 +34,15 @@ import {
   buildPageReadSummary,
   readPageBlockTree,
 } from "../page/index.js";
-import { buildPagePropertiesFromSimpleValues } from "../properties/index.js";
+import {
+  buildPagePropertiesFromSimpleValues,
+  validateSimplePropertyValues,
+} from "../properties/index.js";
 import { getNotionPrompt, notionPrompts } from "../prompts/index.js";
-import { buildDataSourceQueryFromSimpleFilters } from "../query/index.js";
+import {
+  buildDataSourceQueryFromSimpleFilters,
+  validateSimpleDataSourceQueryInput,
+} from "../query/index.js";
 import { notionResources, readNotionResource } from "../resources/index.js";
 import {
   summarizeDataSourceSchema,
@@ -147,6 +157,7 @@ export async function startServer(
                 "Missing required arguments: block_id and children"
               );
             }
+            validateAppendPosition(args.position);
             response = await notionClient.appendBlockChildren(
               args.block_id,
               args.children,
@@ -163,6 +174,8 @@ export async function startServer(
                 "Missing required arguments: block_id and items"
               );
             }
+            validateAppendPosition(args.position);
+            validateSimpleContentItems(args.items);
             response = await notionClient.appendBlockChildren(
               args.block_id,
               buildBlocksFromSimpleContent(args.items),
@@ -179,6 +192,7 @@ export async function startServer(
                 "Missing required arguments: block_id and markdown"
               );
             }
+            validateAppendPosition(args.position);
             const items = parseMarkdownToSimpleContent(args.markdown);
             if (items.length === 0) {
               throw new Error("Markdown did not contain appendable content");
@@ -199,6 +213,7 @@ export async function startServer(
                 "Missing required arguments: block_id and item"
               );
             }
+            validateSimpleEditableContentItem(args.item);
             const existingBlock = await notionClient.retrieveBlock(
               args.block_id
             );
@@ -220,6 +235,7 @@ export async function startServer(
             if (!args.updates || args.updates.length === 0) {
               throw new Error("Missing required argument: updates");
             }
+            validateSimpleContentUpdates(args.updates);
 
             const existingBlocks = await Promise.all(
               args.updates.map((update) =>
@@ -383,6 +399,11 @@ export async function startServer(
             if (!args.data_source_id) {
               throw new Error("Missing required argument: data_source_id");
             }
+            validateSimpleDataSourceQueryInput({
+              filters: args.filters,
+              match: args.match,
+              sorts: args.sorts,
+            });
             const dataSource = await notionClient.retrieveDataSource(
               args.data_source_id
             );
@@ -458,6 +479,7 @@ export async function startServer(
                 "Missing required arguments: data_source_id and values"
               );
             }
+            validateSimplePropertyValues(args.values);
             const dataSource = await notionClient.retrieveDataSource(
               args.data_source_id
             );

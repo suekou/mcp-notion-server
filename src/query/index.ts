@@ -45,6 +45,7 @@ export function buildDataSourceQueryFromSimpleFilters(
   dataSource: DataSourceResponse,
   query: SimpleDataSourceQuery
 ): BuiltDataSourceQuery {
+  validateSimpleDataSourceQueryInput(query);
   const filters = query.filters || [];
   const sorts = query.sorts || [];
   const output: BuiltDataSourceQuery = {};
@@ -70,6 +71,60 @@ export function buildDataSourceQueryFromSimpleFilters(
   }
 
   return output;
+}
+
+export function validateSimpleDataSourceQueryInput(
+  query: SimpleDataSourceQuery
+): void {
+  const filters = query.filters || [];
+  const sorts = query.sorts || [];
+
+  if (query.match !== undefined && query.match !== "all" && query.match !== "any") {
+    throw new Error("match must be either 'all' or 'any' when provided.");
+  }
+
+  if (!Array.isArray(filters)) {
+    throw new Error("filters must be an array when provided.");
+  }
+  filters.forEach((filter, index) => {
+    const path = `filters[${index}]`;
+    if (!isRecord(filter)) {
+      throw new Error(`${path} must be an object with a property field.`);
+    }
+    if (typeof filter.property !== "string" || filter.property.length === 0) {
+      throw new Error(`${path}.property must be a non-empty property name string.`);
+    }
+    if (
+      filter.operator !== undefined &&
+      !SIMPLE_FILTER_OPERATORS.includes(filter.operator)
+    ) {
+      throw new Error(
+        `${path}.operator must be one of: ${SIMPLE_FILTER_OPERATORS.join(", ")}.`
+      );
+    }
+  });
+
+  if (!Array.isArray(sorts)) {
+    throw new Error("sorts must be an array when provided.");
+  }
+  sorts.forEach((sort, index) => {
+    const path = `sorts[${index}]`;
+    if (!isRecord(sort)) {
+      throw new Error(`${path} must be an object with a property field.`);
+    }
+    if (typeof sort.property !== "string" || sort.property.length === 0) {
+      throw new Error(`${path}.property must be a non-empty property name string.`);
+    }
+    if (
+      sort.direction !== undefined &&
+      sort.direction !== "ascending" &&
+      sort.direction !== "descending"
+    ) {
+      throw new Error(
+        `${path}.direction must be either 'ascending' or 'descending'.`
+      );
+    }
+  });
 }
 
 function buildFilter(
@@ -276,6 +331,27 @@ function defaultOperatorForType(type: string): SimpleFilterOperator {
 
 function isEmptyOperator(operator: SimpleFilterOperator): boolean {
   return operator === "is_empty" || operator === "is_not_empty";
+}
+
+const SIMPLE_FILTER_OPERATORS: SimpleFilterOperator[] = [
+  "equals",
+  "does_not_equal",
+  "contains",
+  "does_not_contain",
+  "greater_than",
+  "less_than",
+  "greater_than_or_equal_to",
+  "less_than_or_equal_to",
+  "before",
+  "after",
+  "on_or_before",
+  "on_or_after",
+  "is_empty",
+  "is_not_empty",
+];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
 function expectKnownOption(

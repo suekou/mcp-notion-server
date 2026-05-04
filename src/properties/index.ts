@@ -6,10 +6,22 @@ import {
 
 export type SimplePropertyValues = Record<string, unknown>;
 
+export function validateSimplePropertyValues(
+  values: unknown
+): asserts values is SimplePropertyValues {
+  if (!isRecord(values)) {
+    throw new Error(
+      "values must be an object keyed by exact Notion property names. Use notion_inspect_data_source to confirm property names."
+    );
+  }
+}
+
 export function buildPagePropertiesFromSimpleValues(
   dataSource: DataSourceResponse,
   values: SimplePropertyValues
 ): Record<string, unknown> {
+  validateSimplePropertyValues(values);
+
   const properties: Record<string, unknown> = {};
 
   for (const [propertyName, value] of Object.entries(values)) {
@@ -24,6 +36,10 @@ export function buildPagePropertiesFromSimpleValues(
   }
 
   return properties;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
 function buildPropertyValue(

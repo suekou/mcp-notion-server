@@ -98,6 +98,12 @@ describe("property value builder", () => {
     ).toThrow("Unknown property 'Missing'");
   });
 
+  test("should reject non-object simple values", () => {
+    expect(() =>
+      buildPagePropertiesFromSimpleValues(dataSource, ["Name"] as any)
+    ).toThrow("values must be an object keyed by exact Notion property names");
+  });
+
   test("should reject unknown select options with valid choices", () => {
     expect(() =>
       buildPagePropertiesFromSimpleValues(dataSource, { Priority: "Urgent" })
