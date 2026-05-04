@@ -26,7 +26,7 @@ const mockTools = [
     inputSchema: mockInputSchema,
   },
   {
-    name: "notion_query_database",
+    name: "notion_query_data_source",
     inputSchema: mockInputSchema,
   },
 ];
@@ -53,22 +53,26 @@ describe("NotionClientWrapper", () => {
     expect((wrapper as any).headers).toEqual({
       Authorization: "Bearer test-token",
       "Content-Type": "application/json",
-      "Notion-Version": "2022-06-28",
+      "Notion-Version": "2026-03-11",
     });
   });
 
   test("should call appendBlockChildren with correct parameters", async () => {
     const blockId = "block123";
     const children = [{ type: "paragraph" }];
+    const position = {
+      type: "after_block",
+      after_block: { id: "previous-block" },
+    };
 
-    await wrapper.appendBlockChildren(blockId, children);
+    await wrapper.appendBlockChildren(blockId, children, position);
 
     expect(fetch).toHaveBeenCalledWith(
       `https://api.notion.com/v1/blocks/${blockId}/children`,
       {
         method: "PATCH",
         headers: (wrapper as any).headers,
-        body: JSON.stringify({ children }),
+        body: JSON.stringify({ children, position }),
       }
     );
   });
@@ -135,21 +139,81 @@ describe("NotionClientWrapper", () => {
     );
   });
 
-  test("should call queryDatabase with correct parameters", async () => {
-    const databaseId = "db123";
+  test("should call queryDataSource with correct parameters", async () => {
+    const dataSourceId = "ds123";
     const filter = { property: "Status", equals: "Done" };
     const sorts = [{ property: "Due Date", direction: "ascending" }];
 
-    await wrapper.queryDatabase(databaseId, filter, sorts);
+    await wrapper.queryDataSource(dataSourceId, filter, sorts);
 
     expect(fetch).toHaveBeenCalledWith(
-      `https://api.notion.com/v1/databases/${databaseId}/query`,
+      `https://api.notion.com/v1/data_sources/${dataSourceId}/query`,
       {
         method: "POST",
         headers: (wrapper as any).headers,
         body: JSON.stringify({ filter, sorts }),
       }
     );
+  });
+
+  test("should call createDataSource with correct parameters", async () => {
+    const parent = { type: "page_id", page_id: "page123" };
+    const properties = { Name: { title: {} } };
+    const title = [{ type: "text", text: { content: "Tasks" } }];
+
+    await wrapper.createDataSource(parent, properties, title);
+
+    expect(fetch).toHaveBeenCalledWith("https://api.notion.com/v1/data_sources", {
+      method: "POST",
+      headers: (wrapper as any).headers,
+      body: JSON.stringify({ parent, title, properties }),
+    });
+  });
+
+  test("should call retrieveDataSource with correct parameters", async () => {
+    const dataSourceId = "ds123";
+
+    await wrapper.retrieveDataSource(dataSourceId);
+
+    expect(fetch).toHaveBeenCalledWith(
+      `https://api.notion.com/v1/data_sources/${dataSourceId}`,
+      {
+        method: "GET",
+        headers: (wrapper as any).headers,
+      }
+    );
+  });
+
+  test("should call updateDataSource with correct parameters", async () => {
+    const dataSourceId = "ds123";
+    const properties = { Status: { status: {} } };
+
+    await wrapper.updateDataSource(dataSourceId, undefined, undefined, properties);
+
+    expect(fetch).toHaveBeenCalledWith(
+      `https://api.notion.com/v1/data_sources/${dataSourceId}`,
+      {
+        method: "PATCH",
+        headers: (wrapper as any).headers,
+        body: JSON.stringify({ properties }),
+      }
+    );
+  });
+
+  test("should call createDataSourceItem with correct parameters", async () => {
+    const dataSourceId = "ds123";
+    const properties = { Name: { title: [{ text: { content: "Task" } }] } };
+
+    await wrapper.createDataSourceItem(dataSourceId, properties);
+
+    expect(fetch).toHaveBeenCalledWith("https://api.notion.com/v1/pages", {
+      method: "POST",
+      headers: (wrapper as any).headers,
+      body: JSON.stringify({
+        parent: { type: "data_source_id", data_source_id: dataSourceId },
+        properties,
+      }),
+    });
   });
 
   test("should call search with correct parameters", async () => {
@@ -195,12 +259,12 @@ describe("NotionClientWrapper", () => {
     test("should filter tools based on enabledTools", () => {
       const enabledToolsSet = new Set([
         "notion_retrieve_block",
-        "notion_query_database",
+        "notion_query_data_source",
       ]);
       const result = filterTools(mockTools, enabledToolsSet);
       expect(result).toEqual([
         { name: "notion_retrieve_block", inputSchema: mockInputSchema },
-        { name: "notion_query_database", inputSchema: mockInputSchema },
+        { name: "notion_query_data_source", inputSchema: mockInputSchema },
       ]);
     });
 

@@ -5,6 +5,7 @@
 export type NotionObjectType =
   | "page"
   | "database"
+  | "data_source"
   | "block"
   | "list"
   | "user"
@@ -66,6 +67,7 @@ export type BlockType =
   | "synced_block"
   | "template"
   | "link_to_page"
+  | "meeting_notes"
   | "audio"
   | "bookmark"
   | "breadcrumb"
@@ -84,7 +86,7 @@ export type BlockResponse = {
   created_time: string;
   last_edited_time: string;
   has_children?: boolean;
-  archived?: boolean;
+  in_trash?: boolean;
   [key: string]: any;
 };
 
@@ -109,12 +111,12 @@ export type PageResponse = {
     type: string;
     [key: string]: any;
   } | null;
-  archived?: boolean;
   in_trash?: boolean;
   url?: string;
   public_url?: string;
   parent: {
-    type: "database_id" | "page_id" | "workspace";
+    type: "data_source_id" | "database_id" | "page_id" | "workspace";
+    data_source_id?: string;
     database_id?: string;
     page_id?: string;
   };
@@ -144,14 +146,39 @@ export type DatabaseResponse = {
     type: string;
     [key: string]: any;
   } | null;
-  properties: Record<string, DatabasePropertyConfig>;
+  properties?: Record<string, DatabasePropertyConfig>;
+  data_sources?: Array<{
+    id: string;
+    name?: string;
+  }>;
   parent?: {
     type: string;
     page_id?: string;
     workspace?: boolean;
   };
-  archived?: boolean;
+  in_trash?: boolean;
   is_inline?: boolean;
+};
+
+export type DataSourceResponse = {
+  object: "data_source";
+  id: string;
+  created_time?: string;
+  last_edited_time?: string;
+  title?: RichTextItemResponse[];
+  description?: RichTextItemResponse[];
+  properties: Record<string, DatabasePropertyConfig>;
+  parent: {
+    type: "database_id";
+    database_id: string;
+  };
+  database_parent?: {
+    type: string;
+    page_id?: string;
+    workspace?: boolean;
+  };
+  in_trash?: boolean;
+  url?: string;
 };
 
 export type DatabasePropertyConfig = {
@@ -166,6 +193,7 @@ export type ListResponse = {
   results: Array<
     | PageResponse
     | DatabaseResponse
+    | DataSourceResponse
     | BlockResponse
     | UserResponse
     | CommentResponse
@@ -209,6 +237,7 @@ export type CommentResponse = {
 export type NotionResponse =
   | PageResponse
   | DatabaseResponse
+  | DataSourceResponse
   | BlockResponse
   | ListResponse
   | UserResponse

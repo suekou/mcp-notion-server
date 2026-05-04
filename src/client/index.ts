@@ -12,7 +12,9 @@ import {
   UserResponse,
   CommentResponse,
   RichTextItemResponse,
-  CreateDatabaseArgs,
+  AppendBlockChildrenPosition,
+  CreateDataSourceArgs,
+  DataSourceResponse,
 } from "../types/index.js";
 import fetch from "node-fetch";
 
@@ -26,15 +28,17 @@ export class NotionClientWrapper {
     this.headers = {
       Authorization: `Bearer ${this.notionToken}`,
       "Content-Type": "application/json",
-      "Notion-Version": "2022-06-28",
+      "Notion-Version": "2026-03-11",
     };
   }
 
   async appendBlockChildren(
     block_id: string,
-    children: Partial<BlockResponse>[]
+    children: Partial<BlockResponse>[],
+    position?: AppendBlockChildrenPosition
   ): Promise<BlockResponse> {
-    const body = { children };
+    const body: Record<string, any> = { children };
+    if (position) body.position = position;
 
     const response = await fetch(
       `${this.baseUrl}/blocks/${block_id}/children`,
@@ -154,14 +158,14 @@ export class NotionClientWrapper {
     return response.json();
   }
 
-  async createDatabase(
-    parent: CreateDatabaseArgs["parent"],
+  async createDataSource(
+    parent: CreateDataSourceArgs["parent"],
     properties: Record<string, any>,
     title?: RichTextItemResponse[]
-  ): Promise<DatabaseResponse> {
+  ): Promise<DataSourceResponse> {
     const body = { parent, title, properties };
 
-    const response = await fetch(`${this.baseUrl}/databases`, {
+    const response = await fetch(`${this.baseUrl}/data_sources`, {
       method: "POST",
       headers: this.headers,
       body: JSON.stringify(body),
@@ -170,8 +174,8 @@ export class NotionClientWrapper {
     return response.json();
   }
 
-  async queryDatabase(
-    database_id: string,
+  async queryDataSource(
+    data_source_id: string,
     filter?: Record<string, any>,
     sorts?: Array<{
       property?: string;
@@ -188,7 +192,7 @@ export class NotionClientWrapper {
     if (page_size) body.page_size = page_size;
 
     const response = await fetch(
-      `${this.baseUrl}/databases/${database_id}/query`,
+      `${this.baseUrl}/data_sources/${data_source_id}/query`,
       {
         method: "POST",
         headers: this.headers,
@@ -208,32 +212,47 @@ export class NotionClientWrapper {
     return response.json();
   }
 
-  async updateDatabase(
-    database_id: string,
+  async retrieveDataSource(data_source_id: string): Promise<DataSourceResponse> {
+    const response = await fetch(
+      `${this.baseUrl}/data_sources/${data_source_id}`,
+      {
+        method: "GET",
+        headers: this.headers,
+      }
+    );
+
+    return response.json();
+  }
+
+  async updateDataSource(
+    data_source_id: string,
     title?: RichTextItemResponse[],
     description?: RichTextItemResponse[],
     properties?: Record<string, any>
-  ): Promise<DatabaseResponse> {
+  ): Promise<DataSourceResponse> {
     const body: Record<string, any> = {};
     if (title) body.title = title;
     if (description) body.description = description;
     if (properties) body.properties = properties;
 
-    const response = await fetch(`${this.baseUrl}/databases/${database_id}`, {
-      method: "PATCH",
-      headers: this.headers,
-      body: JSON.stringify(body),
-    });
+    const response = await fetch(
+      `${this.baseUrl}/data_sources/${data_source_id}`,
+      {
+        method: "PATCH",
+        headers: this.headers,
+        body: JSON.stringify(body),
+      }
+    );
 
     return response.json();
   }
 
-  async createDatabaseItem(
-    database_id: string,
+  async createDataSourceItem(
+    data_source_id: string,
     properties: Record<string, any>
   ): Promise<PageResponse> {
     const body = {
-      parent: { database_id },
+      parent: { type: "data_source_id", data_source_id },
       properties,
     };
 

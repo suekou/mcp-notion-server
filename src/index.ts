@@ -6,7 +6,7 @@
  * - Use "json" when you need to process or modify the data programmatically
  *
  * Command-line Arguments:
- * --enabledTools: Comma-separated list of tools to enable (e.g. "notion_retrieve_page,notion_query_database")
+ * --enabledTools: Comma-separated list of tools to enable (e.g. "notion_retrieve_page,notion_query_data_source")
  *
  * Environment Variables:
  * - NOTION_API_TOKEN: Required. Your Notion API integration token.
