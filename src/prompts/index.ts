@@ -90,9 +90,10 @@ export function getNotionPrompt(
           `Content: ${requireArg(args, "content")}`,
           "Workflow:",
           "1. Use `notion_find` with `object_type: \"page\"` if the page ID is not already provided.",
-          "2. Use `notion_append_content` for paragraphs, headings, todos, lists, quotes, callouts, code, and dividers.",
-          "3. Use `notion_append_block_children` only when the requested block type requires raw Notion block JSON.",
-          "4. Keep appended batches reviewable and preserve the user's wording unless they ask for rewriting.",
+          "2. Use `notion_read_page` when you need existing block IDs or context before choosing an insertion point.",
+          "3. Use `notion_append_content` for paragraphs, headings, todos, lists, quotes, callouts, code, and dividers.",
+          "4. Use `notion_append_block_children` only when the requested block type requires raw Notion block JSON.",
+          "5. Keep appended batches reviewable and preserve the user's wording unless they ask for rewriting.",
         ].join("\n")
       );
     default:

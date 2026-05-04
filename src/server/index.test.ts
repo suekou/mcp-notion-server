@@ -11,6 +11,7 @@ describe("MCP server helpers", () => {
   test("should expose tool annotations for client planning hints", () => {
     const tools = getAllTools();
     const retrievePage = tools.find((tool) => tool.name === "notion_retrieve_page");
+    const readPage = tools.find((tool) => tool.name === "notion_read_page");
     const deleteBlock = tools.find((tool) => tool.name === "notion_delete_block");
     const find = tools.find((tool) => tool.name === "notion_find");
     const appendContent = tools.find(
@@ -22,6 +23,11 @@ describe("MCP server helpers", () => {
 
     expect(retrievePage?.annotations).toMatchObject({
       title: "Retrieve Page",
+      readOnlyHint: true,
+      destructiveHint: false,
+    });
+    expect(readPage?.annotations).toMatchObject({
+      title: "Read Page Content",
       readOnlyHint: true,
       destructiveHint: false,
     });
