@@ -15,6 +15,12 @@ export const appendBlockChildrenTool: Tool = {
   name: "notion_append_block_children",
   description:
     "Append new children blocks to a specified parent block in Notion. Requires insert content capabilities. Use the optional 'position' object to insert at the start, end, or after a specific block.",
+  annotations: {
+    title: "Append Block Children",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -59,6 +65,11 @@ export const appendBlockChildrenTool: Tool = {
 export const retrieveBlockTool: Tool = {
   name: "notion_retrieve_block",
   description: "Retrieve a block from Notion",
+  annotations: {
+    title: "Retrieve Block",
+    readOnlyHint: true,
+    destructiveHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -75,6 +86,11 @@ export const retrieveBlockTool: Tool = {
 export const retrieveBlockChildrenTool: Tool = {
   name: "notion_retrieve_block_children",
   description: "Retrieve the children of a block",
+  annotations: {
+    title: "Retrieve Block Children",
+    readOnlyHint: true,
+    destructiveHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -99,6 +115,12 @@ export const retrieveBlockChildrenTool: Tool = {
 export const deleteBlockTool: Tool = {
   name: "notion_delete_block",
   description: "Delete a block in Notion",
+  annotations: {
+    title: "Delete Block",
+    readOnlyHint: false,
+    destructiveHint: true,
+    idempotentHint: true,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -116,6 +138,12 @@ export const updateBlockTool: Tool = {
   name: "notion_update_block",
   description:
     "Update the content of a block in Notion based on its type. The update replaces the entire value for a given field.",
+  annotations: {
+    title: "Update Block",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: true,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -138,6 +166,11 @@ export const updateBlockTool: Tool = {
 export const retrievePageTool: Tool = {
   name: "notion_retrieve_page",
   description: "Retrieve a page from Notion",
+  annotations: {
+    title: "Retrieve Page",
+    readOnlyHint: true,
+    destructiveHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -154,6 +187,12 @@ export const retrievePageTool: Tool = {
 export const updatePagePropertiesTool: Tool = {
   name: "notion_update_page_properties",
   description: "Update properties of a page or an item in a Notion database",
+  annotations: {
+    title: "Update Page Properties",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: true,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -179,6 +218,11 @@ export const listAllUsersTool: Tool = {
   name: "notion_list_all_users",
   description:
     "List all users in the Notion workspace. **Note:** This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.",
+  annotations: {
+    title: "List Users",
+    readOnlyHint: true,
+    destructiveHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -199,6 +243,11 @@ export const retrieveUserTool: Tool = {
   name: "notion_retrieve_user",
   description:
     "Retrieve a specific user by user_id in Notion. **Note:** This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.",
+  annotations: {
+    title: "Retrieve User",
+    readOnlyHint: true,
+    destructiveHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -216,6 +265,11 @@ export const retrieveBotUserTool: Tool = {
   name: "notion_retrieve_bot_user",
   description:
     "Retrieve the bot user associated with the current token in Notion",
+  annotations: {
+    title: "Retrieve Bot User",
+    readOnlyHint: true,
+    destructiveHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -234,6 +288,12 @@ export const createDataSourceTool: Tool = {
   name: "notion_create_data_source",
   description:
     "Create a Notion data source. In the 2025-09-03+ Notion API, data sources are the schema-bearing objects that replace most direct database operations.",
+  annotations: {
+    title: "Create Data Source",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -262,6 +322,11 @@ export const queryDataSourceTool: Tool = {
   name: "notion_query_data_source",
   description:
     "Query a Notion data source with filters, sorts, and pagination. Use notion_retrieve_database first when you only have a database ID and need to discover its data_source_id.",
+  annotations: {
+    title: "Query Data Source",
+    readOnlyHint: true,
+    destructiveHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -307,6 +372,11 @@ export const retrieveDatabaseTool: Tool = {
   name: "notion_retrieve_database",
   description:
     "Retrieve a Notion database container and its child data_sources. Use this to discover which data_source_id should be used for query, schema, and item creation operations.",
+  annotations: {
+    title: "Retrieve Database",
+    readOnlyHint: true,
+    destructiveHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -325,6 +395,11 @@ export const retrieveDataSourceTool: Tool = {
   name: "notion_retrieve_data_source",
   description:
     "Retrieve metadata and property schema for a Notion data source.",
+  annotations: {
+    title: "Retrieve Data Source",
+    readOnlyHint: true,
+    destructiveHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -342,6 +417,12 @@ export const retrieveDataSourceTool: Tool = {
 export const updateDataSourceTool: Tool = {
   name: "notion_update_data_source",
   description: "Update a Notion data source title, description, or properties.",
+  annotations: {
+    title: "Update Data Source",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: true,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -377,6 +458,12 @@ export const createDataSourceItemTool: Tool = {
   name: "notion_create_data_source_item",
   description:
     "Create a new page item in a Notion data source. Use the data_source_id, not the database_id, as the parent.",
+  annotations: {
+    title: "Create Data Source Item",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -401,6 +488,12 @@ export const createCommentTool: Tool = {
   name: "notion_create_comment",
   description:
     "Create a comment in Notion. This requires the integration to have 'insert comment' capabilities. You can either specify a page parent or a discussion_id, but not both.",
+  annotations: {
+    title: "Create Comment",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -438,6 +531,11 @@ export const retrieveCommentsTool: Tool = {
   name: "notion_retrieve_comments",
   description:
     "Retrieve a list of unresolved comments from a Notion page or block. Requires the integration to have 'read comment' capabilities.",
+  annotations: {
+    title: "Retrieve Comments",
+    readOnlyHint: true,
+    destructiveHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -466,6 +564,11 @@ export const retrieveCommentsTool: Tool = {
 export const searchTool: Tool = {
   name: "notion_search",
   description: "Search pages or data sources by title in Notion",
+  annotations: {
+    title: "Search Notion",
+    readOnlyHint: true,
+    destructiveHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {
