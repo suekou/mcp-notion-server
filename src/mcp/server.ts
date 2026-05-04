@@ -10,9 +10,20 @@ import type {
   Resource,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
+import {
+  MCP_APP_MIME_TYPE,
+  notionAppResources,
+  readNotionAppResource,
+} from "../apps/index.js";
 import { NotionClientWrapper } from "../notion/client.js";
 import { getNotionPrompt, notionPrompts } from "../prompts/index.js";
 import { notionResources, readNotionResource } from "../resources/index.js";
+import {
+  openDataSourceAppTool,
+  openFinderAppTool,
+  openPageWorkbenchAppTool,
+} from "../tools/apps/definitions.js";
+import { appToolHandlers } from "../tools/apps/handlers.js";
 import {
   appendBlockChildrenTool,
   deleteBlockTool,
@@ -76,6 +87,7 @@ const SERVER_INSTRUCTIONS = [
 ].join(" ");
 
 const toolHandlers: ToolHandlerMap = {
+  ...appToolHandlers,
   ...blockToolHandlers,
   ...contentToolHandlers,
   ...pageToolHandlers,
@@ -89,6 +101,9 @@ export function getServerInstructions(): string {
 
 export function getAllTools(): Tool[] {
   return [
+    openFinderAppTool,
+    openDataSourceAppTool,
+    openPageWorkbenchAppTool,
     appendBlockChildrenTool,
     appendContentTool,
     appendMarkdownTool,
@@ -125,7 +140,7 @@ export function getAllPrompts(): Prompt[] {
 }
 
 export function getAllResources(): Resource[] {
-  return notionResources;
+  return [...notionResources, ...notionAppResources];
 }
 
 export async function startServer(
@@ -143,6 +158,11 @@ export async function startServer(
         tools: {},
         prompts: {},
         resources: {},
+        extensions: {
+          "io.modelcontextprotocol/ui": {
+            mimeTypes: [MCP_APP_MIME_TYPE],
+          },
+        },
       },
       instructions: SERVER_INSTRUCTIONS,
     },
@@ -177,6 +197,7 @@ function registerNotionTools(
         description: tool.description,
         inputSchema: toolInputSchema(tool),
         annotations: tool.annotations,
+        _meta: tool._meta,
       },
       async (toolArguments: unknown) =>
         executeRegisteredTool(
@@ -217,9 +238,17 @@ function registerNotionResources(server: McpServer) {
         description: resource.description,
         mimeType: resource.mimeType,
       },
-      (uri) => readNotionResource(uri.toString()),
+      (uri) => readRegisteredResource(uri.toString()),
     );
   }
+}
+
+function readRegisteredResource(uri: string) {
+  if (uri.startsWith("ui://")) {
+    return readNotionAppResource(uri);
+  }
+
+  return readNotionResource(uri);
 }
 
 export async function executeRegisteredTool(
