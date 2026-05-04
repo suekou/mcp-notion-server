@@ -14,6 +14,9 @@ describe("MCP server helpers", () => {
     const readPage = tools.find((tool) => tool.name === "notion_read_page");
     const deleteBlock = tools.find((tool) => tool.name === "notion_delete_block");
     const find = tools.find((tool) => tool.name === "notion_find");
+    const queryByValues = tools.find(
+      (tool) => tool.name === "notion_query_data_source_by_values"
+    );
     const appendContent = tools.find(
       (tool) => tool.name === "notion_append_content"
     );
@@ -41,6 +44,11 @@ describe("MCP server helpers", () => {
     });
     expect(find?.annotations).toMatchObject({
       title: "Find Notion Targets",
+      readOnlyHint: true,
+      destructiveHint: false,
+    });
+    expect(queryByValues?.annotations).toMatchObject({
+      title: "Query Data Source By Values",
       readOnlyHint: true,
       destructiveHint: false,
     });
@@ -77,6 +85,7 @@ describe("MCP server helpers", () => {
     expect(getAllPrompts().map((prompt) => prompt.name)).toEqual([
       "notion_find_target",
       "notion_create_database_item",
+      "notion_query_database_items",
       "notion_append_page_content",
     ]);
   });

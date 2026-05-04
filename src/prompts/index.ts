@@ -35,6 +35,24 @@ export const notionPrompts: Prompt[] = [
     ],
   },
   {
+    name: "notion_query_database_items",
+    title: "Query Notion Database Items",
+    description:
+      "Query data source items using schema inspection and simple filters.",
+    arguments: [
+      {
+        name: "data_source",
+        description: "The data source name or ID.",
+        required: true,
+      },
+      {
+        name: "query",
+        description: "The items to find, described in natural language.",
+        required: true,
+      },
+    ],
+  },
+  {
     name: "notion_append_page_content",
     title: "Append Notion Page Content",
     description:
@@ -80,6 +98,19 @@ export function getNotionPrompt(
           "2. Use `notion_inspect_data_source` to get exact property names, option values, and relation fields.",
           "3. Use `notion_create_data_source_item_from_values` with simple values whenever possible.",
           "4. If a property type is unsupported by simple values, fall back to `notion_create_data_source_item` with raw Notion property JSON.",
+        ].join("\n")
+      );
+    case "notion_query_database_items":
+      return promptResult(
+        "Query Notion data source items",
+        [
+          `Data source: ${requireArg(args, "data_source")}`,
+          `Query: ${requireArg(args, "query")}`,
+          "Workflow:",
+          "1. Use `notion_find` with `object_type: \"data_source\"` if the data source ID is not already provided.",
+          "2. Use `notion_inspect_data_source` to get exact property names, option values, and property types.",
+          "3. Use `notion_query_data_source_by_values` for common filters and sorts.",
+          "4. Fall back to `notion_query_data_source` only when the requested query needs raw Notion filter JSON.",
         ].join("\n")
       );
     case "notion_append_page_content":
