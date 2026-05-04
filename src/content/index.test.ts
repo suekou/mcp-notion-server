@@ -3,6 +3,10 @@ import {
   buildBlocksFromSimpleContent,
   buildBlockUpdateFromSimpleContent,
   parseMarkdownToSimpleContent,
+  validateAppendPosition,
+  validateSimpleContentItems,
+  validateSimpleContentUpdates,
+  validateSimpleEditableContentItem,
   validateSimpleContentUpdatesAgainstBlocks,
 } from "./index.js";
 import type { BlockResponse } from "../types/index.js";
@@ -163,6 +167,45 @@ describe("content block builder", () => {
       { type: "divider" },
       { type: "code", text: "const ok = true;", language: "ts" },
     ]);
+  });
+
+  test("should reject malformed simple content before building blocks", () => {
+    expect(() => validateSimpleContentItems("not-array")).toThrow(
+      "items must be a non-empty array"
+    );
+    expect(() =>
+      validateSimpleContentItems([{ type: "paragraph" }])
+    ).toThrow("items[0].text must be a string for paragraph content");
+    expect(() =>
+      validateSimpleContentItems([{ type: "table", text: "Unsupported" }])
+    ).toThrow("items[0].type must be one of");
+  });
+
+  test("should reject malformed editable content and update batches", () => {
+    expect(() => validateSimpleEditableContentItem({ type: "divider" })).toThrow(
+      "item.type must be one of"
+    );
+    expect(() =>
+      validateSimpleContentUpdates([{ block_id: "", item: { type: "paragraph", text: "A" } }])
+    ).toThrow("updates[0].block_id must be a non-empty block ID string");
+    expect(() =>
+      validateSimpleContentUpdates([
+        { block_id: "block-a", item: { type: "paragraph" } },
+      ])
+    ).toThrow("updates[0].item.text must be a string for paragraph content");
+  });
+
+  test("should validate append positions", () => {
+    expect(() => validateAppendPosition({ type: "start" })).not.toThrow();
+    expect(() =>
+      validateAppendPosition({ type: "after_block", after_block: { id: "block-a" } })
+    ).not.toThrow();
+    expect(() => validateAppendPosition({ type: "after_block" })).toThrow(
+      "position.after_block.id must be a block ID string"
+    );
+    expect(() => validateAppendPosition({ type: "middle" })).toThrow(
+      "position.type must be one of"
+    );
   });
 });
 

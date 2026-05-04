@@ -38,6 +38,81 @@ export type SimpleContentUpdate = {
   item: SimpleEditableContentItem;
 };
 
+const SIMPLE_CONTENT_TYPES = [
+  "paragraph",
+  "heading_1",
+  "heading_2",
+  "heading_3",
+  "bulleted_list_item",
+  "numbered_list_item",
+  "to_do",
+  "quote",
+  "callout",
+  "code",
+  "divider",
+] as const;
+
+const EDITABLE_SIMPLE_CONTENT_TYPES = SIMPLE_CONTENT_TYPES.filter(
+  (type) => type !== "divider"
+);
+
+export function validateAppendPosition(position: unknown): void {
+  if (position === undefined) return;
+  if (!isRecord(position)) {
+    throw new Error(
+      "position must be an object: { type: 'start' }, { type: 'end' }, or { type: 'after_block', after_block: { id } }."
+    );
+  }
+
+  if (position.type === "start" || position.type === "end") return;
+
+  if (position.type === "after_block") {
+    if (!isRecord(position.after_block) || typeof position.after_block.id !== "string") {
+      throw new Error(
+        "position.after_block.id must be a block ID string when position.type is 'after_block'."
+      );
+    }
+    return;
+  }
+
+  throw new Error(
+    "position.type must be one of: start, end, after_block."
+  );
+}
+
+export function validateSimpleContentItems(items: unknown): asserts items is SimpleContentItem[] {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error("items must be a non-empty array of simple content items.");
+  }
+
+  items.forEach((item, index) => validateSimpleContentItem(item, `items[${index}]`));
+}
+
+export function validateSimpleEditableContentItem(
+  item: unknown
+): asserts item is SimpleEditableContentItem {
+  validateSimpleContentItem(item, "item", true);
+}
+
+export function validateSimpleContentUpdates(
+  updates: unknown
+): asserts updates is SimpleContentUpdate[] {
+  if (!Array.isArray(updates) || updates.length === 0) {
+    throw new Error("updates must be a non-empty array of simple content updates.");
+  }
+
+  updates.forEach((update, index) => {
+    const path = `updates[${index}]`;
+    if (!isRecord(update)) {
+      throw new Error(`${path} must be an object with block_id and item.`);
+    }
+    if (typeof update.block_id !== "string" || update.block_id.length === 0) {
+      throw new Error(`${path}.block_id must be a non-empty block ID string.`);
+    }
+    validateSimpleContentItem(update.item, `${path}.item`, true);
+  });
+}
+
 export function buildBlocksFromSimpleContent(
   items: SimpleContentItem[]
 ): Partial<BlockResponse>[] {
@@ -269,6 +344,45 @@ function buildBlockFromSimpleContent(
         divider: {},
       };
   }
+}
+
+function validateSimpleContentItem(
+  item: unknown,
+  path: string,
+  editableOnly = false
+): asserts item is SimpleContentItem {
+  if (!isRecord(item)) {
+    throw new Error(`${path} must be an object with a supported type.`);
+  }
+
+  const allowedTypes = editableOnly
+    ? EDITABLE_SIMPLE_CONTENT_TYPES
+    : SIMPLE_CONTENT_TYPES;
+  if (typeof item.type !== "string" || !allowedTypes.includes(item.type as any)) {
+    throw new Error(
+      `${path}.type must be one of: ${allowedTypes.join(", ")}.`
+    );
+  }
+
+  if (item.type !== "divider" && typeof item.text !== "string") {
+    throw new Error(`${path}.text must be a string for ${item.type} content.`);
+  }
+  if (item.type === "divider" && "text" in item) {
+    throw new Error(`${path}.text is not supported for divider content.`);
+  }
+  if ("checked" in item && typeof item.checked !== "boolean") {
+    throw new Error(`${path}.checked must be a boolean when provided.`);
+  }
+  if ("language" in item && typeof item.language !== "string") {
+    throw new Error(`${path}.language must be a string when provided.`);
+  }
+  if ("is_toggleable" in item && typeof item.is_toggleable !== "boolean") {
+    throw new Error(`${path}.is_toggleable must be a boolean when provided.`);
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
 function richTextBlock(
