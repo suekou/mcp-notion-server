@@ -44,6 +44,70 @@ export function buildBlocksFromSimpleContent(
   return items.map((item) => buildBlockFromSimpleContent(item));
 }
 
+export function parseMarkdownToSimpleContent(markdown: string): SimpleContentItem[] {
+  const items: SimpleContentItem[] = [];
+  const paragraphLines: string[] = [];
+  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+  let codeFence:
+    | {
+        language?: string;
+        lines: string[];
+      }
+    | undefined;
+
+  for (const line of lines) {
+    const fenceMatch = line.match(/^```([\w#+.-]*)\s*$/);
+    if (fenceMatch) {
+      if (codeFence) {
+        items.push({
+          type: "code",
+          text: codeFence.lines.join("\n"),
+          language: codeFence.language,
+        });
+        codeFence = undefined;
+      } else {
+        flushParagraph(items, paragraphLines);
+        codeFence = {
+          language: fenceMatch[1] || undefined,
+          lines: [],
+        };
+      }
+      continue;
+    }
+
+    if (codeFence) {
+      codeFence.lines.push(line);
+      continue;
+    }
+
+    const trimmed = line.trim();
+    if (!trimmed) {
+      flushParagraph(items, paragraphLines);
+      continue;
+    }
+
+    const block = parseMarkdownLine(trimmed);
+    if (block) {
+      flushParagraph(items, paragraphLines);
+      items.push(block);
+      continue;
+    }
+
+    paragraphLines.push(trimmed);
+  }
+
+  if (codeFence) {
+    items.push({
+      type: "code",
+      text: codeFence.lines.join("\n"),
+      language: codeFence.language,
+    });
+  }
+  flushParagraph(items, paragraphLines);
+
+  return items;
+}
+
 export function buildBlockUpdateFromSimpleContent(
   item: SimpleContentItem
 ): Partial<BlockResponse> {
@@ -86,6 +150,70 @@ export function validateSimpleContentUpdatesAgainstBlocks(
       );
     }
   });
+}
+
+function parseMarkdownLine(line: string): SimpleContentItem | undefined {
+  if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) {
+    return { type: "divider" };
+  }
+
+  const heading = line.match(/^(#{1,3})\s+(.+)$/);
+  if (heading) {
+    return {
+      type: `heading_${heading[1].length}` as
+        | "heading_1"
+        | "heading_2"
+        | "heading_3",
+      text: heading[2],
+    };
+  }
+
+  const todo = line.match(/^[-*]\s+\[( |x|X)\]\s+(.+)$/);
+  if (todo) {
+    return {
+      type: "to_do",
+      text: todo[2],
+      checked: todo[1].toLowerCase() === "x",
+    };
+  }
+
+  const bullet = line.match(/^[-*]\s+(.+)$/);
+  if (bullet) {
+    return {
+      type: "bulleted_list_item",
+      text: bullet[1],
+    };
+  }
+
+  const numbered = line.match(/^\d+[.)]\s+(.+)$/);
+  if (numbered) {
+    return {
+      type: "numbered_list_item",
+      text: numbered[1],
+    };
+  }
+
+  const quote = line.match(/^>\s?(.+)$/);
+  if (quote) {
+    return {
+      type: "quote",
+      text: quote[1],
+    };
+  }
+
+  return undefined;
+}
+
+function flushParagraph(
+  items: SimpleContentItem[],
+  paragraphLines: string[]
+): void {
+  if (paragraphLines.length === 0) return;
+  items.push({
+    type: "paragraph",
+    text: paragraphLines.join(" "),
+  });
+  paragraphLines.length = 0;
 }
 
 function buildBlockFromSimpleContent(

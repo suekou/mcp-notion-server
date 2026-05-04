@@ -44,6 +44,13 @@ export interface AppendContentArgs {
   format?: "json" | "markdown";
 }
 
+export interface AppendMarkdownArgs {
+  block_id: string;
+  markdown: string;
+  position?: AppendBlockChildrenPosition;
+  format?: "json" | "markdown";
+}
+
 export interface UpdateContentArgs {
   block_id: string;
   item: SimpleEditableContentItem;

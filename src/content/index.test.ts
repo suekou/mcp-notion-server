@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   buildBlocksFromSimpleContent,
   buildBlockUpdateFromSimpleContent,
+  parseMarkdownToSimpleContent,
   validateSimpleContentUpdatesAgainstBlocks,
 } from "./index.js";
 import type { BlockResponse } from "../types/index.js";
@@ -129,6 +130,39 @@ describe("content block builder", () => {
     ).toThrow(
       "Block type mismatch: block block-a is heading_2, but item.type was paragraph"
     );
+  });
+
+  test("should parse common Markdown into simple content items", () => {
+    expect(
+      parseMarkdownToSimpleContent(
+        [
+          "# Title",
+          "",
+          "First paragraph",
+          "continues here.",
+          "",
+          "- Bullet",
+          "1. Ordered",
+          "- [x] Done",
+          "- [ ] Todo",
+          "> Quote",
+          "---",
+          "```ts",
+          "const ok = true;",
+          "```",
+        ].join("\n")
+      )
+    ).toEqual([
+      { type: "heading_1", text: "Title" },
+      { type: "paragraph", text: "First paragraph continues here." },
+      { type: "bulleted_list_item", text: "Bullet" },
+      { type: "numbered_list_item", text: "Ordered" },
+      { type: "to_do", text: "Done", checked: true },
+      { type: "to_do", text: "Todo", checked: false },
+      { type: "quote", text: "Quote" },
+      { type: "divider" },
+      { type: "code", text: "const ok = true;", language: "ts" },
+    ]);
   });
 });
 

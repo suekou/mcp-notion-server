@@ -22,6 +22,7 @@ import {
 import {
   buildBlocksFromSimpleContent,
   buildBlockUpdateFromSimpleContent,
+  parseMarkdownToSimpleContent,
   validateSimpleContentUpdatesAgainstBlocks,
 } from "../content/index.js";
 import { NotionClientWrapper } from "../client/index.js";
@@ -48,6 +49,7 @@ export function getAllTools(): Tool[] {
   return [
     schemas.appendBlockChildrenTool,
     schemas.appendContentTool,
+    schemas.appendMarkdownTool,
     schemas.updateContentTool,
     schemas.updateContentBatchTool,
     schemas.retrieveBlockTool,
@@ -166,6 +168,26 @@ export async function startServer(
             response = await notionClient.appendBlockChildren(
               args.block_id,
               buildBlocksFromSimpleContent(args.items),
+              args.position
+            );
+            break;
+          }
+
+          case "notion_append_markdown": {
+            const args = request.params
+              .arguments as unknown as args.AppendMarkdownArgs;
+            if (!args.block_id || !args.markdown) {
+              throw new Error(
+                "Missing required arguments: block_id and markdown"
+              );
+            }
+            const items = parseMarkdownToSimpleContent(args.markdown);
+            if (items.length === 0) {
+              throw new Error("Markdown did not contain appendable content");
+            }
+            response = await notionClient.appendBlockChildren(
+              args.block_id,
+              buildBlocksFromSimpleContent(items),
               args.position
             );
             break;
