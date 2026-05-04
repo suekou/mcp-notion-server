@@ -13,6 +13,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { buildBlocksFromSimpleContent } from "../content/index.js";
 import { NotionClientWrapper } from "../client/index.js";
+import { buildPagePropertiesFromSimpleValues } from "../properties/index.js";
 import {
   summarizeDataSourceSchema,
   summarizeFindResults,
@@ -40,6 +41,7 @@ export function getAllTools(): Tool[] {
     schemas.retrieveDataSourceTool,
     schemas.updateDataSourceTool,
     schemas.createDataSourceItemTool,
+    schemas.createDataSourceItemFromValuesTool,
     schemas.createCommentTool,
     schemas.retrieveCommentsTool,
     schemas.findTool,
@@ -290,6 +292,28 @@ export async function startServer(
             response = await notionClient.createDataSourceItem(
               args.data_source_id,
               args.properties
+            );
+            break;
+          }
+
+          case "notion_create_data_source_item_from_values": {
+            const args = request.params
+              .arguments as unknown as args.CreateDataSourceItemFromValuesArgs;
+            if (!args.data_source_id || !args.values) {
+              throw new Error(
+                "Missing required arguments: data_source_id and values"
+              );
+            }
+            const dataSource = await notionClient.retrieveDataSource(
+              args.data_source_id
+            );
+            const properties = buildPagePropertiesFromSimpleValues(
+              dataSource,
+              args.values
+            );
+            response = await notionClient.createDataSourceItem(
+              args.data_source_id,
+              properties
             );
             break;
           }

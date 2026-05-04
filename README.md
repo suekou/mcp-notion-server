@@ -287,7 +287,15 @@ All tools support the following optional parameter:
       - `properties` (object): The properties of the new item. These should match the data source schema.
     - Returns: Information about the newly created item.
 
-14. `notion_find`
+14. `notion_create_data_source_item_from_values`
+
+    - Create a new page item using simple values instead of raw Notion property JSON.
+    - Required inputs:
+      - `data_source_id` (string): The ID of the data source to add the item to.
+      - `values` (object): Simple values keyed by exact property name, such as `{ "Name": "Task", "Status": "Done", "Tags": ["AI", "MCP"], "Due": "2026-05-04" }`.
+    - Returns: Information about the newly created item.
+
+15. `notion_find`
 
     - Find pages or data sources and return compact AI-friendly candidates with stable IDs.
     - Optional inputs:
@@ -297,14 +305,14 @@ All tools support the following optional parameter:
       - `page_size` (number, default: 100, max: 100): Number of candidates to retrieve.
     - Returns: Matching candidates with suggested next tools.
 
-15. `notion_inspect_data_source`
+16. `notion_inspect_data_source`
 
     - Inspect a data source schema and return compact property names, types, options, and relation targets.
     - Required inputs:
       - `data_source_id` (string): The ID of the data source to inspect.
     - Returns: A schema summary suitable for creating or updating items.
 
-16. `notion_search`
+17. `notion_search`
 
     - Search pages or data sources by title.
     - Optional inputs:
@@ -315,7 +323,7 @@ All tools support the following optional parameter:
       - `page_size` (number, default: 100, max: 100): Number of results to retrieve.
     - Returns: List of matching pages or data sources.
 
-17. `notion_list_all_users`
+18. `notion_list_all_users`
 
     - List all users in the Notion workspace.
     - Note: This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.
@@ -324,7 +332,7 @@ All tools support the following optional parameter:
       - page_size (number, max: 100): Number of users to retrieve.
     - Returns: A paginated list of all users in the workspace.
 
-18. `notion_retrieve_user`
+19. `notion_retrieve_user`
 
     - Retrieve a specific user by user_id in Notion.
     - Note: This function requires upgrading to the Notion Enterprise plan and using an Organization API key to avoid permission errors.
@@ -332,12 +340,12 @@ All tools support the following optional parameter:
       - user_id (string): The ID of the user to retrieve.
     - Returns: Detailed information about the specified user.
 
-19. `notion_retrieve_bot_user`
+20. `notion_retrieve_bot_user`
 
     - Retrieve the bot user associated with the current token in Notion.
     - Returns: Information about the bot user, including details of the person who authorized the integration.
 
-20. `notion_create_comment`
+21. `notion_create_comment`
 
     - Create a comment in Notion.
     - Requires the integration to have 'insert comment' capabilities.
@@ -349,7 +357,7 @@ All tools support the following optional parameter:
       - `discussion_id` (string): An existing discussion thread ID.
     - Returns: Information about the created comment.
 
-21. `notion_retrieve_comments`
+22. `notion_retrieve_comments`
     - Retrieve a list of unresolved comments from a Notion page or block.
     - Requires the integration to have 'read comment' capabilities.
     - Required inputs:

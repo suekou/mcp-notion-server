@@ -581,6 +581,35 @@ export const createDataSourceItemTool: Tool = {
   },
 };
 
+export const createDataSourceItemFromValuesTool: Tool = {
+  name: "notion_create_data_source_item_from_values",
+  description:
+    "Create a new page item in a Notion data source using simple property values instead of raw Notion property JSON. The server retrieves the data source schema and converts common property types for you: title, rich_text, number, checkbox, select, status, multi_select, date, url, email, phone_number, relation, and people. Use notion_inspect_data_source first when you need valid property names or option values.",
+  annotations: {
+    title: "Create Item From Values",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+  },
+  inputSchema: {
+    type: "object",
+    properties: {
+      data_source_id: {
+        type: "string",
+        description:
+          "The ID of the data source to add the item to." + commonIdDescription,
+      },
+      values: {
+        type: "object",
+        description:
+          "Simple property values keyed by exact Notion property name. Examples: { Name: 'Task', Status: 'Done', Tags: ['AI', 'MCP'], Due: '2026-05-04', Done: false }.",
+      },
+      format: formatParameter,
+    },
+    required: ["data_source_id", "values"],
+  },
+};
+
 // Comments tools
 export const createCommentTool: Tool = {
   name: "notion_create_comment",
