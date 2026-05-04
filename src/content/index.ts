@@ -55,6 +55,7 @@ const SIMPLE_CONTENT_TYPES = [
 const EDITABLE_SIMPLE_CONTENT_TYPES = SIMPLE_CONTENT_TYPES.filter(
   (type) => type !== "divider",
 );
+type SimpleContentType = (typeof SIMPLE_CONTENT_TYPES)[number];
 
 export function validateAppendPosition(position: unknown): void {
   if (position === undefined) return;
@@ -88,9 +89,9 @@ export function validateSimpleContentItems(
     throw new Error("items must be a non-empty array of simple content items.");
   }
 
-  items.forEach((item, index) =>
-    validateSimpleContentItem(item, `items[${index}]`),
-  );
+  items.forEach((item, index) => {
+    validateSimpleContentItem(item, `items[${index}]`);
+  });
 }
 
 export function validateSimpleEditableContentItem(
@@ -367,10 +368,7 @@ function validateSimpleContentItem(
   const allowedTypes = editableOnly
     ? EDITABLE_SIMPLE_CONTENT_TYPES
     : SIMPLE_CONTENT_TYPES;
-  if (
-    typeof item.type !== "string" ||
-    !allowedTypes.includes(item.type as any)
-  ) {
+  if (!isSimpleContentType(item.type, allowedTypes)) {
     throw new Error(`${path}.type must be one of: ${allowedTypes.join(", ")}.`);
   }
 
@@ -389,6 +387,16 @@ function validateSimpleContentItem(
   if ("is_toggleable" in item && typeof item.is_toggleable !== "boolean") {
     throw new Error(`${path}.is_toggleable must be a boolean when provided.`);
   }
+}
+
+function isSimpleContentType(
+  value: unknown,
+  allowedTypes: readonly SimpleContentType[],
+): value is SimpleContentType {
+  return (
+    typeof value === "string" &&
+    (allowedTypes as readonly string[]).includes(value)
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

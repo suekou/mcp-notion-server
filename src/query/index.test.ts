@@ -107,17 +107,17 @@ describe("simple data source query builder", () => {
   test("should reject malformed query shapes", () => {
     expect(() =>
       buildDataSourceQueryFromSimpleFilters(dataSource, {
-        match: "some" as any,
+        match: "some" as unknown as "all",
       }),
     ).toThrow("match must be either 'all' or 'any'");
     expect(() =>
       buildDataSourceQueryFromSimpleFilters(dataSource, {
-        filters: "Status is Done" as any,
+        filters: "Status is Done" as unknown as [],
       }),
     ).toThrow("filters must be an array when provided");
     expect(() =>
       buildDataSourceQueryFromSimpleFilters(dataSource, {
-        sorts: [{ property: "Due", direction: "up" as any }],
+        sorts: [{ property: "Due", direction: "up" as unknown as "ascending" }],
       }),
     ).toThrow("sorts[0].direction must be either 'ascending' or 'descending'");
   });

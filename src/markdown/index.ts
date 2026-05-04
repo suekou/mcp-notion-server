@@ -1,6 +1,7 @@
 import type {
   BlockResponse,
   CommentResponse,
+  DatabasePropertyConfig,
   DatabaseResponse,
   DataSourceResponse,
   ListResponse,
@@ -10,6 +11,37 @@ import type {
   RichTextItemResponse,
   UserResponse,
 } from "../types/index.js";
+
+type NamedOption = { name: string };
+type RelationReference = { id: string };
+type NotionFileReference = {
+  name?: string;
+  type?: string;
+  external?: { url?: string };
+  file?: { url?: string };
+  url?: string;
+};
+type NotionUserReference = {
+  id?: string;
+  name?: string;
+};
+type NotionDateValue = {
+  start?: string;
+  end?: string | null;
+};
+type NotionIconValue = {
+  type?: string;
+  emoji?: string;
+  external?: { url?: string };
+  file?: { url?: string };
+};
+type NotionParentValue = {
+  type?: string;
+  page_id?: string;
+  data_source_id?: string;
+  database_id?: string;
+  block_id?: string;
+};
 
 export type MarkdownRenderOptions = {
   includeBlockMetadata?: boolean;
@@ -257,49 +289,55 @@ function renderBlockBody(
   options: MarkdownRenderOptions,
 ): string {
   const blockType = block.type;
-  const content = block[blockType] || {};
+  const content = toRecord(block[blockType]);
   const depth = options.depth || 0;
   const indent = "  ".repeat(depth);
 
   switch (blockType) {
     case "paragraph":
-      return renderRichTextToMarkdown(content.rich_text);
+      return renderRichTextToMarkdown(readRichText(content.rich_text));
     case "heading_1":
-      return `${content.is_toggleable ? "<details><summary>" : ""}# ${renderRichTextToMarkdown(content.rich_text)}${content.is_toggleable ? "</summary>" : ""}`;
+      return `${content.is_toggleable ? "<details><summary>" : ""}# ${renderRichTextToMarkdown(readRichText(content.rich_text))}${content.is_toggleable ? "</summary>" : ""}`;
     case "heading_2":
-      return `${content.is_toggleable ? "<details><summary>" : ""}## ${renderRichTextToMarkdown(content.rich_text)}${content.is_toggleable ? "</summary>" : ""}`;
+      return `${content.is_toggleable ? "<details><summary>" : ""}## ${renderRichTextToMarkdown(readRichText(content.rich_text))}${content.is_toggleable ? "</summary>" : ""}`;
     case "heading_3":
-      return `${content.is_toggleable ? "<details><summary>" : ""}### ${renderRichTextToMarkdown(content.rich_text)}${content.is_toggleable ? "</summary>" : ""}`;
+      return `${content.is_toggleable ? "<details><summary>" : ""}### ${renderRichTextToMarkdown(readRichText(content.rich_text))}${content.is_toggleable ? "</summary>" : ""}`;
     case "bulleted_list_item":
-      return `${indent}- ${renderRichTextToMarkdown(content.rich_text)}`;
+      return `${indent}- ${renderRichTextToMarkdown(readRichText(content.rich_text))}`;
     case "numbered_list_item":
-      return `${indent}1. ${renderRichTextToMarkdown(content.rich_text)}`;
+      return `${indent}1. ${renderRichTextToMarkdown(readRichText(content.rich_text))}`;
     case "to_do":
-      return `${indent}- [${content.checked ? "x" : " "}] ${renderRichTextToMarkdown(content.rich_text)}`;
+      return `${indent}- [${content.checked ? "x" : " "}] ${renderRichTextToMarkdown(readRichText(content.rich_text))}`;
     case "toggle":
-      return `<details>\n<summary>${renderRichTextToMarkdown(content.rich_text) || "Toggle"}</summary>\n\n</details>`;
+      return `<details>\n<summary>${renderRichTextToMarkdown(readRichText(content.rich_text)) || "Toggle"}</summary>\n\n</details>`;
     case "quote":
-      return prefixLines(renderRichTextToMarkdown(content.rich_text), "> ");
+      return prefixLines(
+        renderRichTextToMarkdown(readRichText(content.rich_text)),
+        "> ",
+      );
     case "callout":
       return prefixLines(
-        [renderIcon(content.icon), renderRichTextToMarkdown(content.rich_text)]
+        [
+          renderIcon(content.icon),
+          renderRichTextToMarkdown(readRichText(content.rich_text)),
+        ]
           .filter(Boolean)
           .join(" "),
         "> ",
       );
     case "code":
       return renderCodeBlock(
-        renderRichTextToPlainText(content.rich_text),
-        content.language,
-        content.caption,
+        renderRichTextToPlainText(readRichText(content.rich_text)),
+        readString(content.language) || undefined,
+        readRichText(content.caption),
       );
     case "meeting_notes":
       return joinSections([
         "### Meeting Notes",
-        renderRichTextToMarkdown(content.rich_text),
+        renderRichTextToMarkdown(readRichText(content.rich_text)),
       ]);
     case "equation":
-      return `$$\n${content.expression || ""}\n$$`;
+      return `$$\n${readString(content.expression)}\n$$`;
     case "divider":
       return "---";
     case "image":
@@ -309,37 +347,44 @@ function renderBlockBody(
     case "audio":
       return renderMediaBlock("Audio", content);
     case "file":
-      return renderMediaBlock(content.name || "File", content);
+      return renderMediaBlock(readString(content.name) || "File", content);
     case "pdf":
       return renderMediaBlock("PDF", content);
     case "bookmark":
       return renderCaptionedLink(
-        renderRichTextToPlainText(content.caption) || content.url || "Bookmark",
-        content.url,
+        renderRichTextToPlainText(readRichText(content.caption)) ||
+          readString(content.url) ||
+          "Bookmark",
+        readString(content.url) || undefined,
       );
     case "embed":
       return renderCaptionedLink(
-        renderRichTextToPlainText(content.caption) || content.url || "Embed",
-        content.url,
+        renderRichTextToPlainText(readRichText(content.caption)) ||
+          readString(content.url) ||
+          "Embed",
+        readString(content.url) || undefined,
       );
     case "link_preview":
-      return renderCaptionedLink(content.url || "Link preview", content.url);
+      return renderCaptionedLink(
+        readString(content.url) || "Link preview",
+        readString(content.url) || undefined,
+      );
     case "child_page":
-      return `Child page: **${content.title || "Untitled"}** (id: \`${block.id}\`)`;
+      return `Child page: **${readString(content.title) || "Untitled"}** (id: \`${block.id}\`)`;
     case "child_database":
-      return `Child database: **${content.title || "Untitled"}** (id: \`${block.id}\`)`;
+      return `Child database: **${readString(content.title) || "Untitled"}** (id: \`${block.id}\`)`;
     case "link_to_page":
       return renderLinkToPage(content);
     case "table":
       return [
-        `Table block: ${content.table_width || "unknown"} columns`,
+        `Table block: ${readNumber(content.table_width) || "unknown"} columns`,
         content.has_column_header ? "- Has column header" : "",
         content.has_row_header ? "- Has row header" : "",
       ]
         .filter(Boolean)
         .join("\n");
     case "table_row":
-      return renderTableRow(content.cells);
+      return renderTableRow(readRichTextRows(content.cells));
     case "table_of_contents":
       return "[Table of contents block]";
     case "breadcrumb":
@@ -349,11 +394,11 @@ function renderBlockBody(
     case "column":
       return "[Column block]";
     case "synced_block":
-      return content.synced_from?.block_id
-        ? `Synced block from \`${content.synced_from.block_id}\``
+      return readString(toRecord(content.synced_from).block_id)
+        ? `Synced block from \`${readString(toRecord(content.synced_from).block_id)}\``
         : "Original synced block";
     case "template":
-      return `Template: ${renderRichTextToMarkdown(content.rich_text)}`;
+      return `Template: ${renderRichTextToMarkdown(readRichText(content.rich_text))}`;
     case "unsupported":
       return `> Unsupported Notion block. Raw block ID: \`${block.id}\``;
     default:
@@ -428,10 +473,7 @@ function renderPageProperties(
 }
 
 function renderPropertySchema(
-  properties: Record<
-    string,
-    { id: string; name?: string; type: string; [key: string]: any }
-  >,
+  properties: Record<string, DatabasePropertyConfig>,
 ): string {
   const rows = Object.entries(properties || {}).map(
     ([fallbackName, property]) => [
@@ -459,8 +501,8 @@ function renderPagePropertyValue(property: PageProperty): string {
     case "select":
       return property.select?.name || "";
     case "multi_select":
-      return (property.multi_select || [])
-        .map((option: any) => option.name)
+      return readNamedOptions(property.multi_select)
+        .map((option) => option.name)
         .join(", ");
     case "status":
       return property.status?.name || "";
@@ -481,8 +523,8 @@ function renderPagePropertyValue(property: PageProperty): string {
     case "formula":
       return renderTypedValue(property.formula);
     case "relation":
-      return (property.relation || [])
-        .map((relation: any) => `\`${relation.id}\``)
+      return readRelationReferences(property.relation)
+        .map((relation) => `\`${relation.id}\``)
         .join(", ");
     case "rollup":
       return renderRollup(property.rollup);
@@ -505,25 +547,24 @@ function renderPagePropertyValue(property: PageProperty): string {
   }
 }
 
-function renderPropertySchemaDetails(property: {
-  type: string;
-  [key: string]: any;
-}): string {
-  const config = property[property.type] || {};
+function renderPropertySchemaDetails(property: DatabasePropertyConfig): string {
+  const config = toRecord(property[property.type]);
 
   switch (property.type) {
     case "select":
     case "multi_select":
     case "status":
-      return `Options: ${(config.options || []).map((option: any) => option.name).join(", ")}`;
+      return `Options: ${readNamedOptions(config.options)
+        .map((option) => option.name)
+        .join(", ")}`;
     case "number":
-      return `Format: ${config.format || "number"}`;
+      return `Format: ${readString(config.format) || "number"}`;
     case "relation":
-      return `Related data source: ${config.data_source_id || config.database_id || ""}`;
+      return `Related data source: ${readString(config.data_source_id) || readString(config.database_id) || ""}`;
     case "formula":
-      return `Formula: ${config.expression || ""}`;
+      return `Formula: ${readString(config.expression)}`;
     case "rollup":
-      return `Rollup: ${config.function || ""}`;
+      return `Rollup: ${readString(config.function)}`;
     case "title":
       return "Title property";
     case "rich_text":
@@ -562,10 +603,8 @@ function renderObjectMetadata(metadata: Record<string, unknown>): string {
 }
 
 function renderFallbackBlock(block: BlockResponse): string {
-  const content = block[block.type];
-  const richText = content?.rich_text
-    ? renderRichTextToMarkdown(content.rich_text)
-    : "";
+  const content = toRecord(block[block.type]);
+  const richText = renderRichTextToMarkdown(readRichText(content.rich_text));
   if (richText) return richText;
 
   return joinSections([
@@ -576,11 +615,13 @@ function renderFallbackBlock(block: BlockResponse): string {
 
 function renderMediaBlock(
   label: string,
-  content: any,
+  content: unknown,
   asImage = false,
 ): string {
   const url = getFileUrl(content);
-  const caption = renderRichTextToMarkdown(content.caption);
+  const caption = renderRichTextToMarkdown(
+    toRichTextArray(toRecord(content).caption),
+  );
   const text = caption || label;
 
   if (asImage && url) {
@@ -612,65 +653,72 @@ function renderTableRow(cells: RichTextItemResponse[][] | undefined): string {
   return `| ${cells.map((cell) => escapeTableCell(renderRichTextToMarkdown(cell))).join(" | ")} |`;
 }
 
-function renderLinkToPage(content: any): string {
-  if (content.page_id) return `Link to page: \`${content.page_id}\``;
-  if (content.data_source_id)
-    return `Link to data source: \`${content.data_source_id}\``;
-  if (content.database_id)
-    return `Link to database: \`${content.database_id}\``;
+function renderLinkToPage(content: unknown): string {
+  const link = toRecord(content);
+  const pageId = readString(link.page_id);
+  const dataSourceId = readString(link.data_source_id);
+  const databaseId = readString(link.database_id);
+  if (pageId) return `Link to page: \`${pageId}\``;
+  if (dataSourceId) return `Link to data source: \`${dataSourceId}\``;
+  if (databaseId) return `Link to database: \`${databaseId}\``;
   return "Link to page";
 }
 
-function renderIcon(icon: any): string {
-  if (!icon) return "";
-  if (icon.type === "emoji") return icon.emoji || "";
-  if (icon.type === "external") return icon.external?.url || "";
-  if (icon.type === "file") return icon.file?.url || "";
+function renderIcon(icon: unknown): string {
+  const value = toRecord(icon) as NotionIconValue;
+  if (value.type === "emoji") return value.emoji || "";
+  if (value.type === "external") return value.external?.url || "";
+  if (value.type === "file") return value.file?.url || "";
   return "";
 }
 
-function renderDate(date: any): string {
-  if (!date) return "";
-  return date.end ? `${date.start} to ${date.end}` : date.start || "";
+function renderDate(date: unknown): string {
+  const value = toRecord(date) as NotionDateValue;
+  return value.end ? `${value.start} to ${value.end}` : value.start || "";
 }
 
-function renderRollup(rollup: any): string {
-  if (!rollup) return "";
-  if (rollup.type === "array") {
-    return (rollup.array || [])
-      .map((item: any) => renderTypedValue(item))
+function renderRollup(rollup: unknown): string {
+  const value = toRecord(rollup);
+  if (!value.type) return "";
+  if (value.type === "array") {
+    return readArray(value.array)
+      .map((item) => renderTypedValue(item))
       .join(", ");
   }
-  return renderTypedValue(rollup);
+  return renderTypedValue(value);
 }
 
-function renderTypedValue(value: any): string {
-  if (!value) return "";
-  if (value.type && value[value.type] !== undefined) {
-    return valueToString(value[value.type]);
+function renderTypedValue(value: unknown): string {
+  const record = toRecord(value);
+  if (!record.type) return valueToString(value);
+  const type = readString(record.type);
+  if (type && record[type] !== undefined) {
+    return valueToString(record[type]);
   }
   return valueToString(value);
 }
 
-function renderFileValue(file: any): string {
+function renderFileValue(file: unknown): string {
+  const value = toRecord(file) as NotionFileReference;
   const url = getFileUrl(file);
-  const name = file.name || "Attachment";
+  const name = value.name || "Attachment";
   return url ? `[${escapeLinkLabel(name)}](${url})` : name;
 }
 
-function renderUserName(user: any): string {
-  return user?.name || user?.id || "";
+function renderUserName(user: unknown): string {
+  const value = toRecord(user) as NotionUserReference;
+  return value.name || value.id || "";
 }
 
-function renderParent(parent: any): string {
-  if (!parent) return "";
+function renderParent(parent: unknown): string {
+  const value = toRecord(parent) as NotionParentValue;
   const id =
-    parent.page_id ||
-    parent.data_source_id ||
-    parent.database_id ||
-    parent.block_id ||
+    value.page_id ||
+    value.data_source_id ||
+    value.database_id ||
+    value.block_id ||
     "";
-  return id ? `${parent.type}:${id}` : parent.type || "";
+  return id ? `${value.type}:${id}` : value.type || "";
 }
 
 function renderTable(
@@ -703,11 +751,11 @@ function extractPageTitle(page: PageResponse): string {
   return "";
 }
 
-function getFileUrl(content: any): string | undefined {
-  if (!content) return undefined;
-  if (content.type === "external") return content.external?.url;
-  if (content.type === "file") return content.file?.url;
-  return content.external?.url || content.file?.url || content.url;
+function getFileUrl(content: unknown): string | undefined {
+  const value = toRecord(content) as NotionFileReference;
+  if (value.type === "external") return value.external?.url;
+  if (value.type === "file") return value.file?.url;
+  return value.external?.url || value.file?.url || value.url;
 }
 
 function formatMetadataValue(value: unknown): string {
@@ -716,6 +764,59 @@ function formatMetadataValue(value: unknown): string {
   if (typeof value === "object" && value !== null)
     return renderCompactJson(value);
   return valueToString(value);
+}
+
+function toRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function readString(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function readNumber(value: unknown): number | undefined {
+  return typeof value === "number" ? value : undefined;
+}
+
+function readArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function readRichText(value: unknown): RichTextItemResponse[] | undefined {
+  return toRichTextArray(value);
+}
+
+function toRichTextArray(value: unknown): RichTextItemResponse[] | undefined {
+  return Array.isArray(value) ? (value as RichTextItemResponse[]) : undefined;
+}
+
+function readRichTextRows(
+  value: unknown,
+): RichTextItemResponse[][] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value.filter(Array.isArray) as RichTextItemResponse[][];
+}
+
+function readNamedOptions(value: unknown): NamedOption[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (option): option is NamedOption =>
+      !!option &&
+      typeof option === "object" &&
+      typeof (option as { name?: unknown }).name === "string",
+  );
+}
+
+function readRelationReferences(value: unknown): RelationReference[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (relation): relation is RelationReference =>
+      !!relation &&
+      typeof relation === "object" &&
+      typeof (relation as { id?: unknown }).id === "string",
+  );
 }
 
 function valueToString(value: unknown): string {

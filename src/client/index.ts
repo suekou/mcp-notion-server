@@ -17,6 +17,8 @@ import type {
   UserResponse,
 } from "../types/index.js";
 
+type NotionJsonObject = Record<string, unknown>;
+
 export type NotionClientOptions = {
   timeoutMs?: number;
   maxRetries?: number;
@@ -138,7 +140,7 @@ export class NotionClientWrapper {
     children: Partial<BlockResponse>[],
     position?: AppendBlockChildrenPosition,
   ): Promise<BlockResponse> {
-    const body: Record<string, any> = { children };
+    const body: NotionJsonObject = { children };
     if (position) body.position = position;
 
     return this.request<BlockResponse>(`/blocks/${block_id}/children`, {
@@ -194,7 +196,7 @@ export class NotionClientWrapper {
 
   async updatePageProperties(
     page_id: string,
-    properties: Record<string, any>,
+    properties: NotionJsonObject,
   ): Promise<PageResponse> {
     const body = { properties };
 
@@ -231,7 +233,7 @@ export class NotionClientWrapper {
 
   async createDataSource(
     parent: CreateDataSourceArgs["parent"],
-    properties: Record<string, any>,
+    properties: NotionJsonObject,
     title?: RichTextItemResponse[],
   ): Promise<DataSourceResponse> {
     const body = { parent, title, properties };
@@ -244,7 +246,7 @@ export class NotionClientWrapper {
 
   async queryDataSource(
     data_source_id: string,
-    filter?: Record<string, any>,
+    filter?: NotionJsonObject,
     sorts?: Array<{
       property?: string;
       timestamp?: string;
@@ -253,7 +255,7 @@ export class NotionClientWrapper {
     start_cursor?: string,
     page_size?: number,
   ): Promise<ListResponse> {
-    const body: Record<string, any> = {};
+    const body: NotionJsonObject = {};
     if (filter) body.filter = filter;
     if (sorts) body.sorts = sorts;
     if (start_cursor) body.start_cursor = start_cursor;
@@ -283,9 +285,9 @@ export class NotionClientWrapper {
     data_source_id: string,
     title?: RichTextItemResponse[],
     description?: RichTextItemResponse[],
-    properties?: Record<string, any>,
+    properties?: NotionJsonObject,
   ): Promise<DataSourceResponse> {
-    const body: Record<string, any> = {};
+    const body: NotionJsonObject = {};
     if (title) body.title = title;
     if (description) body.description = description;
     if (properties) body.properties = properties;
@@ -298,7 +300,7 @@ export class NotionClientWrapper {
 
   async createDataSourceItem(
     data_source_id: string,
-    properties: Record<string, any>,
+    properties: NotionJsonObject,
   ): Promise<PageResponse> {
     const body = {
       parent: { type: "data_source_id", data_source_id },
@@ -316,7 +318,7 @@ export class NotionClientWrapper {
     discussion_id?: string,
     rich_text?: RichTextItemResponse[],
   ): Promise<CommentResponse> {
-    const body: Record<string, any> = { rich_text };
+    const body: NotionJsonObject = { rich_text };
     if (parent) {
       body.parent = parent;
     }
@@ -355,7 +357,7 @@ export class NotionClientWrapper {
     start_cursor?: string,
     page_size?: number,
   ): Promise<ListResponse> {
-    const body: Record<string, any> = {};
+    const body: NotionJsonObject = {};
     if (query) body.query = query;
     if (filter) body.filter = filter;
     if (sort) body.sort = sort;

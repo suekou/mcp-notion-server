@@ -100,7 +100,9 @@ describe("property value builder", () => {
 
   test("should reject non-object simple values", () => {
     expect(() =>
-      buildPagePropertiesFromSimpleValues(dataSource, ["Name"] as any),
+      buildPagePropertiesFromSimpleValues(dataSource, [
+        "Name",
+      ] as unknown as Record<string, unknown>),
     ).toThrow("values must be an object keyed by exact Notion property names");
   });
 

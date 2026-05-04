@@ -233,7 +233,7 @@ function summarizeBlock(block: BlockResponse): PageBlockNode {
 }
 
 function extractBlockText(block: BlockResponse): string {
-  const content = block[block.type] || {};
+  const content = toRecord(block[block.type]);
 
   switch (block.type) {
     case "paragraph":
@@ -248,14 +248,14 @@ function extractBlockText(block: BlockResponse): string {
     case "callout":
     case "code":
     case "meeting_notes":
-      return renderRichTextToPlainText(content.rich_text || []);
+      return renderRichTextToPlainText(readRichText(content.rich_text));
     case "child_page":
     case "child_database":
-      return content.title || "";
+      return readString(content.title);
     case "bookmark":
     case "embed":
     case "link_preview":
-      return content.url || "";
+      return readString(content.url);
     case "divider":
       return "";
     case "image":
@@ -263,10 +263,11 @@ function extractBlockText(block: BlockResponse): string {
     case "pdf":
     case "video":
       return (
-        renderRichTextToPlainText(content.caption || []) || content.name || ""
+        renderRichTextToPlainText(readRichText(content.caption)) ||
+        readString(content.name)
       );
     default:
-      return renderRichTextToPlainText(content.rich_text || []);
+      return renderRichTextToPlainText(readRichText(content.rich_text));
   }
 }
 
@@ -298,7 +299,9 @@ function summarizePagePropertyValue(
     case "status":
       return property.status?.name || null;
     case "multi_select":
-      return (property.multi_select || []).map((option: any) => option.name);
+      return readNamedOptions(property.multi_select).map(
+        (option) => option.name,
+      );
     case "date":
       return property.date?.end
         ? `${property.date.start}..${property.date.end}`
@@ -312,6 +315,34 @@ function summarizePagePropertyValue(
     default:
       return null;
   }
+}
+
+function readNamedOptions(value: unknown): Array<{ name: string }> {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (option): option is { name: string } =>
+      !!option &&
+      typeof option === "object" &&
+      typeof (option as { name?: unknown }).name === "string",
+  );
+}
+
+function toRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function readString(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function readRichText(
+  value: unknown,
+): Parameters<typeof renderRichTextToPlainText>[0] {
+  return Array.isArray(value)
+    ? (value as Parameters<typeof renderRichTextToPlainText>[0])
+    : [];
 }
 
 function extractPageTitle(page: PageResponse): string {
