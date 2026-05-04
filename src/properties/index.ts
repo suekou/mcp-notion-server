@@ -1,4 +1,8 @@
-import { DataSourceResponse, RichTextItemResponse } from "../types/index.js";
+import {
+  DataSourceResponse,
+  DatabasePropertyConfig,
+  RichTextItemResponse,
+} from "../types/index.js";
 
 export type SimplePropertyValues = Record<string, unknown>;
 
@@ -16,7 +20,7 @@ export function buildPagePropertiesFromSimpleValues(
       );
     }
 
-    properties[propertyName] = buildPropertyValue(propertyName, schema.type, value);
+    properties[propertyName] = buildPropertyValue(propertyName, schema, value);
   }
 
   return properties;
@@ -24,9 +28,11 @@ export function buildPagePropertiesFromSimpleValues(
 
 function buildPropertyValue(
   propertyName: string,
-  propertyType: string,
+  schema: DatabasePropertyConfig,
   value: unknown
 ): Record<string, unknown> {
+  const propertyType = schema.type;
+
   switch (propertyType) {
     case "title":
       return { title: stringToRichText(propertyName, value) };
@@ -37,14 +43,32 @@ function buildPropertyValue(
     case "checkbox":
       return { checkbox: expectBoolean(propertyName, value) };
     case "select":
-      return { select: { name: expectString(propertyName, value) } };
+      return {
+        select: {
+          name: expectKnownOption(
+            propertyName,
+            schema,
+            expectString(propertyName, value)
+          ),
+        },
+      };
     case "status":
-      return { status: { name: expectString(propertyName, value) } };
+      return {
+        status: {
+          name: expectKnownOption(
+            propertyName,
+            schema,
+            expectString(propertyName, value)
+          ),
+        },
+      };
     case "multi_select":
       return {
-        multi_select: expectStringArray(propertyName, value).map((name) => ({
-          name,
-        })),
+        multi_select: expectStringArray(propertyName, value).map((name) => {
+          return {
+            name: expectKnownOption(propertyName, schema, name),
+          };
+        }),
       };
     case "date":
       return { date: buildDateValue(propertyName, value) };
@@ -115,6 +139,48 @@ function expectString(propertyName: string, value: unknown): string {
     throw new Error(`Property '${propertyName}' must be a string.`);
   }
   return value;
+}
+
+function expectKnownOption(
+  propertyName: string,
+  schema: DatabasePropertyConfig,
+  optionName: string
+): string {
+  const options = getOptionNames(schema);
+  if (options.length === 0 || options.includes(optionName)) {
+    return optionName;
+  }
+
+  const suggestion = findCaseInsensitiveOption(optionName, options);
+  throw new Error(
+    [
+      `Property '${propertyName}' does not have option '${optionName}'.`,
+      `Valid options: ${options.join(", ")}.`,
+      suggestion ? `Did you mean '${suggestion}'?` : undefined,
+      "Use notion_inspect_data_source to confirm current options.",
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
+}
+
+function getOptionNames(schema: DatabasePropertyConfig): string[] {
+  const config = schema[schema.type] as
+    | { options?: Array<{ name?: unknown }> }
+    | undefined;
+
+  return (config?.options || [])
+    .map((option) => option.name)
+    .filter((name): name is string => typeof name === "string");
+}
+
+function findCaseInsensitiveOption(
+  optionName: string,
+  options: string[]
+): string | undefined {
+  return options.find(
+    (option) => option.toLocaleLowerCase() === optionName.toLocaleLowerCase()
+  );
 }
 
 function nullableString(propertyName: string, value: unknown): string | null {

@@ -63,7 +63,7 @@ function resourceTextByUri(uri: string): string {
         "",
         "- Use `notion_append_content` for everyday paragraphs, headings, todos, lists, quotes, callouts, code, and dividers.",
         "- Use `notion_update_content` with block IDs from `notion_read_page` to update existing simple blocks.",
-        "- Use `notion_create_data_source_item_from_values` for simple data source item creation.",
+        "- Use `notion_create_data_source_item_from_values` for simple data source item creation; it validates select/status/multi_select options against the schema.",
         "- Use raw JSON tools only when the simplified tools do not support the requested block or property type.",
       ].join("\n");
     case "notion://server/tools":
