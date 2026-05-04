@@ -229,6 +229,10 @@ All tools support the following optional parameter:
 
 - `format` (string, "json" or "markdown", default: "markdown"): Controls the response format. Use "markdown" for human-readable output, "json" for programmatic access to the original data structure. Note: Markdown conversion only works when the `NOTION_MARKDOWN_CONVERSION` environment variable is set to "true".
 
+List-heavy read tools also support:
+
+- `response_mode` (string, "auto", "compact", or "full", default: "auto"): Controls how much Notion API detail is returned. Keep the default `auto` for normal AI use; the server returns compact summaries when a large list response would add noise. Use `"full"` only when raw Notion API objects are required for an advanced operation.
+
 1. `notion_append_block_children`
 
    - Append child blocks to a parent block.

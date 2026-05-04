@@ -1,8 +1,11 @@
 import type { RichTextItemResponse } from "../../notion/types.js";
 
+export type ResponseMode = "auto" | "compact" | "full";
+
 export interface ListAllUsersArgs {
   start_cursor?: string;
   page_size?: number;
+  response_mode?: ResponseMode;
   format?: "json" | "markdown";
 }
 
@@ -25,6 +28,7 @@ export interface RetrieveCommentsArgs {
   block_id: string;
   start_cursor?: string;
   page_size?: number;
+  response_mode?: ResponseMode;
   format?: "json" | "markdown";
 }
 
@@ -51,5 +55,6 @@ export interface SearchArgs {
   };
   start_cursor?: string;
   page_size?: number;
+  response_mode?: ResponseMode;
   format?: "json" | "markdown";
 }

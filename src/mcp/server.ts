@@ -56,6 +56,7 @@ import {
   updatePagePropertiesTool,
 } from "../tools/pages/definitions.js";
 import { pageToolHandlers } from "../tools/pages/handlers.js";
+import { optimizeToolResponse } from "../tools/response-optimizer.js";
 import type { ToolHandlerMap } from "../tools/types.js";
 import { filterTools } from "../utils/index.js";
 import {
@@ -241,7 +242,11 @@ export async function executeRegisteredTool(
       throw new Error(`Unknown tool: ${toolName}`);
     }
 
-    const response = await handler(toolArguments, { notionClient });
+    const response = optimizeToolResponse(
+      toolName,
+      await handler(toolArguments, { notionClient }),
+      toolArguments,
+    );
     const requestedFormat =
       typeof toolArguments.format === "string"
         ? toolArguments.format

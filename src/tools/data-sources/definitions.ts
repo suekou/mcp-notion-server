@@ -2,6 +2,7 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import {
   commonIdDescription,
   formatParameter,
+  responseModeParameter,
   richTextObjectSchema,
 } from "../../mcp/schema.js";
 
@@ -138,6 +139,7 @@ export const queryDataSourceTool: Tool = {
         type: "number",
         description: "Number of results per page (max 100)",
       },
+      response_mode: responseModeParameter,
       format: formatParameter,
     },
     required: ["data_source_id"],
@@ -185,6 +187,7 @@ export const queryDataSourceByValuesTool: Tool = {
         type: "number",
         description: "Number of results per page (max 100)",
       },
+      response_mode: responseModeParameter,
       format: formatParameter,
     },
     required: ["data_source_id"],

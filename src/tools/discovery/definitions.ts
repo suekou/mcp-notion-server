@@ -2,6 +2,7 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import {
   commonIdDescription,
   formatParameter,
+  responseModeParameter,
   richTextObjectSchema,
 } from "../../mcp/schema.js";
 
@@ -25,6 +26,7 @@ export const listAllUsersTool: Tool = {
         type: "number",
         description: "Number of users to retrieve (max 100)",
       },
+      response_mode: responseModeParameter,
       format: formatParameter,
     },
   },
@@ -137,6 +139,7 @@ export const retrieveCommentsTool: Tool = {
         type: "number",
         description: "Number of comments to retrieve (max 100).",
       },
+      response_mode: responseModeParameter,
       format: formatParameter,
     },
     required: ["block_id"],
@@ -258,6 +261,7 @@ export const searchTool: Tool = {
         type: "number",
         description: "Number of results to return (max 100). ",
       },
+      response_mode: responseModeParameter,
       format: formatParameter,
     },
   },

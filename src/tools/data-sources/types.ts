@@ -3,6 +3,7 @@ import type { SimplePropertyValues } from "./properties.js";
 import type { SimpleDataSourceFilter, SimpleDataSourceSort } from "./query.js";
 
 export type NotionJsonObject = Record<string, unknown>;
+export type ResponseMode = "auto" | "compact" | "full";
 
 export interface CreateDataSourceArgs {
   parent: {
@@ -25,6 +26,7 @@ export interface QueryDataSourceArgs {
   }>;
   start_cursor?: string;
   page_size?: number;
+  response_mode?: ResponseMode;
   format?: "json" | "markdown";
 }
 
@@ -35,6 +37,7 @@ export interface QueryDataSourceByValuesArgs {
   sorts?: SimpleDataSourceSort[];
   start_cursor?: string;
   page_size?: number;
+  response_mode?: ResponseMode;
   format?: "json" | "markdown";
 }
 
