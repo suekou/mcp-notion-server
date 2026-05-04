@@ -37,6 +37,9 @@ describe("MCP server helpers", () => {
     const createFromValues = tools.find(
       (tool) => tool.name === "notion_create_data_source_item_from_values",
     );
+    const createDatabase = tools.find(
+      (tool) => tool.name === "notion_create_database",
+    );
     const openFinderApp = tools.find(
       (tool) => tool.name === "notion_open_finder_app",
     );
@@ -93,6 +96,11 @@ describe("MCP server helpers", () => {
       readOnlyHint: false,
       destructiveHint: false,
     });
+    expect(createDatabase?.annotations).toMatchObject({
+      title: "Create Database",
+      readOnlyHint: false,
+      destructiveHint: false,
+    });
     expect(openFinderApp?.annotations).toMatchObject({
       title: "Open Notion Finder",
       readOnlyHint: true,
@@ -121,6 +129,7 @@ describe("MCP server helpers", () => {
     expect(getServerInstructions()).toContain(
       "Use high-level Notion tools first",
     );
+    expect(getServerInstructions()).toContain("Use notion_create_database");
     expect(getServerInstructions()).toContain("Prefer data_source_id");
   });
 

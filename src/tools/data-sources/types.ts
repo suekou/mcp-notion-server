@@ -5,11 +5,27 @@ import type { SimpleDataSourceFilter, SimpleDataSourceSort } from "./query.js";
 export type NotionJsonObject = Record<string, unknown>;
 export type ResponseMode = "auto" | "compact" | "full";
 
-export interface CreateDataSourceArgs {
+export interface CreateDatabaseArgs {
   parent: {
     type: string;
     page_id?: string;
     workspace?: boolean;
+  };
+  title?: RichTextItemResponse[];
+  description?: RichTextItemResponse[];
+  is_inline?: boolean;
+  initial_data_source: {
+    properties: NotionJsonObject;
+  };
+  icon?: NotionJsonObject;
+  cover?: NotionJsonObject;
+  format?: "json" | "markdown";
+}
+
+export interface CreateDataSourceArgs {
+  parent: {
+    type: string;
+    database_id?: string;
   };
   title?: RichTextItemResponse[];
   properties: NotionJsonObject;

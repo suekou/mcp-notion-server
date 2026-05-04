@@ -89,6 +89,7 @@ function resourceTextByUri(uri: string): string {
         "",
         "- Blocks: `notion_append_block_children`, `notion_append_content`, `notion_append_markdown`, `notion_update_content`, `notion_update_content_batch`, `notion_retrieve_block`, `notion_retrieve_block_children`, `notion_update_block`, `notion_delete_block`.",
         "- Pages: `notion_retrieve_page`, `notion_read_page`, `notion_update_page_properties`.",
+        "- Databases: `notion_create_database`, `notion_retrieve_database`.",
         "- Data sources: `notion_create_data_source`, `notion_query_data_source`, `notion_query_data_source_by_values`, `notion_retrieve_data_source`, `notion_update_data_source`, `notion_create_data_source_item`.",
         "- Discovery: `notion_retrieve_database`, `notion_search`.",
         "- Comments and users: `notion_create_comment`, `notion_retrieve_comments`, `notion_list_all_users`, `notion_retrieve_user`, `notion_retrieve_bot_user`.",

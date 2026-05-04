@@ -8,6 +8,7 @@ import {
   validateSimpleDataSourceQueryInput,
 } from "./query.js";
 import type {
+  CreateDatabaseArgs,
   CreateDataSourceArgs,
   CreateDataSourceItemArgs,
   CreateDataSourceItemFromValuesArgs,
@@ -58,6 +59,16 @@ export const dataSourceToolHandlers: ToolHandlerMap = {
       args.start_cursor,
       args.page_size,
     );
+  },
+
+  async notion_create_database(toolArguments, { notionClient }) {
+    const args = toolArguments as unknown as CreateDatabaseArgs;
+    if (!args.parent || !args.initial_data_source?.properties) {
+      throw new Error(
+        "Missing required arguments: parent and initial_data_source.properties",
+      );
+    }
+    return notionClient.createDatabase(args);
   },
 
   async notion_create_data_source(toolArguments, { notionClient }) {

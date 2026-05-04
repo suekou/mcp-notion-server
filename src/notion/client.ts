@@ -4,7 +4,10 @@
 
 import { convertToMarkdown } from "../markdown/index.js";
 import type { AppendBlockChildrenPosition } from "../tools/blocks/types.js";
-import type { CreateDataSourceArgs } from "../tools/data-sources/types.js";
+import type {
+  CreateDatabaseArgs,
+  CreateDataSourceArgs,
+} from "../tools/data-sources/types.js";
 import { NotionApiError } from "./errors.js";
 import type {
   BlockResponse,
@@ -209,6 +212,23 @@ export class NotionClientWrapper {
     const body = { parent, title, properties };
 
     return this.request<DataSourceResponse>("/data_sources", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async createDatabase(args: CreateDatabaseArgs): Promise<DatabaseResponse> {
+    const body: NotionJsonObject = {
+      parent: args.parent,
+      initial_data_source: args.initial_data_source,
+    };
+    if (args.title) body.title = args.title;
+    if (args.description) body.description = args.description;
+    if (typeof args.is_inline === "boolean") body.is_inline = args.is_inline;
+    if (args.icon) body.icon = args.icon;
+    if (args.cover) body.cover = args.cover;
+
+    return this.request<DatabaseResponse>("/databases", {
       method: "POST",
       body: JSON.stringify(body),
     });
