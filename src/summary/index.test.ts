@@ -1,9 +1,6 @@
 import { describe, expect, test } from "vitest";
-import {
-  summarizeDataSourceSchema,
-  summarizeFindResults,
-} from "./index.js";
-import { DataSourceResponse, ListResponse } from "../types/index.js";
+import type { DataSourceResponse, ListResponse } from "../types/index.js";
+import { summarizeDataSourceSchema, summarizeFindResults } from "./index.js";
 
 describe("summary helpers", () => {
   test("should summarize search results into compact find candidates", () => {

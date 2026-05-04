@@ -58,7 +58,7 @@ function resourceTextByUri(uri: string): string {
         "- Use `notion_read_page` for page metadata plus compact block outlines or Markdown.",
         "- Use `notion_retrieve_page` only when you need raw page metadata.",
         "- Use `notion_retrieve_block_children` for low-level page or block content pagination.",
-        "- Use `format: \"markdown\"` for human reading when markdown conversion is enabled; use `format: \"json\"` before programmatic edits.",
+        '- Use `format: "markdown"` for human reading when markdown conversion is enabled; use `format: "json"` before programmatic edits.',
         "",
         "## Writing",
         "",

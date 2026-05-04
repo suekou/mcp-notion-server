@@ -53,52 +53,59 @@ const SIMPLE_CONTENT_TYPES = [
 ] as const;
 
 const EDITABLE_SIMPLE_CONTENT_TYPES = SIMPLE_CONTENT_TYPES.filter(
-  (type) => type !== "divider"
+  (type) => type !== "divider",
 );
 
 export function validateAppendPosition(position: unknown): void {
   if (position === undefined) return;
   if (!isRecord(position)) {
     throw new Error(
-      "position must be an object: { type: 'start' }, { type: 'end' }, or { type: 'after_block', after_block: { id } }."
+      "position must be an object: { type: 'start' }, { type: 'end' }, or { type: 'after_block', after_block: { id } }.",
     );
   }
 
   if (position.type === "start" || position.type === "end") return;
 
   if (position.type === "after_block") {
-    if (!isRecord(position.after_block) || typeof position.after_block.id !== "string") {
+    if (
+      !isRecord(position.after_block) ||
+      typeof position.after_block.id !== "string"
+    ) {
       throw new Error(
-        "position.after_block.id must be a block ID string when position.type is 'after_block'."
+        "position.after_block.id must be a block ID string when position.type is 'after_block'.",
       );
     }
     return;
   }
 
-  throw new Error(
-    "position.type must be one of: start, end, after_block."
-  );
+  throw new Error("position.type must be one of: start, end, after_block.");
 }
 
-export function validateSimpleContentItems(items: unknown): asserts items is SimpleContentItem[] {
+export function validateSimpleContentItems(
+  items: unknown,
+): asserts items is SimpleContentItem[] {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error("items must be a non-empty array of simple content items.");
   }
 
-  items.forEach((item, index) => validateSimpleContentItem(item, `items[${index}]`));
+  items.forEach((item, index) =>
+    validateSimpleContentItem(item, `items[${index}]`),
+  );
 }
 
 export function validateSimpleEditableContentItem(
-  item: unknown
+  item: unknown,
 ): asserts item is SimpleEditableContentItem {
   validateSimpleContentItem(item, "item", true);
 }
 
 export function validateSimpleContentUpdates(
-  updates: unknown
+  updates: unknown,
 ): asserts updates is SimpleContentUpdate[] {
   if (!Array.isArray(updates) || updates.length === 0) {
-    throw new Error("updates must be a non-empty array of simple content updates.");
+    throw new Error(
+      "updates must be a non-empty array of simple content updates.",
+    );
   }
 
   updates.forEach((update, index) => {
@@ -114,12 +121,14 @@ export function validateSimpleContentUpdates(
 }
 
 export function buildBlocksFromSimpleContent(
-  items: SimpleContentItem[]
+  items: SimpleContentItem[],
 ): Partial<BlockResponse>[] {
   return items.map((item) => buildBlockFromSimpleContent(item));
 }
 
-export function parseMarkdownToSimpleContent(markdown: string): SimpleContentItem[] {
+export function parseMarkdownToSimpleContent(
+  markdown: string,
+): SimpleContentItem[] {
   const items: SimpleContentItem[] = [];
   const paragraphLines: string[] = [];
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
@@ -184,7 +193,7 @@ export function parseMarkdownToSimpleContent(markdown: string): SimpleContentIte
 }
 
 export function buildBlockUpdateFromSimpleContent(
-  item: SimpleContentItem
+  item: SimpleContentItem,
 ): Partial<BlockResponse> {
   if (item.type === "divider") {
     throw new Error("Divider blocks do not have editable content");
@@ -203,11 +212,11 @@ export function buildBlockUpdateFromSimpleContent(
 
 export function validateSimpleContentUpdatesAgainstBlocks(
   updates: SimpleContentUpdate[],
-  blocks: BlockResponse[]
+  blocks: BlockResponse[],
 ): void {
   if (updates.length !== blocks.length) {
     throw new Error(
-      `Expected ${updates.length} blocks for validation, received ${blocks.length}.`
+      `Expected ${updates.length} blocks for validation, received ${blocks.length}.`,
     );
   }
 
@@ -215,13 +224,13 @@ export function validateSimpleContentUpdatesAgainstBlocks(
     const block = blocks[index];
     if (block.id !== update.block_id) {
       throw new Error(
-        `Block validation order mismatch: expected ${update.block_id}, received ${block.id}.`
+        `Block validation order mismatch: expected ${update.block_id}, received ${block.id}.`,
       );
     }
 
     if (block.type !== update.item.type) {
       throw new Error(
-        `Block type mismatch: block ${update.block_id} is ${block.type}, but item.type was ${update.item.type}`
+        `Block type mismatch: block ${update.block_id} is ${block.type}, but item.type was ${update.item.type}`,
       );
     }
   });
@@ -281,7 +290,7 @@ function parseMarkdownLine(line: string): SimpleContentItem | undefined {
 
 function flushParagraph(
   items: SimpleContentItem[],
-  paragraphLines: string[]
+  paragraphLines: string[],
 ): void {
   if (paragraphLines.length === 0) return;
   items.push({
@@ -292,7 +301,7 @@ function flushParagraph(
 }
 
 function buildBlockFromSimpleContent(
-  item: SimpleContentItem
+  item: SimpleContentItem,
 ): Partial<BlockResponse> {
   switch (item.type) {
     case "paragraph":
@@ -349,7 +358,7 @@ function buildBlockFromSimpleContent(
 function validateSimpleContentItem(
   item: unknown,
   path: string,
-  editableOnly = false
+  editableOnly = false,
 ): asserts item is SimpleContentItem {
   if (!isRecord(item)) {
     throw new Error(`${path} must be an object with a supported type.`);
@@ -358,10 +367,11 @@ function validateSimpleContentItem(
   const allowedTypes = editableOnly
     ? EDITABLE_SIMPLE_CONTENT_TYPES
     : SIMPLE_CONTENT_TYPES;
-  if (typeof item.type !== "string" || !allowedTypes.includes(item.type as any)) {
-    throw new Error(
-      `${path}.type must be one of: ${allowedTypes.join(", ")}.`
-    );
+  if (
+    typeof item.type !== "string" ||
+    !allowedTypes.includes(item.type as any)
+  ) {
+    throw new Error(`${path}.type must be one of: ${allowedTypes.join(", ")}.`);
   }
 
   if (item.type !== "divider" && typeof item.text !== "string") {
@@ -387,7 +397,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function richTextBlock(
   type: "paragraph" | "quote" | "bulleted_list_item" | "numbered_list_item",
-  text: string
+  text: string,
 ): Partial<BlockResponse> {
   return {
     object: "block",

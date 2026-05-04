@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import type { BlockResponse } from "../types/index.js";
 import {
   buildBlocksFromSimpleContent,
   buildBlockUpdateFromSimpleContent,
@@ -6,10 +7,9 @@ import {
   validateAppendPosition,
   validateSimpleContentItems,
   validateSimpleContentUpdates,
-  validateSimpleEditableContentItem,
   validateSimpleContentUpdatesAgainstBlocks,
+  validateSimpleEditableContentItem,
 } from "./index.js";
-import type { BlockResponse } from "../types/index.js";
 
 describe("content block builder", () => {
   test("should build common Notion blocks from simple content", () => {
@@ -20,7 +20,7 @@ describe("content block builder", () => {
         { type: "to_do", text: "Write tests", checked: true },
         { type: "code", text: "console.log('ok')", language: "javascript" },
         { type: "divider" },
-      ])
+      ]),
     ).toEqual([
       {
         object: "block",
@@ -90,7 +90,7 @@ describe("content block builder", () => {
       buildBlockUpdateFromSimpleContent({
         type: "paragraph",
         text: "Updated text",
-      })
+      }),
     ).toEqual({
       paragraph: {
         rich_text: [
@@ -106,7 +106,7 @@ describe("content block builder", () => {
 
   test("should reject divider updates because they have no editable content", () => {
     expect(() =>
-      buildBlockUpdateFromSimpleContent({ type: "divider" })
+      buildBlockUpdateFromSimpleContent({ type: "divider" }),
     ).toThrow("Divider blocks do not have editable content");
   });
 
@@ -117,11 +117,8 @@ describe("content block builder", () => {
           { block_id: "block-a", item: { type: "paragraph", text: "A" } },
           { block_id: "block-b", item: { type: "to_do", text: "B" } },
         ],
-        [
-          block("block-a", "paragraph"),
-          block("block-b", "to_do"),
-        ]
-      )
+        [block("block-a", "paragraph"), block("block-b", "to_do")],
+      ),
     ).not.toThrow();
   });
 
@@ -129,10 +126,10 @@ describe("content block builder", () => {
     expect(() =>
       validateSimpleContentUpdatesAgainstBlocks(
         [{ block_id: "block-a", item: { type: "paragraph", text: "A" } }],
-        [block("block-a", "heading_2")]
-      )
+        [block("block-a", "heading_2")],
+      ),
     ).toThrow(
-      "Block type mismatch: block block-a is heading_2, but item.type was paragraph"
+      "Block type mismatch: block block-a is heading_2, but item.type was paragraph",
     );
   });
 
@@ -154,8 +151,8 @@ describe("content block builder", () => {
           "```ts",
           "const ok = true;",
           "```",
-        ].join("\n")
-      )
+        ].join("\n"),
+      ),
     ).toEqual([
       { type: "heading_1", text: "Title" },
       { type: "paragraph", text: "First paragraph continues here." },
@@ -171,40 +168,45 @@ describe("content block builder", () => {
 
   test("should reject malformed simple content before building blocks", () => {
     expect(() => validateSimpleContentItems("not-array")).toThrow(
-      "items must be a non-empty array"
+      "items must be a non-empty array",
+    );
+    expect(() => validateSimpleContentItems([{ type: "paragraph" }])).toThrow(
+      "items[0].text must be a string for paragraph content",
     );
     expect(() =>
-      validateSimpleContentItems([{ type: "paragraph" }])
-    ).toThrow("items[0].text must be a string for paragraph content");
-    expect(() =>
-      validateSimpleContentItems([{ type: "table", text: "Unsupported" }])
+      validateSimpleContentItems([{ type: "table", text: "Unsupported" }]),
     ).toThrow("items[0].type must be one of");
   });
 
   test("should reject malformed editable content and update batches", () => {
-    expect(() => validateSimpleEditableContentItem({ type: "divider" })).toThrow(
-      "item.type must be one of"
-    );
     expect(() =>
-      validateSimpleContentUpdates([{ block_id: "", item: { type: "paragraph", text: "A" } }])
+      validateSimpleEditableContentItem({ type: "divider" }),
+    ).toThrow("item.type must be one of");
+    expect(() =>
+      validateSimpleContentUpdates([
+        { block_id: "", item: { type: "paragraph", text: "A" } },
+      ]),
     ).toThrow("updates[0].block_id must be a non-empty block ID string");
     expect(() =>
       validateSimpleContentUpdates([
         { block_id: "block-a", item: { type: "paragraph" } },
-      ])
+      ]),
     ).toThrow("updates[0].item.text must be a string for paragraph content");
   });
 
   test("should validate append positions", () => {
     expect(() => validateAppendPosition({ type: "start" })).not.toThrow();
     expect(() =>
-      validateAppendPosition({ type: "after_block", after_block: { id: "block-a" } })
+      validateAppendPosition({
+        type: "after_block",
+        after_block: { id: "block-a" },
+      }),
     ).not.toThrow();
     expect(() => validateAppendPosition({ type: "after_block" })).toThrow(
-      "position.after_block.id must be a block ID string"
+      "position.after_block.id must be a block ID string",
     );
     expect(() => validateAppendPosition({ type: "middle" })).toThrow(
-      "position.type must be one of"
+      "position.type must be one of",
     );
   });
 });

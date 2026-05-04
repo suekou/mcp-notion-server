@@ -37,7 +37,8 @@ export const richTextObjectSchema = {
         },
         link: {
           type: "object",
-          description: "Optional link object with a 'url' field. Do NOT provide a NULL value, just ignore this field no link.",
+          description:
+            "Optional link object with a 'url' field. Do NOT provide a NULL value, just ignore this field no link.",
           properties: {
             url: {
               type: "string",
@@ -187,7 +188,8 @@ export const richTextObjectSchema = {
     },
     annotations: {
       type: "object",
-      description: "Styling information for the text. By default, give nothing for default text.",
+      description:
+        "Styling information for the text. By default, give nothing for default text.",
       properties: {
         bold: { type: "boolean" },
         italic: { type: "boolean" },
@@ -223,7 +225,8 @@ export const richTextObjectSchema = {
     },
     href: {
       type: "string",
-      description: "The URL of any link or mention in this text, if any. Do NOT provide a NULL value, just ignore this field if there is no link or mention.",
+      description:
+        "The URL of any link or mention in this text, if any. Do NOT provide a NULL value, just ignore this field if there is no link or mention.",
     },
     plain_text: {
       type: "string",
@@ -299,7 +302,8 @@ export const blockObjectSchema = {
       properties: {
         rich_text: {
           type: "array",
-          description: "Array of rich text objects representing the heading content.",
+          description:
+            "Array of rich text objects representing the heading content.",
           items: richTextObjectSchema,
         },
         color: {
@@ -339,7 +343,8 @@ export const blockObjectSchema = {
       properties: {
         rich_text: {
           type: "array",
-          description: "Array of rich text objects representing the heading content.",
+          description:
+            "Array of rich text objects representing the heading content.",
           items: richTextObjectSchema,
         },
         color: {
@@ -379,7 +384,8 @@ export const blockObjectSchema = {
       properties: {
         rich_text: {
           type: "array",
-          description: "Array of rich text objects representing the heading content.",
+          description:
+            "Array of rich text objects representing the heading content.",
           items: richTextObjectSchema,
         },
         color: {
@@ -419,7 +425,8 @@ export const blockObjectSchema = {
       properties: {
         rich_text: {
           type: "array",
-          description: "Array of rich text objects representing the list item content.",
+          description:
+            "Array of rich text objects representing the list item content.",
           items: richTextObjectSchema,
         },
         color: {
@@ -463,7 +470,8 @@ export const blockObjectSchema = {
       properties: {
         rich_text: {
           type: "array",
-          description: "Array of rich text objects representing the list item content.",
+          description:
+            "Array of rich text objects representing the list item content.",
           items: richTextObjectSchema,
         },
         color: {
@@ -507,7 +515,8 @@ export const blockObjectSchema = {
       properties: {
         rich_text: {
           type: "array",
-          description: "Array of rich text objects representing the toggle content.",
+          description:
+            "Array of rich text objects representing the toggle content.",
           items: richTextObjectSchema,
         },
         color: {
@@ -537,7 +546,8 @@ export const blockObjectSchema = {
         },
         children: {
           type: "array",
-          description: "Nested child blocks that are revealed when the toggle is opened.",
+          description:
+            "Nested child blocks that are revealed when the toggle is opened.",
           items: {
             type: "object",
             description: "A nested block object.",

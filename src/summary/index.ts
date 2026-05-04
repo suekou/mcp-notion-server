@@ -1,7 +1,7 @@
-import {
-  DataSourceResponse,
+import type {
   DatabasePropertyConfig,
   DatabaseResponse,
+  DataSourceResponse,
   ListResponse,
   PageProperty,
   PageResponse,
@@ -56,7 +56,7 @@ export type DataSourceSchemaSummary = {
 
 export function summarizeFindResults(
   response: ListResponse,
-  query?: string
+  query?: string,
 ): NotionFindSummary {
   return {
     object: "notion_find_results",
@@ -70,10 +70,10 @@ export function summarizeFindResults(
 }
 
 export function summarizeDataSourceSchema(
-  dataSource: DataSourceResponse
+  dataSource: DataSourceResponse,
 ): DataSourceSchemaSummary {
   const properties = Object.entries(dataSource.properties || {}).map(
-    ([name, property]) => summarizeProperty(name, property)
+    ([name, property]) => summarizeProperty(name, property),
   );
 
   return {
@@ -127,7 +127,7 @@ function summarizeFindableObject(item: FindableObject): NotionFindResult {
 
 function summarizeProperty(
   name: string,
-  property: DatabasePropertyConfig
+  property: DatabasePropertyConfig,
 ): DataSourcePropertySummary {
   const summary: DataSourcePropertySummary = {
     name: property.name || name,
@@ -154,7 +154,7 @@ function extractOptions(property: DatabasePropertyConfig): string[] {
   }
   if (property.type === "multi_select") {
     return (property.multi_select?.options || []).map(
-      (option: any) => option.name
+      (option: any) => option.name,
     );
   }
   if (property.type === "status") {
@@ -170,7 +170,7 @@ function isFindableObject(item: unknown): item is FindableObject {
     typeof item === "object" &&
     "object" in item &&
     ["page", "database", "data_source"].includes(
-      (item as { object: string }).object
+      (item as { object: string }).object,
     )
   );
 }

@@ -1,14 +1,15 @@
 import { describe, expect, test } from "vitest";
-import {
-  buildPageReadSummary,
-  readPageBlockTree,
-} from "./index.js";
-import type { BlockResponse, ListResponse, PageResponse } from "../types/index.js";
+import type {
+  BlockResponse,
+  ListResponse,
+  PageResponse,
+} from "../types/index.js";
+import { buildPageReadSummary, readPageBlockTree } from "./index.js";
 
 describe("page read helpers", () => {
   test("should read nested page blocks with stable outline IDs", async () => {
     const fetchBlockChildren = async (
-      blockId: string
+      blockId: string,
     ): Promise<ListResponse> => ({
       object: "list",
       next_cursor: null,
@@ -60,7 +61,7 @@ describe("page read helpers", () => {
     expect(summary.content.markdown).toContain("# Plan");
     expect(summary.content.markdown).toContain("- [ ] Ship MCP refresh");
     expect(summary.content.markdown).toContain(
-      '<!-- notion:block id="todo1" type="to_do" -->'
+      '<!-- notion:block id="todo1" type="to_do" -->',
     );
   });
 
@@ -92,7 +93,6 @@ describe("page read helpers", () => {
       truncated: true,
     });
   });
-
 });
 
 const page: PageResponse = {

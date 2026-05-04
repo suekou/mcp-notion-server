@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
+import type { DataSourceResponse } from "../types/index.js";
 import { buildPagePropertiesFromSimpleValues } from "./index.js";
-import { DataSourceResponse } from "../types/index.js";
 
 const dataSource: DataSourceResponse = {
   object: "data_source",
@@ -62,7 +62,7 @@ describe("property value builder", () => {
         Done: true,
         Estimate: 3,
         Related: ["page-a", "page-b"],
-      })
+      }),
     ).toEqual({
       Name: {
         title: [
@@ -94,27 +94,27 @@ describe("property value builder", () => {
 
   test("should reject unknown properties", () => {
     expect(() =>
-      buildPagePropertiesFromSimpleValues(dataSource, { Missing: "value" })
+      buildPagePropertiesFromSimpleValues(dataSource, { Missing: "value" }),
     ).toThrow("Unknown property 'Missing'");
   });
 
   test("should reject non-object simple values", () => {
     expect(() =>
-      buildPagePropertiesFromSimpleValues(dataSource, ["Name"] as any)
+      buildPagePropertiesFromSimpleValues(dataSource, ["Name"] as any),
     ).toThrow("values must be an object keyed by exact Notion property names");
   });
 
   test("should reject unknown select options with valid choices", () => {
     expect(() =>
-      buildPagePropertiesFromSimpleValues(dataSource, { Priority: "Urgent" })
+      buildPagePropertiesFromSimpleValues(dataSource, { Priority: "Urgent" }),
     ).toThrow(
-      "Property 'Priority' does not have option 'Urgent'. Valid options: High, Low."
+      "Property 'Priority' does not have option 'Urgent'. Valid options: High, Low.",
     );
   });
 
   test("should suggest case-insensitive option matches", () => {
     expect(() =>
-      buildPagePropertiesFromSimpleValues(dataSource, { Status: "done" })
+      buildPagePropertiesFromSimpleValues(dataSource, { Status: "done" }),
     ).toThrow("Did you mean 'Done'?");
   });
 
@@ -122,9 +122,9 @@ describe("property value builder", () => {
     expect(() =>
       buildPagePropertiesFromSimpleValues(dataSource, {
         Tags: ["AI", "Docs"],
-      })
+      }),
     ).toThrow(
-      "Property 'Tags' does not have option 'Docs'. Valid options: AI, Notion."
+      "Property 'Tags' does not have option 'Docs'. Valid options: AI, Notion.",
     );
   });
 });

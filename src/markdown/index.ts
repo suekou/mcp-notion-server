@@ -1,14 +1,14 @@
 import type {
   BlockResponse,
-  DataSourceResponse,
+  CommentResponse,
   DatabaseResponse,
+  DataSourceResponse,
   ListResponse,
   NotionResponse,
   PageProperty,
   PageResponse,
   RichTextItemResponse,
   UserResponse,
-  CommentResponse,
 } from "../types/index.js";
 
 export type MarkdownRenderOptions = {
@@ -25,7 +25,7 @@ export type MarkdownBlockNode = {
 };
 
 export function convertToMarkdown(
-  response: NotionResponse | null | undefined
+  response: NotionResponse | null | undefined,
 ): string {
   if (!response) return "";
 
@@ -51,7 +51,7 @@ export function convertToMarkdown(
 
 export function renderBlockToMarkdown(
   block: BlockResponse,
-  options: MarkdownRenderOptions = {}
+  options: MarkdownRenderOptions = {},
 ): string {
   const body = renderBlockBody(block, options);
   if (!options.includeBlockMetadata) return body;
@@ -62,7 +62,7 @@ export function renderBlockToMarkdown(
 
 export function renderMarkdownBlockTree(
   blocks: MarkdownBlockNode[],
-  options: { includeBlockMetadata?: boolean } = {}
+  options: { includeBlockMetadata?: boolean } = {},
 ): string {
   return blocks
     .map((block) => renderMarkdownNode(block, 0, options))
@@ -71,18 +71,24 @@ export function renderMarkdownBlockTree(
 }
 
 export function renderRichTextToMarkdown(
-  richTextArray: RichTextItemResponse[] | undefined
+  richTextArray: RichTextItemResponse[] | undefined,
 ): string {
   if (!Array.isArray(richTextArray)) return "";
   return richTextArray.map(renderRichTextItemToMarkdown).join("");
 }
 
 export function renderRichTextToPlainText(
-  richTextArray: RichTextItemResponse[] | undefined
+  richTextArray: RichTextItemResponse[] | undefined,
 ): string {
   if (!Array.isArray(richTextArray)) return "";
   return richTextArray
-    .map((item) => item.plain_text || item.text?.content || item.equation?.expression || "")
+    .map(
+      (item) =>
+        item.plain_text ||
+        item.text?.content ||
+        item.equation?.expression ||
+        "",
+    )
     .join("");
 }
 
@@ -112,7 +118,7 @@ function renderPageResponse(page: PageResponse): string {
 }
 
 function renderDatabaseLikeResponse(
-  database: DatabaseResponse | DataSourceResponse
+  database: DatabaseResponse | DataSourceResponse,
 ): string {
   const title = renderRichTextToPlainText(database.title) || "Untitled";
   const label = database.object === "data_source" ? "Data Source" : "Database";
@@ -157,7 +163,9 @@ function renderListResponse(list: ListResponse): string {
     user: "Users",
     comment: "Comments",
   };
-  const rendered = list.results.map((item) => renderListItem(item)).join("\n\n---\n\n");
+  const rendered = list.results
+    .map((item) => renderListItem(item))
+    .join("\n\n---\n\n");
   const pagination = list.has_more
     ? [
         "> More results are available.",
@@ -246,7 +254,7 @@ function renderCommentResponse(comment: CommentResponse): string {
 
 function renderBlockBody(
   block: BlockResponse,
-  options: MarkdownRenderOptions
+  options: MarkdownRenderOptions,
 ): string {
   const blockType = block.type;
   const content = block[blockType] || {};
@@ -277,13 +285,13 @@ function renderBlockBody(
         [renderIcon(content.icon), renderRichTextToMarkdown(content.rich_text)]
           .filter(Boolean)
           .join(" "),
-        "> "
+        "> ",
       );
     case "code":
       return renderCodeBlock(
         renderRichTextToPlainText(content.rich_text),
         content.language,
-        content.caption
+        content.caption,
       );
     case "meeting_notes":
       return joinSections([
@@ -307,12 +315,12 @@ function renderBlockBody(
     case "bookmark":
       return renderCaptionedLink(
         renderRichTextToPlainText(content.caption) || content.url || "Bookmark",
-        content.url
+        content.url,
       );
     case "embed":
       return renderCaptionedLink(
         renderRichTextToPlainText(content.caption) || content.url || "Embed",
-        content.url
+        content.url,
       );
     case "link_preview":
       return renderCaptionedLink(content.url || "Link preview", content.url);
@@ -356,7 +364,7 @@ function renderBlockBody(
 function renderMarkdownNode(
   node: MarkdownBlockNode,
   depth: number,
-  options: { includeBlockMetadata?: boolean }
+  options: { includeBlockMetadata?: boolean },
 ): string {
   const metadata =
     options.includeBlockMetadata === false
@@ -406,7 +414,9 @@ function renderRichTextItemToMarkdown(item: RichTextItemResponse): string {
   return text;
 }
 
-function renderPageProperties(properties: Record<string, PageProperty>): string {
+function renderPageProperties(
+  properties: Record<string, PageProperty>,
+): string {
   const rows = Object.entries(properties || {}).map(([name, property]) => [
     name,
     property.id,
@@ -418,16 +428,24 @@ function renderPageProperties(properties: Record<string, PageProperty>): string 
 }
 
 function renderPropertySchema(
-  properties: Record<string, { id: string; name?: string; type: string; [key: string]: any }>
+  properties: Record<
+    string,
+    { id: string; name?: string; type: string; [key: string]: any }
+  >,
 ): string {
-  const rows = Object.entries(properties || {}).map(([fallbackName, property]) => [
-    property.name || fallbackName,
-    property.id,
-    property.type,
-    renderPropertySchemaDetails(property),
-  ]);
+  const rows = Object.entries(properties || {}).map(
+    ([fallbackName, property]) => [
+      property.name || fallbackName,
+      property.id,
+      property.type,
+      renderPropertySchemaDetails(property),
+    ],
+  );
 
-  return joinSections(["## Properties", renderTable(["Property Name", "ID", "Type", "Details"], rows, false)]);
+  return joinSections([
+    "## Properties",
+    renderTable(["Property Name", "ID", "Type", "Details"], rows, false),
+  ]);
 }
 
 function renderPagePropertyValue(property: PageProperty): string {
@@ -441,7 +459,9 @@ function renderPagePropertyValue(property: PageProperty): string {
     case "select":
       return property.select?.name || "";
     case "multi_select":
-      return (property.multi_select || []).map((option: any) => option.name).join(", ");
+      return (property.multi_select || [])
+        .map((option: any) => option.name)
+        .join(", ");
     case "status":
       return property.status?.name || "";
     case "date":
@@ -461,7 +481,9 @@ function renderPagePropertyValue(property: PageProperty): string {
     case "formula":
       return renderTypedValue(property.formula);
     case "relation":
-      return (property.relation || []).map((relation: any) => `\`${relation.id}\``).join(", ");
+      return (property.relation || [])
+        .map((relation: any) => `\`${relation.id}\``)
+        .join(", ");
     case "rollup":
       return renderRollup(property.rollup);
     case "created_by":
@@ -473,7 +495,9 @@ function renderPagePropertyValue(property: PageProperty): string {
     case "last_edited_time":
       return property.last_edited_time || "";
     case "unique_id":
-      return [property.unique_id?.prefix, property.unique_id?.number].filter(Boolean).join("-");
+      return [property.unique_id?.prefix, property.unique_id?.number]
+        .filter(Boolean)
+        .join("-");
     case "verification":
       return property.verification?.state || "";
     default:
@@ -529,7 +553,9 @@ function renderPropertySchemaDetails(property: {
 
 function renderObjectMetadata(metadata: Record<string, unknown>): string {
   const rows = Object.entries(metadata)
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .filter(
+      ([, value]) => value !== undefined && value !== null && value !== "",
+    )
     .map(([key, value]) => `- ${key}: ${formatMetadataValue(value)}`);
 
   return rows.length ? rows.join("\n") : "";
@@ -551,7 +577,7 @@ function renderFallbackBlock(block: BlockResponse): string {
 function renderMediaBlock(
   label: string,
   content: any,
-  asImage = false
+  asImage = false,
 ): string {
   const url = getFileUrl(content);
   const caption = renderRichTextToMarkdown(content.caption);
@@ -571,12 +597,14 @@ function renderCaptionedLink(label: string, url?: string): string {
 function renderCodeBlock(
   code: string,
   language?: string,
-  caption?: RichTextItemResponse[]
+  caption?: RichTextItemResponse[],
 ): string {
   const fence = code.includes("```") ? "````" : "```";
   const rendered = `${fence}${language || ""}\n${code}\n${fence}`;
   const renderedCaption = renderRichTextToMarkdown(caption);
-  return renderedCaption ? `${rendered}\n\nCaption: ${renderedCaption}` : rendered;
+  return renderedCaption
+    ? `${rendered}\n\nCaption: ${renderedCaption}`
+    : rendered;
 }
 
 function renderTableRow(cells: RichTextItemResponse[][] | undefined): string {
@@ -586,8 +614,10 @@ function renderTableRow(cells: RichTextItemResponse[][] | undefined): string {
 
 function renderLinkToPage(content: any): string {
   if (content.page_id) return `Link to page: \`${content.page_id}\``;
-  if (content.data_source_id) return `Link to data source: \`${content.data_source_id}\``;
-  if (content.database_id) return `Link to database: \`${content.database_id}\``;
+  if (content.data_source_id)
+    return `Link to data source: \`${content.data_source_id}\``;
+  if (content.database_id)
+    return `Link to database: \`${content.database_id}\``;
   return "Link to page";
 }
 
@@ -607,7 +637,9 @@ function renderDate(date: any): string {
 function renderRollup(rollup: any): string {
   if (!rollup) return "";
   if (rollup.type === "array") {
-    return (rollup.array || []).map((item: any) => renderTypedValue(item)).join(", ");
+    return (rollup.array || [])
+      .map((item: any) => renderTypedValue(item))
+      .join(", ");
   }
   return renderTypedValue(rollup);
 }
@@ -644,12 +676,15 @@ function renderParent(parent: any): string {
 function renderTable(
   headers: string[],
   rows: Array<Array<unknown>>,
-  includeHeading = true
+  includeHeading = true,
 ): string {
   const table = [
     `| ${headers.map(escapeTableCell).join(" | ")} |`,
     `| ${headers.map(() => "---").join(" | ")} |`,
-    ...rows.map((row) => `| ${row.map((value) => escapeTableCell(valueToString(value))).join(" | ")} |`),
+    ...rows.map(
+      (row) =>
+        `| ${row.map((value) => escapeTableCell(valueToString(value))).join(" | ")} |`,
+    ),
   ].join("\n");
 
   return includeHeading ? joinSections(["## Properties", table]) : table;
@@ -678,7 +713,8 @@ function getFileUrl(content: any): string | undefined {
 function formatMetadataValue(value: unknown): string {
   if (typeof value === "boolean") return value ? "true" : "false";
   if (Array.isArray(value)) return value.map(valueToString).join(", ");
-  if (typeof value === "object" && value !== null) return renderCompactJson(value);
+  if (typeof value === "object" && value !== null)
+    return renderCompactJson(value);
   return valueToString(value);
 }
 
@@ -711,7 +747,11 @@ function prefixLines(text: string, prefix: string): string {
     .join("\n");
 }
 
-function indentNestedMarkdown(text: string, depth: number, type: string): string {
+function indentNestedMarkdown(
+  text: string,
+  depth: number,
+  type: string,
+): string {
   if (!text || depth === 0) return text;
   const shouldIndent = [
     "bulleted_list_item",

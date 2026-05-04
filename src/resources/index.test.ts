@@ -21,7 +21,7 @@ describe("Notion resources", () => {
 
   test("should reject unknown resource URIs", () => {
     expect(() => readNotionResource("notion://server/missing")).toThrow(
-      "Unknown resource URI"
+      "Unknown resource URI",
     );
   });
 });
