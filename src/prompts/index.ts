@@ -123,11 +123,12 @@ export function getNotionPrompt(
           "1. Use `notion_find` with `object_type: \"page\"` if the page ID is not already provided.",
           "2. Use `notion_read_page` when you need existing block IDs or context before choosing an insertion point.",
           "3. Use `notion_plan_page_edit` before applying multi-block edits or when the user wants review first.",
-          "4. Use `notion_append_content` for paragraphs, headings, todos, lists, quotes, callouts, code, and dividers.",
-          "5. Use `notion_update_content` when the user wants to replace text or simple fields in one existing block.",
-          "6. Use `notion_update_content_batch` when several existing simple blocks should be updated together.",
-          "7. Use `notion_append_block_children` or `notion_update_block` only when the requested block type requires raw Notion block JSON.",
-          "8. Keep edited batches reviewable and preserve the user's wording unless they ask for rewriting.",
+          "4. Use `notion_append_markdown` when the content is already Markdown-like and uses supported blocks.",
+          "5. Use `notion_append_content` for structured simple content items.",
+          "6. Use `notion_update_content` when the user wants to replace text or simple fields in one existing block.",
+          "7. Use `notion_update_content_batch` when several existing simple blocks should be updated together.",
+          "8. Use `notion_append_block_children` or `notion_update_block` only when the requested block type requires raw Notion block JSON.",
+          "9. Keep edited batches reviewable and preserve the user's wording unless they ask for rewriting.",
         ].join("\n")
       );
     default:

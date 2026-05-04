@@ -242,6 +242,60 @@ export const appendContentTool: Tool = {
   },
 };
 
+export const appendMarkdownTool: Tool = {
+  name: "notion_append_markdown",
+  description:
+    "Append a safe subset of Markdown to a Notion page or block without writing raw Notion block JSON. Supports headings (#, ##, ###), paragraphs, bullet items, numbered items, todos (- [ ] / - [x]), quotes, dividers, and fenced code blocks. Use this when the user provides Markdown-like content and wants it appended; use raw block tools for tables, images, rich text annotations, nested lists, or advanced Notion blocks.",
+  annotations: {
+    title: "Append Markdown Content",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+  },
+  inputSchema: {
+    type: "object",
+    properties: {
+      block_id: {
+        type: "string",
+        description:
+          "The parent block or page ID to append Markdown content to." +
+          commonIdDescription,
+      },
+      markdown: {
+        type: "string",
+        description:
+          "Markdown content to convert into simple Notion blocks. Unsupported Markdown is treated as plain paragraph text where possible.",
+      },
+      position: {
+        type: "object",
+        description:
+          "Where to insert the content. Omit this to append at the end.",
+        properties: {
+          type: {
+            type: "string",
+            enum: ["after_block", "start", "end"],
+          },
+          after_block: {
+            type: "object",
+            properties: {
+              id: {
+                type: "string",
+                description:
+                  "The existing block ID to insert after." +
+                  commonIdDescription,
+              },
+            },
+            required: ["id"],
+          },
+        },
+        required: ["type"],
+      },
+      format: formatParameter,
+    },
+    required: ["block_id", "markdown"],
+  },
+};
+
 export const updateContentTool: Tool = {
   name: "notion_update_content",
   description:

@@ -23,6 +23,9 @@ describe("MCP server helpers", () => {
     const appendContent = tools.find(
       (tool) => tool.name === "notion_append_content"
     );
+    const appendMarkdown = tools.find(
+      (tool) => tool.name === "notion_append_markdown"
+    );
     const updateContent = tools.find(
       (tool) => tool.name === "notion_update_content"
     );
@@ -65,6 +68,11 @@ describe("MCP server helpers", () => {
     });
     expect(appendContent?.annotations).toMatchObject({
       title: "Append Simple Content",
+      readOnlyHint: false,
+      destructiveHint: false,
+    });
+    expect(appendMarkdown?.annotations).toMatchObject({
+      title: "Append Markdown Content",
       readOnlyHint: false,
       destructiveHint: false,
     });
