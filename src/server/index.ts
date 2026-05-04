@@ -5,17 +5,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
-  CallToolRequest,
   CallToolResult,
-  CallToolRequestSchema,
-  GetPromptRequest,
-  GetPromptRequestSchema,
-  ListToolsRequestSchema,
-  ListPromptsRequestSchema,
   Prompt,
-  ReadResourceRequest,
-  ReadResourceRequestSchema,
-  ListResourcesRequestSchema,
   Resource,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
@@ -48,6 +39,7 @@ import {
   summarizeDataSourceSchema,
   summarizeFindResults,
 } from "../summary/index.js";
+import { promptArgsShape, toolInputSchema } from "./schema.js";
 import { filterTools } from "../utils/index.js";
 import * as schemas from "../types/schemas.js";
 import * as args from "../types/args.js";
@@ -144,20 +136,98 @@ export async function startServer(
       instructions: SERVER_INSTRUCTIONS,
     }
   );
-  const { server } = mcpServer;
 
   const notionClient = new NotionClientWrapper(notionToken);
 
-  server.setRequestHandler(
-    CallToolRequestSchema,
-    async (request: CallToolRequest) => {
-      console.error("Received CallToolRequest:", request);
-      try {
-        const toolArguments = request.params.arguments ?? {};
+  registerNotionTools(
+    mcpServer,
+    notionClient,
+    enabledToolsSet,
+    enableMarkdownConversion
+  );
+  registerNotionPrompts(mcpServer);
+  registerNotionResources(mcpServer);
 
-        let response: unknown;
+  const transport = new StdioServerTransport();
+  await mcpServer.connect(transport);
+}
 
-        switch (request.params.name) {
+function registerNotionTools(
+  server: McpServer,
+  notionClient: NotionClientWrapper,
+  enabledToolsSet: Set<string>,
+  enableMarkdownConversion: boolean
+) {
+  for (const tool of filterTools(getAllTools(), enabledToolsSet)) {
+    server.registerTool(
+      tool.name,
+      {
+        title: tool.annotations?.title,
+        description: tool.description,
+        inputSchema: toolInputSchema(tool),
+        annotations: tool.annotations,
+      },
+      async (toolArguments: unknown) =>
+        executeRegisteredTool(
+          tool.name,
+          toolArguments,
+          notionClient,
+          enableMarkdownConversion
+        )
+    );
+  }
+}
+
+function registerNotionPrompts(server: McpServer) {
+  for (const prompt of getAllPrompts()) {
+    server.registerPrompt(
+      prompt.name,
+      {
+        title: prompt.title,
+        description: prompt.description,
+        argsSchema: promptArgsShape(prompt.arguments),
+      },
+      (promptArguments: unknown) =>
+        getNotionPrompt(
+          prompt.name,
+          promptArguments as Record<string, string> | undefined
+        )
+    );
+  }
+}
+
+function registerNotionResources(server: McpServer) {
+  for (const resource of getAllResources()) {
+    server.registerResource(
+      resource.name,
+      resource.uri,
+      {
+        title: resource.title,
+        description: resource.description,
+        mimeType: resource.mimeType,
+      },
+      (uri) => readNotionResource(uri.toString())
+    );
+  }
+}
+
+export async function executeRegisteredTool(
+  toolName: string,
+  toolArgumentsInput: unknown,
+  notionClient: NotionClientWrapper,
+  enableMarkdownConversion: boolean
+): Promise<CallToolResult> {
+  console.error("Received tool call:", {
+    name: toolName,
+    arguments: toolArgumentsInput,
+  });
+
+  try {
+    const toolArguments = isRecord(toolArgumentsInput) ? toolArgumentsInput : {};
+
+    let response: unknown;
+
+    switch (toolName) {
           case "notion_append_block_children": {
             const args = toolArguments as unknown as args.AppendBlockChildrenArgs;
             if (!args.block_id || !args.children) {
@@ -559,71 +629,35 @@ export async function startServer(
           }
 
           default:
-            throw new Error(`Unknown tool: ${request.params.name}`);
+            throw new Error(`Unknown tool: ${toolName}`);
         }
 
-        // Check format parameter and return appropriate response
-        const requestedFormat = (toolArguments as any)?.format || "markdown";
+    // Check format parameter and return appropriate response
+    const requestedFormat = (toolArguments as any)?.format || "markdown";
 
-        // Only convert to markdown if both conditions are met:
-        // 1. The requested format is markdown
-        // 2. The experimental markdown conversion is enabled via environment variable
-        if (
-          enableMarkdownConversion &&
-          requestedFormat === "markdown" &&
-          isMarkdownConvertibleResponse(response)
-        ) {
-          const markdown = await notionClient.toMarkdown(response);
-          return {
-            content: [{ type: "text", text: markdown }],
-          };
-        } else {
-          return formatJsonToolResult(response);
-        }
-      } catch (error) {
-        console.error("Error executing tool:", error);
-        return formatToolError(error);
-      }
+    // Only convert to markdown if both conditions are met:
+    // 1. The requested format is markdown
+    // 2. The experimental markdown conversion is enabled via environment variable
+    if (
+      enableMarkdownConversion &&
+      requestedFormat === "markdown" &&
+      isMarkdownConvertibleResponse(response)
+    ) {
+      const markdown = await notionClient.toMarkdown(response);
+      return {
+        content: [{ type: "text", text: markdown }],
+      };
+    } else {
+      return formatJsonToolResult(response);
     }
-  );
+  } catch (error) {
+    console.error("Error executing tool:", error);
+    return formatToolError(error);
+  }
+}
 
-  server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return {
-      tools: filterTools(getAllTools(), enabledToolsSet),
-    };
-  });
-
-  server.setRequestHandler(ListPromptsRequestSchema, async () => {
-    return {
-      prompts: getAllPrompts(),
-    };
-  });
-
-  server.setRequestHandler(
-    GetPromptRequestSchema,
-    async (request: GetPromptRequest) => {
-      return getNotionPrompt(
-        request.params.name,
-        request.params.arguments as Record<string, string> | undefined
-      );
-    }
-  );
-
-  server.setRequestHandler(ListResourcesRequestSchema, async () => {
-    return {
-      resources: getAllResources(),
-    };
-  });
-
-  server.setRequestHandler(
-    ReadResourceRequestSchema,
-    async (request: ReadResourceRequest) => {
-      return readNotionResource(request.params.uri);
-    }
-  );
-
-  const transport = new StdioServerTransport();
-  await mcpServer.connect(transport);
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
 function toStructuredContent(response: unknown): Record<string, unknown> {
