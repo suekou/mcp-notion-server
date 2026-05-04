@@ -5,6 +5,7 @@ import {
   getAllPrompts,
   getAllResources,
   getAllTools,
+  getServerInstructions,
 } from "./index.js";
 
 describe("MCP server helpers", () => {
@@ -96,6 +97,22 @@ describe("MCP server helpers", () => {
       type: "text",
       text: JSON.stringify(response, null, 2),
     });
+  });
+
+  test("should provide server instructions for AI workflow guidance", () => {
+    expect(getServerInstructions()).toContain("Use high-level Notion tools first");
+    expect(getServerInstructions()).toContain("Prefer data_source_id");
+  });
+
+  test("should not require dummy arguments for no-argument tools", () => {
+    const botUserTool = getAllTools().find(
+      (tool) => tool.name === "notion_retrieve_bot_user"
+    );
+
+    expect(botUserTool?.inputSchema.required).toBeUndefined();
+    expect(botUserTool?.inputSchema.properties).not.toHaveProperty(
+      "random_string"
+    );
   });
 
   test("should expose reusable Notion workflow prompts", () => {

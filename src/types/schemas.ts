@@ -617,13 +617,8 @@ export const retrieveBotUserTool: Tool = {
   inputSchema: {
     type: "object",
     properties: {
-      random_string: {
-        type: "string",
-        description: "Dummy parameter for no-parameter tools",
-      },
       format: formatParameter,
     },
-    required: ["random_string"],
   },
 };
 
