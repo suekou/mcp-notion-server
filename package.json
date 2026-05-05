@@ -19,6 +19,9 @@
     "docs",
     "README.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc && node scripts/build-apps.mjs",
     "build:apps": "node scripts/build-apps.mjs",
