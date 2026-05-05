@@ -7,7 +7,7 @@
   "type": "module",
   "packageManager": "pnpm@10.24.0",
   "engines": {
-    "node": ">=24 <25",
+    "node": ">=22",
     "pnpm": ">=10.24.0"
   },
   "main": "build/index.js",
@@ -16,6 +16,7 @@
   },
   "files": [
     "build",
+    "docs",
     "README.md"
   ],
   "scripts": {
@@ -42,7 +43,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.13",
-    "@types/node": "^24.0.0",
+    "@types/node": "^22.0.0",
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
     "@types/yargs": "^17.0.33",
