@@ -1,17 +1,16 @@
-import { expect, test, describe } from "vitest";
-import { convertToMarkdown } from "./index.js";
-import {
-  PageResponse,
+import { describe, expect, test } from "vitest";
+import type {
   BlockResponse,
   DatabaseResponse,
+  DataSourceResponse,
   ListResponse,
-} from "../types/index.js";
+  PageResponse,
+} from "../notion/types.js";
+import { convertToMarkdown, renderBlockToMarkdown } from "./index.js";
 
 describe("convertToMarkdown", () => {
   test("should handle null or undefined response", () => {
-    // @ts-ignore - intentionally testing with null
     expect(convertToMarkdown(null)).toBe("");
-    // @ts-ignore - intentionally testing with undefined
     expect(convertToMarkdown(undefined)).toBe("");
   });
 
@@ -36,10 +35,9 @@ describe("convertToMarkdown", () => {
         emoji: "🐞",
       },
       parent: {
-        type: "database_id",
-        database_id: "a1d8501e-1ac1-43e9-a6bd-ea9fe6c8822b",
+        type: "data_source_id",
+        data_source_id: "a1d8501e-1ac1-43e9-a6bd-ea9fe6c8822b",
       },
-      archived: true,
       in_trash: true,
       properties: {
         "Due date": {
@@ -94,16 +92,20 @@ describe("convertToMarkdown", () => {
     // More detailed verification
     expect(markdown).toMatch(/^# Bug bash\n\n/); // Check if title is correctly processed
     expect(markdown).toMatch(/## Properties\n\n/); // Check if properties section exists
-    expect(markdown).toMatch(/\| Property \| Value \|\n\|\-+\|\-+\|/); // Check if property table header is correct
-    expect(markdown).toMatch(/\| Due date \| 2023-02-23 \|/); // Check if date property is correctly displayed
-    expect(markdown).toMatch(/\| Status \| Not started \|/); // Check if status property is correctly displayed
-    expect(markdown).toMatch(/\| Title \| Bug bash \|/); // Check if title property is correctly displayed
-    expect(markdown).toMatch(/> This page contains child blocks/); // Check if note about child blocks exists
     expect(markdown).toMatch(
-      /> Block ID: `be633bf1-dfa0-436d-b259-571129a590e5`/
+      /\| Property \| ID \| Type \| Value \|\n\| --- \| --- \| --- \| --- \|/,
+    ); // Check if property table header is correct
+    expect(markdown).toMatch(/\| Due date \| M%3BBw \| date \| 2023-02-23 \|/); // Check if date property is correctly displayed
+    expect(markdown).toMatch(/\| Status \| Z%3ClH \| status \| Not started \|/); // Check if status property is correctly displayed
+    expect(markdown).toMatch(/\| Title \| title \| title \| Bug bash \|/); // Check if title property is correctly displayed
+    expect(markdown).toMatch(
+      /> Page content is not included in a page metadata response/,
+    ); // Check if note about child blocks exists
+    expect(markdown).toMatch(
+      /> Block ID: `be633bf1-dfa0-436d-b259-571129a590e5`/,
     ); // Check if block ID is correctly displayed
     expect(markdown).toMatch(
-      /\[View in Notion\]\(https:\/\/www\.notion\.so\/Bug-bash-be633bf1dfa0436db259571129a590e5\)/
+      /\[View in Notion\]\(https:\/\/www\.notion\.so\/Bug-bash-be633bf1dfa0436db259571129a590e5\)/,
     ); // Check if link to Notion is correctly displayed
   });
 
@@ -127,7 +129,6 @@ describe("convertToMarkdown", () => {
         id: "ee5f0f84-409a-440f-983a-a5315961c6e4",
       },
       has_children: false,
-      archived: false,
       in_trash: false,
       type: "heading_2",
       heading_2: {
@@ -157,8 +158,81 @@ describe("convertToMarkdown", () => {
 
     const markdown = convertToMarkdown(blockResponse);
 
-    // Check if it's correctly displayed as a heading 2
-    expect(markdown).toBe("## Lacinato kale");
+    // Check if it keeps the stable block ID and color metadata.
+    expect(markdown).toContain(
+      '<!-- notion:block id="c02fc1d3-db8b-45c5-a222-27595b15aea7" type="heading_2" -->',
+    );
+    expect(markdown).toContain(
+      '## <span data-notion-color="green">Lacinato kale</span>',
+    );
+  });
+
+  test("should render common block types with AI-friendly metadata", () => {
+    const blocks: BlockResponse[] = [
+      {
+        object: "block",
+        id: "todo-done",
+        type: "to_do",
+        created_time: "2026-01-01T00:00:00.000Z",
+        last_edited_time: "2026-01-01T00:00:00.000Z",
+        to_do: {
+          checked: true,
+          rich_text: [{ type: "text", text: { content: "Ship it" } }],
+        },
+      },
+      {
+        object: "block",
+        id: "code-1",
+        type: "code",
+        created_time: "2026-01-01T00:00:00.000Z",
+        last_edited_time: "2026-01-01T00:00:00.000Z",
+        code: {
+          language: "typescript",
+          rich_text: [{ type: "text", text: { content: "const ok = true;" } }],
+        },
+      },
+      {
+        object: "block",
+        id: "image-1",
+        type: "image",
+        created_time: "2026-01-01T00:00:00.000Z",
+        last_edited_time: "2026-01-01T00:00:00.000Z",
+        image: {
+          type: "external",
+          external: { url: "https://example.com/image.png" },
+          caption: [{ type: "text", text: { content: "Architecture" } }],
+        },
+      },
+      {
+        object: "block",
+        id: "row-1",
+        type: "table_row",
+        created_time: "2026-01-01T00:00:00.000Z",
+        last_edited_time: "2026-01-01T00:00:00.000Z",
+        table_row: {
+          cells: [
+            [{ type: "text", text: { content: "Name" } }],
+            [{ type: "text", text: { content: "Status" } }],
+          ],
+        },
+      },
+    ];
+
+    const markdown = blocks
+      .map((block) =>
+        renderBlockToMarkdown(block, { includeBlockMetadata: true }),
+      )
+      .join("\n\n");
+
+    expect(markdown).toContain(
+      '<!-- notion:block id="todo-done" type="to_do" -->',
+    );
+    expect(markdown).toContain("- [x] Ship it");
+    expect(markdown).toContain("```typescript\nconst ok = true;\n```");
+    expect(markdown).toContain(
+      "![Architecture](https://example.com/image.png)",
+    );
+    expect(markdown).toContain("| Name | Status |");
   });
 
   test("should convert a database response to markdown", () => {
@@ -237,6 +311,7 @@ describe("convertToMarkdown", () => {
           type: "relation",
           relation: {
             database_id: "668d797c-76fa-4934-9b05-ad288df2d136",
+            data_source_id: "668d797c-76fa-4934-9b05-ad288df2d136",
             synced_property_name: "Related to Grocery List (Meals)",
           },
         },
@@ -322,7 +397,7 @@ describe("convertToMarkdown", () => {
         type: "page_id",
         page_id: "98ad959b-2b6a-4774-80ee-00246fb0ea9b",
       },
-      archived: false,
+      in_trash: false,
       is_inline: false,
     };
 
@@ -332,26 +407,69 @@ describe("convertToMarkdown", () => {
     expect(markdown).toMatch(/^# Grocery List \(Database\)\n\n/); // Check if title is correctly processed
     expect(markdown).toMatch(/## Properties\n\n/); // Check if properties section exists
     expect(markdown).toMatch(
-      /\| Property Name \| Type \| Details \|\n\|\-+\|\-+\|\-+\|/
+      /\| Property Name \| ID \| Type \| Details \|\n\| --- \| --- \| --- \| --- \|/,
     ); // Check if property table is correct
 
     // Check if each property is correctly displayed
-    expect(markdown).toMatch(/\| \\\+1 \| people \| /); // +1 property
-    expect(markdown).toMatch(/\| In stock \| checkbox \| /); // In stock property
-    expect(markdown).toMatch(/\| Price \| number \| /); // Price property
+    expect(markdown).toMatch(/\| \+1 \| Wp%3DC \| people \| /); // +1 property
+    expect(markdown).toMatch(/\| In stock \| fk%5EY \| checkbox \| /); // In stock property
+    expect(markdown).toMatch(/\| Price \| evWq \| number \| /); // Price property
     expect(markdown).toMatch(
-      /\| Store availability \| multi_select \| Options: Duc Loi Market, Rainbow Grocery, Nijiya Market, Gus's Community Market \|/
+      /\| Store availability \| s}Kq \| multi_select \| Options: Duc Loi Market, Rainbow Grocery, Nijiya Market, Gus's Community Market \|/,
     ); // Property with options
     expect(markdown).toMatch(
-      /\| Food group \| select \| Options: 🥦Vegetable, 🍎Fruit, 💪Protein \|/
+      /\| Food group \| CM%3EH \| select \| Options: 🥦Vegetable, 🍎Fruit, 💪Protein \|/,
     ); // Options with emoji
     expect(markdown).toMatch(
-      /\| Meals \| relation \| Related DB: 668d797c-76fa-4934-9b05-ad288df2d136 \|/
+      /\| Meals \| %7DWA~ \| relation \| Related data source: 668d797c-76fa-4934-9b05-ad288df2d136 \|/,
     ); // Relation
 
     // Check if link to Notion is correctly displayed
     expect(markdown).toMatch(
-      /\[View in Notion\]\(https:\/\/www\.notion\.so\/bc1211cae3f14939ae34260b16f627c\)/
+      /\[View in Notion\]\(https:\/\/www\.notion\.so\/bc1211cae3f14939ae34260b16f627c\)/,
+    );
+  });
+
+  test("should convert a data source response to markdown", () => {
+    const dataSourceResponse: DataSourceResponse = {
+      object: "data_source",
+      id: "bc1211ca-e3f1-4939-ae34-5260b16f627c",
+      title: [
+        {
+          type: "text",
+          text: { content: "Tasks" },
+          plain_text: "Tasks",
+        },
+      ],
+      parent: {
+        type: "database_id",
+        database_id: "6ee911d9-189c-4844-93e8-260c1438b6e4",
+      },
+      properties: {
+        Name: {
+          id: "title",
+          name: "Name",
+          type: "title",
+          title: {},
+        },
+        Status: {
+          id: "status",
+          name: "Status",
+          type: "status",
+          status: {
+            options: [{ id: "todo", name: "Todo", color: "default" }],
+          },
+        },
+      },
+      in_trash: false,
+    };
+
+    const markdown = convertToMarkdown(dataSourceResponse);
+
+    expect(markdown).toMatch(/^# Tasks \(Data Source\)\n\n/);
+    expect(markdown).toMatch(/\| Name \| title \| title \| Title property \|/);
+    expect(markdown).toMatch(
+      /\| Status \| status \| status \| Options: Todo \|/,
     );
   });
 
@@ -384,10 +502,10 @@ describe("convertToMarkdown", () => {
             emoji: "🥬",
           },
           parent: {
-            type: "database_id",
-            database_id: "d9824bdc-8445-4327-be8b-5b47500af6ce",
+            type: "data_source_id",
+            data_source_id: "d9824bdc-8445-4327-be8b-5b47500af6ce",
           },
-          archived: false,
+          in_trash: false,
           properties: {
             "Store availability": {
               id: "%3AUPp",
@@ -523,10 +641,10 @@ describe("convertToMarkdown", () => {
             emoji: "🥬",
           },
           parent: {
-            type: "database_id",
-            database_id: "d9824bdc-8445-4327-be8b-5b47500af6ce",
+            type: "data_source_id",
+            data_source_id: "d9824bdc-8445-4327-be8b-5b47500af6ce",
           },
-          archived: false,
+          in_trash: false,
           properties: {
             "Store availability": {
               id: "%3AUPp",
@@ -721,14 +839,14 @@ describe("convertToMarkdown", () => {
 
     // Check if title and link for each page in the search results are included
     expect(markdown).toMatch(
-      /## \[Tuscan kale\]\(https:\/\/www\.notion\.so\/Tuscan-kale-954b67f93f8741db887423b92bbd31ee\)/
+      /## \[Tuscan kale\]\(https:\/\/www\.notion\.so\/Tuscan-kale-954b67f93f8741db887423b92bbd31ee\)/,
     ); // First page
-    expect(markdown).toMatch(/ID: `954b67f9-3f87-41db-8874-23b92bbd31ee`/); // First page ID
+    expect(markdown).toMatch(/- id: 954b67f9-3f87-41db-8874-23b92bbd31ee/); // First page ID
 
     expect(markdown).toMatch(
-      /## \[Tuscan kale\]\(https:\/\/www\.notion\.so\/Tuscan-kale-598337872cf94fdf8782e53db20768a5\)/
+      /## \[Tuscan kale\]\(https:\/\/www\.notion\.so\/Tuscan-kale-598337872cf94fdf8782e53db20768a5\)/,
     ); // Second page
-    expect(markdown).toMatch(/ID: `59833787-2cf9-4fdf-8782-e53db20768a5`/); // Second page ID
+    expect(markdown).toMatch(/- id: 59833787-2cf9-4fdf-8782-e53db20768a5/); // Second page ID
 
     // Check if each result is separated by a divider line
     expect(markdown).toMatch(/---\n\n/);
@@ -743,7 +861,7 @@ describe("convertToMarkdown", () => {
       id: "unknown123",
     };
 
-    // @ts-ignore - intentionally testing with unknown type
+    // @ts-expect-error - intentionally testing with unknown type
     const markdown = convertToMarkdown(unknownResponse);
 
     expect(markdown).toMatch(/^```json\n/); // JSON code block start

@@ -1,36 +1,62 @@
 {
   "name": "@suekou/mcp-notion-server",
-  "version": "1.2.4",
-  "description": "MCP server for interacting with Notion API based on Node",
+  "version": "2.0.0",
+  "description": "AI-friendly MCP server for the Notion API",
   "license": "MIT",
   "author": "Kosuke Suenaga (https://github.com/suekou/mcp-notion-server)",
   "type": "module",
+  "packageManager": "pnpm@10.24.0",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10.24.0"
+  },
   "main": "build/index.js",
   "bin": {
     "mcp-notion-server": "build/index.js"
   },
   "files": [
     "build",
-    "Readme.md"
+    "docs",
+    "README.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
-    "prepare": "npm run build",
+    "build": "tsc && node scripts/build-apps.mjs",
+    "build:apps": "node scripts/build-apps.mjs",
+    "prepare": "pnpm run build",
     "watch": "tsc --watch",
-    "inspector": "npx @modelcontextprotocol/inspector build/index.js",
+    "inspector": "pnpm dlx @modelcontextprotocol/inspector build/index.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "biome lint",
+    "lint:fix": "biome lint --write",
+    "format": "biome format --write",
+    "format:check": "biome format",
+    "check": "biome check",
+    "check:fix": "biome check --write"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.2",
-    "node-fetch": "^2.7.0",
-    "vitest": "3.0.9",
-    "yargs": "^17.7.2"
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "yargs": "^17.7.2",
+    "zod": "^4.4.1"
   },
   "devDependencies": {
-    "@types/node": "^20.11.24",
-    "@types/node-fetch": "^2.6.12",
+    "@biomejs/biome": "2.4.13",
+    "@types/node": "^22.0.0",
+    "@types/react": "18.3.18",
+    "@types/react-dom": "18.3.5",
     "@types/yargs": "^17.0.33",
-    "typescript": "^5.3.3"
+    "@vitejs/plugin-react": "4.3.4",
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.49",
+    "tailwindcss": "3.4.17",
+    "typescript": "^5.3.3",
+    "vite": "5.4.21",
+    "vite-plugin-singlefile": "2.3.0",
+    "vitest": "3.0.9"
   }
 }

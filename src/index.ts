@@ -6,7 +6,7 @@
  * - Use "json" when you need to process or modify the data programmatically
  *
  * Command-line Arguments:
- * --enabledTools: Comma-separated list of tools to enable (e.g. "notion_retrieve_page,notion_query_database")
+ * --enabledTools: Comma-separated list of tools to enable (e.g. "notion_retrieve_page,notion_query_data_source")
  *
  * Environment Variables:
  * - NOTION_API_TOKEN: Required. Your Notion API integration token.
@@ -16,7 +16,7 @@
  */
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { startServer } from "./server/index.js";
+import { startServer } from "./mcp/server.js";
 
 // Parse command line arguments
 const argv = yargs(hideBin(process.argv))
@@ -27,7 +27,7 @@ const argv = yargs(hideBin(process.argv))
   .parseSync();
 
 const enabledToolsSet = new Set(
-  argv.enabledTools ? argv.enabledTools.split(",") : []
+  argv.enabledTools ? argv.enabledTools.split(",") : [],
 );
 
 // if test environment, do not execute main()
