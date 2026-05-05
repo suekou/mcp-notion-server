@@ -24,7 +24,7 @@
     "url": "https://github.com/suekou/mcp-notion-server"
   },
   "publishConfig": {
-      "access": "public"
+    "access": "public"
   },
   "scripts": {
     "build": "tsc && node scripts/build-apps.mjs",
