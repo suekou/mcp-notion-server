@@ -251,7 +251,7 @@ export const blockObjectSchema = {
     type: {
       type: "string",
       description:
-        "Type of the block. Possible values include 'paragraph', 'heading_1', 'heading_2', 'heading_3', 'bulleted_list_item', 'numbered_list_item', 'to_do', 'toggle', 'child_page', 'child_database', 'embed', 'callout', 'quote', 'equation', 'divider', 'table_of_contents', 'column', 'column_list', 'link_preview', 'synced_block', 'template', 'link_to_page', 'audio', 'bookmark', 'breadcrumb', 'code', 'file', 'image', 'pdf', 'video'. Not all types are supported for creation via API.",
+        "Type of the block. Possible values include 'paragraph', 'heading_1', 'heading_2', 'heading_3', 'bulleted_list_item', 'numbered_list_item', 'to_do', 'toggle', 'child_page', 'child_database', 'embed', 'callout', 'quote', 'equation', 'divider', 'table', 'table_row', 'table_of_contents', 'column', 'column_list', 'link_preview', 'synced_block', 'template', 'link_to_page', 'audio', 'bookmark', 'breadcrumb', 'code', 'file', 'image', 'pdf', 'video'. Not all types are supported for creation via API.",
     },
     paragraph: {
       type: "object",
@@ -556,6 +556,86 @@ export const blockObjectSchema = {
           },
         },
       },
+    },
+    table: {
+      type: "object",
+      description:
+        "Table block object. Contains table_width columns and rows of cells. The table_width is immutable after creation.",
+      properties: {
+        table_width: {
+          type: "integer",
+          description:
+            "Number of columns in the table. This value is immutable after creation.",
+        },
+        has_column_header: {
+          type: "boolean",
+          description:
+            "Whether the table has a column header row. Default is false.",
+          default: false,
+        },
+        has_row_header: {
+          type: "boolean",
+          description:
+            "Whether the table has a row header column. Default is false.",
+          default: false,
+        },
+        children: {
+          type: "array",
+          description:
+            "Array of table_row block objects representing the rows of the table.",
+          items: {
+            type: "object",
+            description: "A table_row block object.",
+            properties: {
+              type: {
+                type: "string",
+                description: "Must be 'table_row'.",
+                enum: ["table_row"],
+              },
+              table_row: {
+                type: "object",
+                description:
+                  "Table row content. Each cell is an array of rich text objects.",
+                properties: {
+                  cells: {
+                    type: "array",
+                    description:
+                      "Array of cells. Each cell is an array of rich text objects. The number of cells must match table_width.",
+                    items: {
+                      type: "array",
+                      description:
+                        "A single cell containing an array of rich text objects.",
+                      items: richTextObjectSchema,
+                    },
+                  },
+                },
+                required: ["cells"],
+              },
+            },
+            required: ["type", "table_row"],
+          },
+        },
+      },
+      required: ["table_width", "children"],
+    },
+    table_row: {
+      type: "object",
+      description:
+        "Table row block object. Each cell is an array of rich text objects.",
+      properties: {
+        cells: {
+          type: "array",
+          description:
+            "Array of cells. Each cell is an array of rich text objects.",
+          items: {
+            type: "array",
+            description:
+              "A single cell containing an array of rich text objects.",
+            items: richTextObjectSchema,
+          },
+        },
+      },
+      required: ["cells"],
     },
     divider: {
       type: "object",
