@@ -169,19 +169,9 @@ function buildTypedCondition(
       return equalsCondition(operator, expectBoolean(propertyName, value));
     case "select":
     case "status":
-      return optionCondition(
-        propertyName,
-        schema,
-        operator,
-        value,
-      );
+      return optionCondition(propertyName, schema, operator, value);
     case "multi_select":
-      return optionCondition(
-        propertyName,
-        schema,
-        operator,
-        value,
-      );
+      return optionCondition(propertyName, schema, operator, value);
     case "date":
       return dateCondition(propertyName, operator, value);
     case "relation":
@@ -279,7 +269,13 @@ function optionCondition(
     ]);
   }
 
-  return { [operator]: expectKnownOption(propertyName, schema, expectString(propertyName, value)) };
+  return {
+    [operator]: expectKnownOption(
+      propertyName,
+      schema,
+      expectString(propertyName, value),
+    ),
+  };
 }
 
 function dateCondition(
