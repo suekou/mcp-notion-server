@@ -169,24 +169,14 @@ function buildTypedCondition(
       return equalsCondition(operator, expectBoolean(propertyName, value));
     case "select":
     case "status":
-      return optionCondition(
-        propertyName,
-        schema,
-        operator,
-        expectString(propertyName, value),
-      );
+      return optionCondition(propertyName, schema, operator, value);
     case "multi_select":
-      return optionCondition(
-        propertyName,
-        schema,
-        operator,
-        expectString(propertyName, value),
-      );
+      return optionCondition(propertyName, schema, operator, value);
     case "date":
       return dateCondition(propertyName, operator, value);
     case "relation":
     case "people":
-      return containsCondition(operator, expectString(propertyName, value));
+      return containsCondition(propertyName, operator, value);
     default:
       throw new Error(
         `Property '${propertyName}' has unsupported type '${schema.type}' for simple querying. Use notion_query_data_source with raw Notion filter JSON.`,
@@ -263,7 +253,7 @@ function optionCondition(
   propertyName: string,
   schema: DatabasePropertyConfig,
   operator: SimpleFilterOperator,
-  optionName: string,
+  value: unknown,
 ): Record<string, unknown> {
   if (isEmptyOperator(operator)) return { [operator]: true };
 
@@ -279,7 +269,13 @@ function optionCondition(
     ]);
   }
 
-  return { [operator]: expectKnownOption(propertyName, schema, optionName) };
+  return {
+    [operator]: expectKnownOption(
+      propertyName,
+      schema,
+      expectString(propertyName, value),
+    ),
+  };
 }
 
 function dateCondition(
@@ -307,8 +303,9 @@ function dateCondition(
 }
 
 function containsCondition(
+  propertyName: string,
   operator: SimpleFilterOperator,
-  value: string,
+  value: unknown,
 ): Record<string, unknown> {
   if (isEmptyOperator(operator)) return { [operator]: true };
   if (!["contains", "does_not_contain"].includes(operator)) {
@@ -316,7 +313,7 @@ function containsCondition(
       `Relation and people filters only support contains or does_not_contain, got '${operator}'.`,
     );
   }
-  return { [operator]: value };
+  return { [operator]: expectString(propertyName, value) };
 }
 
 function requirePropertySchema(
