@@ -144,3 +144,9 @@ pnpm run inspector
 ## License
 
 This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.
+
+## Discovery
+
+[![Beacon Verified](https://registry-ruby.vercel.app/api/v1/agents/suekou%2Fmcp-notion-server/badge.svg)](https://portal-five-phi-54.vercel.app/?q=suekou%2Fmcp-notion-server)
+
+Listed on [Beacon](https://portal-five-phi-54.vercel.app) — searchable index of open-source MCP servers.

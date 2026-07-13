@@ -1,0 +1,26 @@
+{
+  "beacon_manifest": "0.1",
+  "id": "suekou/mcp-notion-server",
+  "name": "Mcp Notion Server",
+  "description": "Open-source AI agent \u2014 mcp, model-context-protocol, notion, notion-api.",
+  "capabilities": [
+    "mcp",
+    "model-context-protocol",
+    "notion",
+    "notion-api",
+    "npm",
+    "model",
+    "context",
+    "protocol",
+    "server",
+    "connecting"
+  ],
+  "interfaces": [
+    {
+      "type": "mcp",
+      "endpoint": "https://github.com/suekou/mcp-notion-server"
+    }
+  ],
+  "source": "https://github.com/suekou/mcp-notion-server",
+  "homepage": "https://github.com/suekou/mcp-notion-server"
+}
