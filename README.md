@@ -1,5 +1,7 @@
 # Notion MCP Server
 
+[![MCP Toplist](https://mcptoplist.com/badge/glama%2Fsuekou%2Fmcp-notion-server.svg)](https://mcptoplist.com/server/glama%2Fsuekou%2Fmcp-notion-server)
+
 AI-friendly MCP server for the Notion API. It helps agents find, read, query, and update Notion workspaces while keeping responses compact enough for day-to-day AI workflows.
 
 This server targets the Notion API `2026-03-11` and uses the current database/data source model. It exposes MCP tools, prompts, resources, structured tool results, and optional MCP Apps for interactive Notion workflows.
