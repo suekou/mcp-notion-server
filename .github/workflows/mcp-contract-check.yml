@@ -1,0 +1,39 @@
+name: MCP Contract Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  contract-check:
+    name: MCP Tool Contract Testing & Schema Fuzzing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.24.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build project
+        run: pnpm run build
+
+      - name: Run MCP Contract & Schema Fuzz Check
+        uses: gendjo-owlhead/mcp-contract-check@v1
+        env:
+          NOTION_API_TOKEN: "ci_contract_check_dummy_token"
+        with:
+          command: "node build/index.js"
+          fuzz: "true"
